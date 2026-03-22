@@ -30,6 +30,32 @@ Sakoo PHP Web Framework
 >
 >It's not a Stable and Reliable Version. Please do not use it in Production Environment.
 
+# Why Sakoo?
+
+### 1. Backend Scaffolding System (App-Modules-Hub)
+
+Quickly generate backend structure using Sakoo’s App-Modules-Hub. Perfect for rapid MVP development and team-based projects.
+
+### 2. Concurrency-Ready, Fast & Scalable
+
+Sakoo is natively designed to support concurrent execution and is suitable for real-time systems or high-throughput applications using Co-Routines and JIT compilation. Its stateless architecture enables efficient horizontal scaling, making it ideal for modern, distributed workloads.
+
+### 3. PWA, Telegram Mini App & Telegram Bot Ready
+
+Not only Perfect for making PWA, Telegram Mini Apps, and Bots, nor Clean and fast in syntax.
+
+### 4. AI-Driven Development (AIDD) and Prompt to Production (P2P)
+
+Sakoo PHP Framework turns acceptance criteria into production-ready, secure code through an automated pipeline. Using Agent with MCP (Access to Docs, Errors, Source), RAG, and PHPArkitect, it enforces architecture and context, while an LLM generates tests first, then the code to make them pass. Each cycle runs through PHPUnit, PHPStan, PHPCSFixer, and security scans—ensuring correctness, quality, and safety. Sakoo guarantees integrity and reliability.
+
+### 5. Domain-Oriented & Customizable Architecture
+
+Sakoo is structured around Domain Contexts, not just MVC. It is built for modularity, testability, and clean separation of business logic, making it a great fit for domain-driven applications. Also, Sakoo's ORM is clean and decoupled: No Active Record coupling, Easy to test and extend, and designed for DDD-friendly patterns like Aggregates and Value Objects. Finally, Sakoo lets you customize your folder structure based on your preferred architecture.
+
+### 6. Zero Third-Party Dependencies
+
+Sakoo doesn’t rely on external Composer packages. This means no update conflicts, better security, and full control over your stack. It is ideal for sensitive or mission-critical applications, using the latest PHP version and complete core components.
+
 ## Requirements
 
 Sakoo Just needed _Docker_ Platform to Run.

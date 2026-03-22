@@ -2,37 +2,30 @@
 
 declare(strict_types=1);
 
-use Swoole\Http\Request;
-use Swoole\Http\Response;
-use Swoole\Http\Server;
+use Sakoo\Framework\Core\Env\Env;
+use Sakoo\Framework\Core\FileSystem\Disk;
+use Sakoo\Framework\Core\FileSystem\File;
+use Sakoo\Framework\Core\Kernel\Environment;
+use Sakoo\Framework\Core\Kernel\Kernel;
+use Sakoo\Framework\Core\Kernel\Mode;
+use System\Handler\ErrorHandler;
+use System\Handler\ExceptionHandler;
+use System\Path\Path;
 
-// Create Kernel
+require_once __DIR__ . '/../vendor/autoload.php';
 
-$server = new Server('0.0.0.0', 9501);
+$envFile = File::open(Disk::Local, Path::getRootDir() . '/.env');
+Env::load($envFile);
 
-$server->set([
-	'worker_num' => swoole_cpu_num() * 2,
-	'daemonize' => false,
-	'max_request' => 10000,
-	'dispatch_mode' => 2,
-	'debug_mode' => 0,
-	'enable_coroutine' => true,
-	'log_level' => \SWOOLE_LOG_TRACE,
-]);
+$loaders = require_once Path::getSystemDir() . '/ServiceLoader/Loaders.php';
+$timeZone = Env::get('SERVER_TIME_ZONE', 'UTC');
+$environment = Env::get('APP_DEBUG', true) ? Environment::Debug : Environment::Production;
 
-$server->on('request', function (Request $request, Response $response) {
-	$response->header('Content-Type', 'text/html');
-	$response->status(200);
-	$response->end('Hello World!');
-});
+Kernel::prepare(Mode::HTTP, $environment)
+	->setErrorHandler(new ErrorHandler())
+	->setExceptionHandler(new ExceptionHandler())
+	->setServiceLoaders($loaders)
+	->setServerTimezone($timeZone)
+	->run();
 
-$server->on('start', function (Server $server) {
-	echo "Swoole HTTP server started at http://127.0.0.1:9501\n";
-	//    echo "Worker processes: {$server->setting['worker_num']}\n";
-});
-
-$server->on('shutdown', function (Server $server) {
-	echo "Swoole HTTP server shutdown at http://127.0.0.1:9501\n";
-});
-
-$server->start();
+require_once 'server.php';

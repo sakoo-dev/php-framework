@@ -17,8 +17,7 @@ RUN chown -R www-data:www-data /var/www/html/
 WORKDIR /var/www/html/
 USER www-data:www-data
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD pgrep php-fpm || exit 1
-
+HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD curl -f http://127.0.0.1:9501/health || exit 1
 EXPOSE 9501
 
 CMD ["php", "public/index.php"]

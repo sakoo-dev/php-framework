@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sakoo\Framework\Core\Tests\Command;
 
 use PHPUnit\Framework\Attributes\Test;
-use Sakoo\Framework\Core\Command\DocGenCommand;
+use Sakoo\Framework\Core\Commands\DocGenCommand;
 use Sakoo\Framework\Core\Console\Application;
 use Sakoo\Framework\Core\Console\Command;
 use Sakoo\Framework\Core\Console\Input;

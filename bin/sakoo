@@ -10,6 +10,11 @@ if [ "$(uname -s)" != "Linux" ] && [ "$(uname -s)" != "Darwin" ]; then
   exit 1
 fi
 
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker is not available in PATH"
+  exit 1
+fi
+
 if ! [ -x "$(command -v docker-compose)" ]; then
   shopt -s expand_aliases
   alias docker-compose='docker compose'

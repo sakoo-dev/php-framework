@@ -1,0 +1,7 @@
+#!/bin/bash
+
+APP_SERVICE='sakoo.app:1.0.0'
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_PATH="$(dirname "$SCRIPT_DIR")"
+
+docker run --rm -i -v "$PROJECT_PATH:/var/www/html" --health-cmd "exit 0" --health-interval 5s --health-retries 5 --health-start-period 5s --health-timeout 5s "$APP_SERVICE" php ./assist mcp:run

@@ -2,23 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Sakoo\Framework\Core\Tests\Command;
+namespace App\Assist\Tests;
 
+use App\Assist\Commands\ExampleCommand;
 use PHPUnit\Framework\Attributes\Test;
-use Sakoo\Framework\Core\Commands\DevCommand;
 use Sakoo\Framework\Core\Console\Application;
 use Sakoo\Framework\Core\Console\Command;
 use Sakoo\Framework\Core\Console\Input;
 use Sakoo\Framework\Core\Console\Output;
+use Sakoo\Framework\Core\Tests\Command\AbstractCommandBase;
 
-final class DevCommandTest extends AbstractCommandBase
+final class ExampleCommandTest extends AbstractCommandBase
 {
 	private Command $command;
 
 	protected function setUp(): void
 	{
-		parent::setUp();
-		$this->command = new DevCommand();
+		AbstractCommandBase::setUp();
+		$this->command = new ExampleCommand();
 	}
 
 	protected function getCommand(): Command
@@ -29,7 +30,7 @@ final class DevCommandTest extends AbstractCommandBase
 	#[Test]
 	public function command_works_properly(): void
 	{
-		$input = new Input(['dev']);
+		$input = new Input(['example']);
 		$output = new Output();
 		$output->setSilentMode();
 
@@ -40,6 +41,6 @@ final class DevCommandTest extends AbstractCommandBase
 		$result = $output->getDisplay();
 
 		$this->assertEquals(Output::SUCCESS, $status);
-		$this->assertStringContainsString('JIT Enabled:', $result);
+		$this->assertStringContainsString('It works properly', $result);
 	}
 }

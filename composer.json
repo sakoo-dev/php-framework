@@ -34,9 +34,9 @@
     "friendsofphp/php-cs-fixer": "^3.6",
     "phpstan/phpstan": "^2",
     "phpunit/phpunit": "^10",
-    "php-mcp/server": "^2.0",
-    "inspector-apm/neuron-ai": "^2.0",
-    "swoole/ide-helper": "^6.0"
+    "swoole/ide-helper": "^6.0",
+    "mcp/sdk": "dev-main",
+    "neuron-core/neuron-ai": "3.x-dev"
   },
   "scripts": {
     "lint": "./vendor/bin/php-cs-fixer check . --using-cache=no",
@@ -52,5 +52,10 @@
         "symlink": true
       }
     }
-  ]
+  ],
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
+  }
 }

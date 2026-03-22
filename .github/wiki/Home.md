@@ -3310,244 +3310,6 @@ public function get(): string
 $markdown->get()
 ```
 
-## 📦 Sakoo\Framework\Core\AI\Agent
-
-### 🟢 DataAnalystAgent
-
----
-
-##### Contract
-
-```php
-protected function provider(): AIProviderInterface
-```
-
-##### Usage
-
-```php
-$dataAnalystAgent->provider()
-```
-
----
-
-##### Contract
-
-```php
-public function instructions(): string
-```
-
-##### Usage
-
-```php
-$dataAnalystAgent->instructions()
-```
-
----
-
-##### Contract
-
-```php
-protected function tools(): array
-```
-
-##### Usage
-
-```php
-$dataAnalystAgent->tools()
-```
-
-### 🟢 DeveloperAgent
-
----
-
-##### Contract
-
-```php
-protected function provider(): AIProviderInterface
-```
-
-##### Usage
-
-```php
-$developerAgent->provider()
-```
-
----
-
-##### Contract
-
-```php
-public function instructions(): string
-```
-
-##### Usage
-
-```php
-$developerAgent->instructions()
-```
-
----
-
-##### Contract
-
-```php
-protected function tools(): array
-```
-
-##### Usage
-
-```php
-$developerAgent->tools()
-```
-
-### 🟢 ProductManagerAgent
-
----
-
-##### Contract
-
-```php
-protected function provider(): AIProviderInterface
-```
-
-##### Usage
-
-```php
-$productManagerAgent->provider()
-```
-
----
-
-##### Contract
-
-```php
-public function instructions(): string
-```
-
-##### Usage
-
-```php
-$productManagerAgent->instructions()
-```
-
----
-
-##### Contract
-
-```php
-protected function tools(): array
-```
-
-##### Usage
-
-```php
-$productManagerAgent->tools()
-```
-
-## 📦 Sakoo\Framework\Core\AI\Mcp
-
-### 🟢 McpServer
-
----
-
-##### Contract
-
-```php
-public static function factory(): Server
-```
-
-##### Usage
-
-```php
-McpServer::factory()
-```
-
-<sub><sup>@throws ConfigurationException</sup></sub>
-
-<sub><sup>@throws DiscoveryException</sup></sub>
-
-### 🟢 McpElements
-
----
-
-##### Contract
-
-```php
-public function readFileTool(string $path): string
-```
-
-##### Usage
-
-```php
-$mcpElements->readFileTool($path)
-```
-
----
-
-##### Contract
-
-```php
-public function writeFileTool(string $path, string $content): array
-```
-
-##### Usage
-
-```php
-$mcpElements->writeFileTool($path, $content)
-```
-
-<sub><sup>@return array&lt;string,bool|string&gt;</sup></sub>
-
----
-
-##### Contract
-
-```php
-public function getFilesListTool(): array
-```
-
-##### Usage
-
-```php
-$mcpElements->getFilesListTool()
-```
-
-<sub><sup>@return string[]</sup></sub>
-
----
-
-##### Contract
-
-```php
-public function getFilesListResource(): array
-```
-
-##### Usage
-
-```php
-$mcpElements->getFilesListResource()
-```
-
-<sub><sup>@return string[]</sup></sub>
-
----
-
-##### Contract
-
-```php
-public function featureFromStory(string $fileName): PromptMessage
-```
-
-##### Usage
-
-```php
-$mcpElements->featureFromStory($fileName)
-```
-
-## 📦 Sakoo\Framework\Core\AI\Rag
-
-### 🟢 SmartRag
-
 ## 📦 Sakoo\Framework\Core\Finder
 
 ### 🟢 FileFinder
@@ -4578,47 +4340,7 @@ public function isStaticInstantiator(): bool
 $virtualMethodObject->isStaticInstantiator()
 ```
 
-## 📦 Sakoo\Framework\Core\Profiler
-
-### 🟢 Profiler
-
----
-
-#### How to use the Class:
-
-```php
-$profiler = new Profiler(ClockInterface $clock)
-```
-
----
-
-##### Contract
-
-```php
-public function start(string $key): void
-```
-
-##### Usage
-
-```php
-$profiler->start($key)
-```
-
----
-
-##### Contract
-
-```php
-public function elapsedTime(string $key): int
-```
-
-##### Usage
-
-```php
-$profiler->elapsedTime($key)
-```
-
-## 📦 Sakoo\Framework\Core\Command
+## 📦 Sakoo\Framework\Core\Commands
 
 ### 🟢 ContainerCacheCommand
 
@@ -4712,92 +4434,6 @@ public function getApplication(): Application
 
 ```php
 $containerCacheCommand->getApplication()
-```
-
-### 🟢 McpServerCommand
-
----
-
-##### Contract
-
-```php
-public static function getName(): string
-```
-
-##### Usage
-
-```php
-McpServerCommand::getName()
-```
-
----
-
-##### Contract
-
-```php
-public static function getDescription(): string
-```
-
-##### Usage
-
-```php
-McpServerCommand::getDescription()
-```
-
----
-
-##### Contract
-
-```php
-public function run(Input $input, Output $output): int
-```
-
-##### Usage
-
-```php
-$mcpServerCommand->run($input, $output)
-```
-
----
-
-##### Contract
-
-```php
-public function help(Input $input, Output $output): int
-```
-
-##### Usage
-
-```php
-$mcpServerCommand->help($input, $output)
-```
-
----
-
-##### Contract
-
-```php
-public function setRunningApplication(Application $app): void
-```
-
-##### Usage
-
-```php
-$mcpServerCommand->setRunningApplication($app)
-```
-
----
-
-##### Contract
-
-```php
-public function getApplication(): Application
-```
-
-##### Usage
-
-```php
-$mcpServerCommand->getApplication()
 ```
 
 ### 🟢 ZenCommand
@@ -5066,7 +4702,7 @@ public function getApplication(): Application
 $docGenCommand->getApplication()
 ```
 
-## 📦 Sakoo\Framework\Core\Command\Watcher
+## 📦 Sakoo\Framework\Core\Commands\Watcher
 
 ### 🟢 PhpBundler
 
@@ -5212,6 +4848,46 @@ public function getApplication(): Application
 
 ```php
 $watchCommand->getApplication()
+```
+
+## 📦 Sakoo\Framework\Core\Profiler
+
+### 🟢 Profiler
+
+---
+
+#### How to use the Class:
+
+```php
+$profiler = new Profiler(ClockInterface $clock)
+```
+
+---
+
+##### Contract
+
+```php
+public function start(string $key): void
+```
+
+##### Usage
+
+```php
+$profiler->start($key)
+```
+
+---
+
+##### Contract
+
+```php
+public function elapsedTime(string $key): int
+```
+
+##### Usage
+
+```php
+$profiler->elapsedTime($key)
 ```
 
 ## 📦 Sakoo\Framework\Core\Set\Exceptions
@@ -6636,9 +6312,67 @@ public function getOption(string $name): string
 $input->getOption($name)
 ```
 
+---
+
+##### Contract
+
+```php
+public function getUserInput(): string
+```
+
+##### Usage
+
+```php
+$input->getUserInput()
+```
+
+---
+
+##### Contract
+
+```php
+public function radio(array $options, string $title): string
+```
+
+##### Usage
+
+```php
+$input->radio($options, $title)
+```
+
+<sub><sup>@param string[] $options</sup></sub>
+
 ## 📦 Sakoo\Framework\Core\Console\Exceptions
 
 ### 🟥 CommandNotFoundException
+
+## 📦 Sakoo\Framework\Core\Console\Components
+
+### 🟢 RadioButton
+
+---
+
+#### How to use the Class:
+
+```php
+$radioButton = new RadioButton(string $prompt, array $options)
+```
+
+<sub><sup>@param string[] $options</sup></sub>
+
+---
+
+##### Contract
+
+```php
+public function show(): string
+```
+
+##### Usage
+
+```php
+$radioButton->show()
+```
 
 ## 📦 Sakoo\Framework\Core\Console\Commands
 

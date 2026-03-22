@@ -37,8 +37,8 @@ check:
 	@./sakoo composer validate --strict
 	@./sakoo composer audit
 	@docker build --check -f ./docker/sakoo.app/Dockerfile .
-	@./bin/test-coverage
 	@make doc
+	@./bin/test-coverage
 
 .PHONY: test
 test:

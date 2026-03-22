@@ -28,5 +28,5 @@ Kernel::prepare(Mode::Console, $environment)
 	->setServerTimezone($timeZone)
 	->run();
 
-$application = require_once Path::getAppDir() . '/Console/Bootstrap.php';
+$application = require_once Path::getAppDir() . '/Assist/Bootstrap.php';
 $application->run();

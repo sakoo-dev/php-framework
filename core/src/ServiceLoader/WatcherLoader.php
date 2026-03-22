@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sakoo\Framework\Core\ServiceLoader;
 
-use Sakoo\Framework\Core\Command\Watcher\PhpBundler;
+use Sakoo\Framework\Core\Commands\Watcher\PhpBundler;
 use Sakoo\Framework\Core\Container\Container;
 use Sakoo\Framework\Core\Watcher\Contracts\File;
 use Sakoo\Framework\Core\Watcher\Contracts\FileSystemAction;

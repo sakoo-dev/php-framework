@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sakoo\Framework\Core\Console;
 
+use Sakoo\Framework\Core\Console\Components\RadioButton;
+
 class Input
 {
 	/** @var array<string> */
@@ -73,6 +75,17 @@ class Input
 	public function getOption(string $name): ?string
 	{
 		return $this->options[$name] ?? null;
+	}
+
+	public function getUserInput(): string
+	{
+		return readline() ?: '';
+	}
+
+	/** @param string[] $options */
+	public function radio(array $options, string $title = 'Select an option:'): string
+	{
+		return (new RadioButton($title, $options))->show();
 	}
 
 	private function getLongOption(string $arg): void

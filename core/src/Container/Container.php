@@ -89,7 +89,7 @@ class Container implements ContainerInterface
 	 */
 	public function new(string $class, array $params = []): object
 	{
-		throwUnless(class_exists($class), new ClassNotFoundException());
+		throwUnless(class_exists($class), new ClassNotFoundException("$class cannot be found."));
 
 		// @phpstan-ignore argument.type
 		$reflector = new \ReflectionClass($class);

@@ -1,6 +1,0 @@
-# https://blueprint.laravelshift.com/
-sakoo:
-  services:
-    payment:
-      controller: 'controller'
-      entity: 'entity'

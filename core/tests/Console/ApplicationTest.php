@@ -6,7 +6,7 @@ namespace Sakoo\Framework\Core\Tests\Console;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use Sakoo\Framework\Core\Command\ZenCommand;
+use Sakoo\Framework\Core\Commands\ZenCommand;
 use Sakoo\Framework\Core\Console\Application;
 use Sakoo\Framework\Core\Console\Commands\VersionCommand;
 use Sakoo\Framework\Core\Console\Exceptions\CommandNotFoundException;

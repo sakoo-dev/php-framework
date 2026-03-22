@@ -48,7 +48,11 @@ services:
     networks:
       - sakoo.network
     healthcheck:
-      test: [ "CMD", "service", "nginx", "status" ]
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
 volumes:
   sakoo.volume:

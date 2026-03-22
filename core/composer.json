@@ -31,6 +31,7 @@
     "php": ">=8.3",
     "ext-zend-opcache": "*",
     "ext-inotify": "*",
+    "ext-posix": "*",
     "ext-swoole": "*",
     "psr/container": "^2.0",
     "psr/log": "^3.0",
