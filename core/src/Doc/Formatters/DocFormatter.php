@@ -9,15 +9,40 @@ use Sakoo\Framework\Core\Doc\Object\MethodInterface;
 use Sakoo\Framework\Core\Doc\Object\MethodObject;
 use Sakoo\Framework\Core\Doc\Object\NamespaceObject;
 
+/**
+ * Full API reference formatter for the documentation generator.
+ *
+ * Produces a Markdown document structured as:
+ *
+ *   # 📚 Documentation
+ *   ## 📦 Namespace\Name
+ *   ### 🟢/🟥 ClassName
+ *   #### How to use the Class:   (constructor or static instantiator)
+ *   ##### Contract / Usage       (regular methods)
+ *
+ * For each method the formatter emits:
+ * - A "How to use the Class" block for constructors and static named constructors,
+ *   showing the instantiation expression.
+ * - A Contract block (full signature with modifiers and return type) and a Usage
+ *   block (call-site expression with `$instance->method($args)` or `Class::method()`)
+ *   for all other public/protected methods.
+ * - Inline PHPDoc lines rendered as small text, with @throws lines rendered as
+ *   callout blocks.
+ *
+ * Classes marked as exceptions are given a 🟥 icon; all others use 🟢.
+ * Methods carrying the DontDocument attribute, private methods, and non-constructor
+ * magic methods are silently skipped.
+ *
+ * TODO: add @throws label rendering for methods, Attribute support, helper function support.
+ */
 class DocFormatter extends Formatter
 {
-	/*
-	 * TODO: required functionalities for Documentation Generator:
-	 * Throws Label for methods
-	 * Supporting Attributes
-	 * Supporting Helper functions
+	/**
+	 * Iterates all namespaces and their classes, renders each class's methods,
+	 * and returns the complete Markdown API reference as a string.
+	 *
+	 * @param NamespaceObject[] $namespaces
 	 */
-
 	public function format(array $namespaces): string
 	{
 		$this->markup->h1('📚 Documentation');
@@ -30,13 +55,15 @@ class DocFormatter extends Formatter
 		return (string) $this->markup;
 	}
 
+	/**
+	 * Renders a single method: constructor/static-instantiator as a "How to use"
+	 * snippet, and regular methods as a Contract + Usage pair.
+	 */
 	private function parseMethod(MethodInterface $method): void
 	{
 		$class = $method->getClass();
-
 		$parameters = $method->getDefaultValueTypes();
 		$parametersVars = $method->getDefaultValues();
-
 		$modifiers = $method->getModifiers();
 		$modifiers = implode(' ', $modifiers) . ($modifiers ? ' ' : '');
 
@@ -60,20 +87,20 @@ class DocFormatter extends Formatter
 			return;
 		}
 
-		$this->markup->h5('Contract');
-		$this->markup->code("$modifiers" . 'function ' . $method->getName() . "($parameters)$returnTypes", 'php');
+		$this->markup->h3('- `' . $method->getName() . '` Function');
+		$this->printPHPDocs($method);
+		$code = '// --- Contract' . PHP_EOL;
+		$code .= "{$modifiers}function " . $method->getName() . "($parameters)$returnTypes" . PHP_EOL;
+		$code .= '// --- Usage' . PHP_EOL;
+		$code .= ($method->isStatic() ? $class->getName() . '::' : "$instancePointer->") . $method->getName() . "($parametersVars)";
 
-		$this->markup->h5('Usage');
-
-		if ($method->isStatic()) {
-			$this->markup->code($class->getName() . '::' . $method->getName() . "($parametersVars)", 'php');
-
-			return;
-		}
-
-		$this->markup->code("$instancePointer->" . $method->getName() . "($parametersVars)", 'php');
+		$this->markup->code($code, 'php');
 	}
 
+	/**
+	 * Iterates all virtual and real methods of $class, skipping undocumentable ones,
+	 * and renders each via parseMethod() followed by its PHPDoc text.
+	 */
 	private function parseClass(ClassObject $class): void
 	{
 		/** @var MethodInterface[] $methods */
@@ -86,26 +113,53 @@ class DocFormatter extends Formatter
 			}
 
 			$this->markup->hr();
-
 			$this->parseMethod($method);
-
-			foreach ($method->getPhpDocs() as $line) {
-				if (empty($line)) {
-					continue;
-				}
-
-				$this->markup->tiny(htmlspecialchars($line));
-			}
 		}
 	}
 
+	/**
+	 * Iterates all classes in $namespace, prepends an exception/regular icon, and
+	 * delegates class rendering to parseClass().
+	 */
 	private function parseNamespace(NamespaceObject $namespace): void
 	{
 		foreach ($namespace->getClasses() as $class) {
 			$icon = $class->isException() ? '🟥' : '🟢';
 			$this->markup->h3($icon . ' ' . $class->getName());
-
+			$this->printPHPDocs($class);
 			$this->parseClass($class);
+		}
+	}
+
+	/**
+	 * Renders the PHPDoc lines for $method. Blank lines flush accumulated text as
+	 * a small-text paragraph. @throws lines are rendered as callout blocks.
+	 * Remaining text is concatenated into a paragraph flushed at the end.
+	 */
+	private function printPHPDocs(ClassObject|MethodInterface $component): void
+	{
+		$textBuffer = '';
+
+		foreach ($component->getPhpDocs() as $line) {
+			if (!$line) {
+				if ($textBuffer) {
+					$this->markup->tiny(htmlspecialchars($textBuffer));
+					$textBuffer = '';
+					$this->markup->br();
+				}
+
+				continue;
+			}
+
+			if (str_starts_with($line, '@throws')) {
+				$this->markup->callout(htmlspecialchars($line));
+			} else {
+				$textBuffer .= $line . ' ';
+			}
+		}
+
+		if ($textBuffer) {
+			$this->markup->tiny(htmlspecialchars(trim($textBuffer)));
 		}
 	}
 }

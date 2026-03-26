@@ -1,7 +1,20 @@
 #!/bin/bash
 
 APP_SERVICE='sakoo.app:1.0.0'
+CONTAINER_NAME="mcp-server"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_PATH="$(dirname "$SCRIPT_DIR")"
 
-docker run --rm -i -v "$PROJECT_PATH:/var/www/html" --health-cmd "exit 0" --health-interval 5s --health-retries 5 --health-start-period 5s --health-timeout 5s "$APP_SERVICE" php ./assist mcp:run
+if ! docker ps -q --filter "name=^${CONTAINER_NAME}$" | grep -q .; then
+  if docker ps -aq --filter "name=^${CONTAINER_NAME}$" | grep -q .; then
+    docker start "$CONTAINER_NAME"
+  else
+    docker run -d --name "$CONTAINER_NAME" \
+      --restart unless-stopped \
+      -v "$PROJECT_PATH:/var/www/html" \
+      --health-cmd "exit 0" --health-interval 5s --health-retries 5 --health-start-period 5s --health-timeout 5s \
+      "$APP_SERVICE" sleep infinity
+  fi
+fi
+
+docker exec -i "$CONTAINER_NAME" php ./assist mcp:run

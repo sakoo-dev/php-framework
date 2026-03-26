@@ -10,6 +10,21 @@ use Sakoo\Framework\Core\Path\Path;
 use Sakoo\Framework\Core\Watcher\Contracts\Event;
 use Sakoo\Framework\Core\Watcher\WatcherActions;
 
+/**
+ * FileSystemAction implementation that auto-formats PHP files on change.
+ *
+ * Extends WatcherActions so it inherits the per-file Locker debounce guard in
+ * fileModified(). When a PHP file is modified:
+ *
+ * 1. The parent debounce check is applied — the event is dropped if the locker
+ *    is already held (i.e. a previous format run for the same file is still in progress).
+ * 2. The changed file path is logged to the console output with a timestamp.
+ * 3. PHP CS Fixer is run silently on the changed file via exec().
+ * 4. The locker is released so future MODIFY events for the same file are processed.
+ * 5. A "Watching …" status line is re-printed to confirm the watcher is still active.
+ *
+ * fileMoved() and fileDeleted() are inherited as no-ops from WatcherActions.
+ */
 class PhpBundler extends WatcherActions
 {
 	public function __construct(
@@ -18,6 +33,10 @@ class PhpBundler extends WatcherActions
 		private readonly Output $output,
 	) {}
 
+	/**
+	 * Debounces, logs, lints, unlocks, and re-prints the watcher status for every
+	 * detected MODIFY event on a watched PHP file.
+	 */
 	public function fileModified(Event $event): void
 	{
 		parent::fileModified($event);
@@ -31,6 +50,10 @@ class PhpBundler extends WatcherActions
 		$this->output->block('Watching ...', Output::COLOR_CYAN);
 	}
 
+	/**
+	 * Runs PHP CS Fixer on $path in quiet mode, applying the project's code style
+	 * configuration automatically whenever a file is saved.
+	 */
 	private function makeLint(string $path): void
 	{
 		$vendor = Path::getVendorDir();

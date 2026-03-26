@@ -6,6 +6,7 @@ namespace App\Assist\Commands;
 
 use App\Assist\AI\Mcp\McpServer;
 use Mcp\Server\Transport\StdioTransport;
+use Psr\Log\LoggerInterface;
 use Sakoo\Framework\Core\Console\Command;
 use Sakoo\Framework\Core\Console\Input;
 use Sakoo\Framework\Core\Console\Output;
@@ -29,7 +30,8 @@ class McpServerCommand extends Command
 	public function run(Input $input, Output $output): int
 	{
 		try {
-			McpServer::factory()->run(new StdioTransport());
+			$logger = resolve(LoggerInterface::class);
+			McpServer::factory()->run(new StdioTransport(logger: $logger));
 		} catch (\Throwable $e) {
 			fwrite(STDERR, '[CRITICAL ERROR] ' . $e->getMessage() . "\n");
 

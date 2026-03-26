@@ -9,6 +9,28 @@ use Sakoo\Framework\Core\Assert\Exception\LazyAssertionException;
 use Sakoo\Framework\Core\Doc\Attributes\DontDocument;
 
 /**
+ * Deferred assertion runner that collects all failures before throwing.
+ *
+ * Unlike Assert, which throws on the first failed assertion, LazyAssertion
+ * accumulates every InvalidArgumentException raised during its run and reports
+ * them all at once when validate() is called. This is particularly useful for
+ * form or DTO validation where the caller needs a complete list of errors rather
+ * than stopping at the first one.
+ *
+ * Usage pattern:
+ *   Assert::lazy()
+ *       ->that($email, 'email')->string()->notEmpty()
+ *       ->that($age, 'age')->int()->greater(0)
+ *       ->validate();
+ *
+ * Calling that() switches the active "chain" — subsequent assertion method calls
+ * operate on the value bound in the most recent that() call. Each chain is keyed
+ * by its $chainName so the final exception message can identify which field
+ * triggered which failure.
+ *
+ * The full set of proxied assertion methods mirrors those on Assert and is
+ * documented in the @method annotations above the class declaration.
+ *
  * @method LazyAssertion true(mixed $value, string $message = '')
  * @method LazyAssertion false(mixed $value, string $message = '')
  * @method LazyAssertion bool(mixed $value, string $message = '')
@@ -75,7 +97,7 @@ use Sakoo\Framework\Core\Doc\Attributes\DontDocument;
 class LazyAssertion
 {
 	/**
-	 * @phpstan-var  array<string,array<int,InvalidArgumentException>> $exceptions
+	 * @phpstan-var array<string,array<int,InvalidArgumentException>> $exceptions
 	 */
 	private array $exceptions = [];
 	private string $chainName = '';
@@ -84,6 +106,10 @@ class LazyAssertion
 	public function __construct() {}
 
 	/**
+	 * Proxies any Assert method call, catching InvalidArgumentException instead of
+	 * re-throwing it. Failures are stored under the current chain name and reported
+	 * together when validate() is called.
+	 *
 	 * @param array<mixed> $arguments
 	 */
 	public function __call(string $name, array $arguments): static
@@ -99,6 +125,10 @@ class LazyAssertion
 	}
 
 	/**
+	 * Switches the active assertion chain to a new value and chain name.
+	 * Subsequent assertion calls will operate on $value and store any failures
+	 * under the $chainName key in the exception map.
+	 *
 	 * @return AssertionChain
 	 *
 	 * @phpstan-ignore return.phpDocType
@@ -112,6 +142,10 @@ class LazyAssertion
 	}
 
 	/**
+	 * Finalises the lazy assertion run. Throws LazyAssertionException containing a
+	 * numbered list of every failure accumulated across all chains when at least one
+	 * assertion failed. Does nothing when all assertions passed.
+	 *
 	 * @throws LazyAssertionException
 	 */
 	public function validate(): void

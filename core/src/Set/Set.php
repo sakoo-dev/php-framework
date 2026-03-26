@@ -10,6 +10,28 @@ use Sakoo\Framework\Core\Set\Strategy\Searcher;
 use Sakoo\Framework\Core\Set\Strategy\Sorter;
 
 /**
+ * Type-safe generic collection.
+ *
+ * Set<T> infers the element type T from the first item inserted and rejects any
+ * subsequent item whose PHP gettype() differs from that inferred type, throwing
+ * GenericMismatchException. This makes the collection behave similarly to a
+ * typed generic in languages with native generics, preventing silent type coercion
+ * that would be possible with a plain PHP array.
+ *
+ * Elements can be stored with either an explicit string/int key (associative) or
+ * appended without a key (sequential). Integer keys passed to get() and remove()
+ * are always treated as positional indices — not as literal array keys — so
+ * get(0) reliably returns the first element even in associative sets.
+ *
+ * The ItemAccess trait adds named positional accessors (first(), second(), …,
+ * tenth()) for the most commonly accessed positions.
+ *
+ * Sorting and searching are delegated to pluggable Sorter<T> and Searcher<T>
+ * strategy objects injected at the call site, keeping the Set algorithm-agnostic.
+ *
+ * Magic property access (__get / __set) maps property names to associative keys,
+ * enabling object-style access on associative sets.
+ *
  * @template T
  *
  * @implements IterableInterface<T>
@@ -21,6 +43,9 @@ class Set implements IterableInterface
 	use ItemAccess;
 
 	/**
+	 * Constructs a Set from $items, inferring T from the first element and
+	 * validating all subsequent elements against it.
+	 *
 	 * @param array<int|string,T> $items
 	 *
 	 * @implements \IteratorAggregate<int|string, T>
@@ -39,6 +64,9 @@ class Set implements IterableInterface
 	}
 
 	/**
+	 * Returns the element stored under the associative key $name, or null when it
+	 * does not exist. Delegates to get() so type validation applies to any default.
+	 *
 	 * @return null|T
 	 *
 	 * @throws GenericMismatchException|\Throwable
@@ -49,6 +77,9 @@ class Set implements IterableInterface
 	}
 
 	/**
+	 * Stores $value under the associative key $name without type validation.
+	 * Prefer add() for validated insertion.
+	 *
 	 * @param T $value
 	 */
 	public function __set(string $name, mixed $value): void
@@ -56,22 +87,35 @@ class Set implements IterableInterface
 		$this->items[$name] = $value;
 	}
 
+	/**
+	 * Returns true when an element with the given int or string $name key exists.
+	 */
 	public function exists(int|string $name): bool
 	{
 		return isset($this->items[$name]);
 	}
 
+	/**
+	 * Returns the number of elements in the collection.
+	 */
 	public function count(): int
 	{
 		return count($this->items);
 	}
 
+	/**
+	 * Passes each element (value, key) to $callback. Return values are discarded.
+	 */
 	public function each(callable $callback): void
 	{
 		array_walk($this->items, $callback);
 	}
 
 	/**
+	 * Returns a new Set whose elements are the results of applying $callback to
+	 * each element of this Set. The inferred generic type of the new Set is
+	 * determined by the callback's return values.
+	 *
 	 * @template U
 	 *
 	 * @param callable(T): U $callback
@@ -86,6 +130,9 @@ class Set implements IterableInterface
 	}
 
 	/**
+	 * Extracts nested values using a dot-notation $key (e.g. 'address.city') from
+	 * each element via successive array_column calls, and returns them as a new Set.
+	 *
 	 * @return Set<T>
 	 *
 	 * @throws GenericMismatchException|\Throwable
@@ -106,6 +153,12 @@ class Set implements IterableInterface
 	}
 
 	/**
+	 * Adds an element to the collection with type validation.
+	 *
+	 * When only $key is provided (and $value is null), $key is treated as the
+	 * value and appended sequentially. When both $key and $value are given, $value
+	 * is stored under $key (which must be int or string).
+	 *
 	 * @return Set<T>
 	 *
 	 * @throws GenericMismatchException|\Throwable
@@ -131,6 +184,10 @@ class Set implements IterableInterface
 	}
 
 	/**
+	 * Removes the element at $key from the collection and returns the same instance.
+	 * Integer $key is treated as a positional index; string $key is an associative key.
+	 * Does nothing when the key does not exist.
+	 *
 	 * @return Set<T>
 	 */
 	public function remove(int|string $key): self
@@ -149,6 +206,12 @@ class Set implements IterableInterface
 	}
 
 	/**
+	 * Returns the element at $key, or $default when the key does not exist.
+	 *
+	 * Integer $key is treated as a positional index (via array_slice), allowing
+	 * consistent positional access even in associative sets. When $default is
+	 * provided it must satisfy the generic type constraint.
+	 *
 	 * @return null|T
 	 *
 	 * @throws GenericMismatchException|\Throwable
@@ -169,6 +232,8 @@ class Set implements IterableInterface
 	}
 
 	/**
+	 * Returns all elements as a plain PHP array, preserving keys.
+	 *
 	 * @return array<T>
 	 */
 	public function toArray(): array
@@ -177,6 +242,9 @@ class Set implements IterableInterface
 	}
 
 	/**
+	 * Returns an ArrayIterator over the internal items array, enabling foreach
+	 * iteration and satisfying the IteratorAggregate contract.
+	 *
 	 * @return \ArrayIterator<int|string, T>
 	 */
 	public function getIterator(): \ArrayIterator
@@ -185,6 +253,9 @@ class Set implements IterableInterface
 	}
 
 	/**
+	 * Throws GenericMismatchException when $value's PHP type does not match the
+	 * inferred generic type T of this Set.
+	 *
 	 * @throws GenericMismatchException|\Throwable
 	 */
 	private function typeMismatchChecking(mixed $value): void
@@ -192,6 +263,10 @@ class Set implements IterableInterface
 		throwIf($this->genericType !== gettype($value), new GenericMismatchException());
 	}
 
+	/**
+	 * Records the PHP type of $value as the Set's generic type T on the first call.
+	 * Subsequent calls are no-ops because the type is locked after the first element.
+	 */
 	private function detectGeneric(mixed $value): void
 	{
 		if (is_null($this->genericType)) {
@@ -200,6 +275,9 @@ class Set implements IterableInterface
 	}
 
 	/**
+	 * Delegates sorting to $sorter and returns a new Set with elements reordered
+	 * according to the strategy's algorithm.
+	 *
 	 * @param Sorter<T> $sorter
 	 *
 	 * @return Set<T>
@@ -210,6 +288,9 @@ class Set implements IterableInterface
 	}
 
 	/**
+	 * Delegates searching to $searcher and returns a new Set containing only the
+	 * elements that match $needle according to the strategy.
+	 *
 	 * @param Searcher<T> $searcher
 	 *
 	 * @return Set<T>
@@ -220,6 +301,9 @@ class Set implements IterableInterface
 	}
 
 	/**
+	 * Returns a new Set containing only the elements for which $callback returns
+	 * true. The inferred generic type is preserved in the new Set.
+	 *
 	 * @return Set<T>
 	 *
 	 * @throws GenericMismatchException|\Throwable

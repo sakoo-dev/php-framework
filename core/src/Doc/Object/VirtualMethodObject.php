@@ -4,6 +4,24 @@ declare(strict_types=1);
 
 namespace Sakoo\Framework\Core\Doc\Object;
 
+/**
+ * Parsed value object representing a virtual method declared via a @method PHPDoc tag.
+ *
+ * PHP classes can document methods that do not exist in source using @method tags,
+ * typically on classes that use __call() magic. This class parses such a tag line
+ * into structured data (name, return type, parameters, static flag, description) so
+ * the documentation generator can render virtual methods alongside real ones.
+ *
+ * Parse rules (applied by parse() during construction):
+ * - Leading '@method' is stripped.
+ * - An optional 'static' keyword sets isStatic = true.
+ * - An optional return-type token precedes the method name.
+ * - Parameters inside parentheses are extracted and further parsed by parseParams().
+ * - Trailing text after the closing ')' is stored as the description.
+ *
+ * Throws InvalidVirtualMethodDefinitionException when the line is malformed
+ * (missing parentheses, unbalanced brackets).
+ */
 class VirtualMethodObject implements MethodInterface
 {
 	private bool $isStatic = false;
@@ -14,59 +32,89 @@ class VirtualMethodObject implements MethodInterface
 	private array $params = [];
 
 	/**
-	 * @throws InvalidVirtualMethodDefinitionException
+	 * @throws InvalidVirtualMethodDefinitionException when $line cannot be parsed
 	 */
 	public function __construct(private ClassObject $classObject, private string $line)
 	{
 		$this->parse();
 	}
 
+	/**
+	 * Returns the ClassObject that declared this @method tag.
+	 */
 	public function getClass(): ClassObject
 	{
 		return $this->classObject;
 	}
 
+	/**
+	 * Returns the parsed method name.
+	 */
 	public function getName(): string
 	{
 		return $this->methodName;
 	}
 
+	/**
+	 * Always returns false — virtual methods declared in PHPDoc are implicitly public.
+	 */
 	public function isPrivate(): bool
 	{
 		return false;
 	}
 
+	/**
+	 * Always returns false — virtual methods declared in PHPDoc are implicitly public.
+	 */
 	public function isProtected(): bool
 	{
 		return false;
 	}
 
+	/**
+	 * Always returns true — virtual methods are public by convention.
+	 */
 	public function isPublic(): bool
 	{
 		return true;
 	}
 
+	/**
+	 * Returns true when the @method tag included the 'static' keyword.
+	 */
 	public function isStatic(): bool
 	{
 		return $this->isStatic;
 	}
 
+	/**
+	 * Returns true when the parsed method name is '__construct'.
+	 */
 	public function isConstructor(): bool
 	{
 		return '__construct' === $this->methodName;
 	}
 
+	/**
+	 * Returns true when the method name starts with '__'.
+	 */
 	public function isMagicMethod(): bool
 	{
 		return str_starts_with($this->methodName, '__');
 	}
 
+	/**
+	 * Returns the parsed return type string, or null when none was declared.
+	 */
 	public function getMethodReturnTypes(): ?string
 	{
 		return $this->returnType;
 	}
 
 	/**
+	 * Returns the structured doc metadata for this virtual method as an associative
+	 * array with 'description', 'params', and 'return' keys.
+	 *
 	 * @return array<string, mixed>
 	 */
 	public function getPhpDocs(): array
@@ -78,6 +126,12 @@ class VirtualMethodObject implements MethodInterface
 		];
 	}
 
+	/**
+	 * Returns the modifier names for this virtual method (['public'] or
+	 * ['public', 'static'] when declared static).
+	 *
+	 * @return string[]
+	 */
 	public function getModifiers(): array
 	{
 		$modifiers = ['public'];
@@ -89,11 +143,18 @@ class VirtualMethodObject implements MethodInterface
 		return $modifiers;
 	}
 
+	/**
+	 * Always returns false — virtual methods exist only in PHPDoc, not in framework source.
+	 */
 	public function isFrameworkFunction(): bool
 	{
 		return false;
 	}
 
+	/**
+	 * Returns a comma-separated string of the non-null default values parsed from
+	 * the parameter list, used in call-site usage examples.
+	 */
 	public function getDefaultValues(): string
 	{
 		$defaults = array_filter(array_column($this->params, 'default'));
@@ -101,6 +162,10 @@ class VirtualMethodObject implements MethodInterface
 		return implode(', ', $defaults);
 	}
 
+	/**
+	 * Returns a pipe-joined string of the non-null parameter types parsed from the
+	 * parameter list, used in method contract examples.
+	 */
 	public function getDefaultValueTypes(): string
 	{
 		$types = array_filter(array_column($this->params, 'type'));
@@ -108,11 +173,19 @@ class VirtualMethodObject implements MethodInterface
 		return implode('|', $types);
 	}
 
+	/**
+	 * Returns true when the description contains '@internal', excluding the method
+	 * from generated documentation.
+	 */
 	public function shouldNotDocument(): bool
 	{
 		return str_contains($this->description ?? '', '@internal');
 	}
 
+	/**
+	 * Returns true when this virtual method is a public static named constructor
+	 * (returns self, static, or its own name).
+	 */
 	public function isStaticInstantiator(): bool
 	{
 		return $this->isStatic()
@@ -121,7 +194,9 @@ class VirtualMethodObject implements MethodInterface
 	}
 
 	/**
-	 * @throws InvalidVirtualMethodDefinitionException
+	 * Parses the raw @method tag line into the instance's fields.
+	 *
+	 * @throws InvalidVirtualMethodDefinitionException when parentheses are missing or unbalanced
 	 */
 	private function parse(): void
 	{
@@ -157,6 +232,9 @@ class VirtualMethodObject implements MethodInterface
 	}
 
 	/**
+	 * Parses a comma-separated parameter section string into a list of records,
+	 * each with 'type', 'name', and 'default' keys (all nullable strings).
+	 *
 	 * @return array<array<string, null|string>>
 	 */
 	private function parseParams(string $paramSection): array
@@ -168,7 +246,6 @@ class VirtualMethodObject implements MethodInterface
 			$type = null;
 			$name = null;
 			$default = null;
-
 			$tokens = preg_split('/\s+/', $param);
 
 			if ($tokens) {
@@ -189,17 +266,17 @@ class VirtualMethodObject implements MethodInterface
 			}
 
 			if ($name || $type || $default) {
-				$params[] = [
-					'type' => $type,
-					'name' => $name,
-					'default' => $default,
-				];
+				$params[] = ['type' => $type, 'name' => $name, 'default' => $default];
 			}
 		}
 
 		return $params;
 	}
 
+	/**
+	 * Returns true when $token looks like a PHP type name: after stripping leading
+	 * '?', '[]', and '\' characters, the first character is alphabetic.
+	 */
 	private function isTypeLike(string $token): bool
 	{
 		$token = trim($token, '?[]\\');

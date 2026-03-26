@@ -7,6 +7,21 @@ namespace Sakoo\Framework\Core\Assert;
 use Sakoo\Framework\Core\Doc\Attributes\DontDocument;
 
 /**
+ * Fluent assertion chain for validating a single bound value.
+ *
+ * Returned by Assert::that($value), this class proxies every static method
+ * defined on Assert (and its traits) with $value pre-filled as the first argument,
+ * so assertions can be chained without repeating the subject:
+ *
+ *   Assert::that($email)->string()->notEmpty()->length(255);
+ *
+ * Each proxied call returns the same AssertionChain instance, preserving the
+ * fluent interface. Failures throw InvalidArgumentException immediately, just as
+ * calling Assert methods directly would.
+ *
+ * The full set of available assertion methods is documented in the @method
+ * annotations above the class declaration.
+ *
  * @method AssertionChain true(string $message = '')
  * @method AssertionChain false(string $message = '')
  * @method AssertionChain bool(string $message = '')
@@ -75,6 +90,10 @@ readonly class AssertionChain
 	public function __construct(private mixed $value = null) {}
 
 	/**
+	 * Proxies any Assert static method, prepending the bound value as the first
+	 * argument before forwarding the call. Returns the same chain instance so
+	 * further assertions can be appended.
+	 *
 	 * @param array<mixed> $arguments
 	 */
 	public function __call(string $name, array $arguments): static
