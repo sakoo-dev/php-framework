@@ -2,18 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Sakoo\Framework\Core\Doc\Object;
+namespace Sakoo\Framework\Core\Doc\Object\Class;
 
 use Sakoo\Framework\Core\Doc\Attributes\DontDocument;
+use Sakoo\Framework\Core\Doc\Object\Method\InvalidVirtualMethodDefinitionException;
+use Sakoo\Framework\Core\Doc\Object\Method\MethodObject;
+use Sakoo\Framework\Core\Doc\Object\Method\VirtualMethodObject;
+use Sakoo\Framework\Core\Doc\Object\PhpDoc\PhpDocObject;
 use Sakoo\Framework\Core\Exception\Exception;
-use Sakoo\Framework\Core\Regex\Regex;
 
 /**
  * Reflection-backed value object representing a single PHP class for documentation.
  *
  * Wraps a ReflectionClass and exposes the information the documentation generator
  * needs: the class short name, namespace, public/protected methods (as MethodObject
- * instances), virtual methods parsed from @method PHPDoc tags (as VirtualMethodObject
+ * instances), virtual methods parsed from [at-sign]method PHPDoc tags (as VirtualMethodObject
  * instances), and metadata flags (isException, isInstantiable, isIllegal).
  *
  * isIllegal() determines whether the class should be excluded from generated docs:
@@ -21,10 +24,10 @@ use Sakoo\Framework\Core\Regex\Regex;
  * and interfaces — leaving only concrete, documentable classes in the output.
  *
  * getPhpDocs() parses the class-level doc comment into trimmed lines for use by
- * formatters, and getVirtualMethods() extracts @method tag lines from those docs
+ * formatters, and getVirtualMethods() extracts [at-sign]method tag lines from those docs
  * and attempts to parse each one into a VirtualMethodObject.
  */
-readonly class ClassObject
+readonly class ClassObject implements ClassInterface
 {
 	/**
 	 * @phpstan-ignore missingType.generics
@@ -100,56 +103,32 @@ readonly class ClassObject
 		return $this->class->getShortName();
 	}
 
-	/**
-	 * Parses the class-level PHPDoc block and returns its content as an ordered
-	 * array of trimmed lines. Returns an empty array when no doc comment exists.
-	 *
-	 * @return string[]
-	 */
-	public function getPhpDocs(): array
+	public function getRawDoc(): string
 	{
-		$phpDoc = $this->class->getDocComment();
+		return $this->class->getDocComment() ?: '';
+	}
 
-		if (!$phpDoc) {
-			return [];
-		}
-
-		$match = (new Regex())
-			->startsWith('/**')
-			->add('([\s\S]+)')
-			->endsWith('*/')
-			->match($phpDoc);
-
-		$lines = explode("\n", $match ? $match[1] : '');
-		$result = [];
-
-		foreach ($lines as $line) {
-			$result[] = trim($line, "/* \t\r\n");
-		}
-
-		return $result;
+	public function getPhpDocObject(): PhpDocObject
+	{
+		return new PhpDocObject($this);
 	}
 
 	/**
-	 * Parses @method tag lines from the class-level PHPDoc and returns them as
+	 * Parses [at-sign]method tag lines from the class-level PHPDoc and returns them as
 	 * VirtualMethodObject instances. Lines that fail to parse are silently skipped.
 	 *
 	 * @return VirtualMethodObject[]
 	 */
 	public function getVirtualMethods(): array
 	{
-		$phpDocs = $this->getPhpDocs();
-
-		if (!$phpDocs) {
-			return [];
-		}
+		$phpDocs = $this->getPhpDocObject();
 
 		$result = [];
 
-		foreach ($phpDocs as $line) {
-			if (str_starts_with($line, '@method ')) {
+		foreach ($phpDocs->getLines() as $line) {
+			if ($line->isMethod()) {
 				try {
-					$result[] = new VirtualMethodObject($this, $line);
+					$result[] = new VirtualMethodObject($this, (string) $line);
 				} catch (InvalidVirtualMethodDefinitionException $e) {
 					continue;
 				}

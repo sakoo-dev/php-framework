@@ -29,7 +29,7 @@ use Sakoo\Framework\Core\Doc\Attributes\DontDocument;
  * triggered which failure.
  *
  * The full set of proxied assertion methods mirrors those on Assert and is
- * documented in the @method annotations above the class declaration.
+ * documented in the [at-sign]method annotations above the class declaration.
  *
  * @method LazyAssertion true(mixed $value, string $message = '')
  * @method LazyAssertion false(mixed $value, string $message = '')

@@ -19,7 +19,7 @@ use Sakoo\Framework\Core\Doc\Attributes\DontDocument;
  * fluent interface. Failures throw InvalidArgumentException immediately, just as
  * calling Assert methods directly would.
  *
- * The full set of available assertion methods is documented in the @method
+ * The full set of available assertion methods is documented in the [at-sign]method
  * annotations above the class declaration.
  *
  * @method AssertionChain true(string $message = '')

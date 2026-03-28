@@ -38,7 +38,7 @@
 // --- Contract
 public function log( $level, Stringable|string $message, array $context): void
 // --- Usage
-$fileLogger->log($level, $message, $context)
+$fileLogger->log($level, $message, $context);
 ```
 
 ### 🟢 LogFormatter
@@ -68,7 +68,7 @@ $fileLogger->log($level, $message, $context)
 #### How to use the Class:
 
 ```php
-$logFormatter = new LogFormatter(string $level, Stringable|string $message, string $mode, string $env)
+$logFormatter = new LogFormatter(string $level, Stringable|string $message, string $mode, string $env);
 ```
 
 ## 📦 Sakoo\Framework\Core\VarDump\Cli
@@ -96,7 +96,7 @@ $logFormatter = new LogFormatter(string $level, Stringable|string $message, stri
 #### How to use the Class:
 
 ```php
-$cliFormatter = new CliFormatter(Output $output)
+$cliFormatter = new CliFormatter(Output $output);
 ```
 
 ---
@@ -111,7 +111,7 @@ $cliFormatter = new CliFormatter(Output $output)
 // --- Contract
 public function format(mixed $value): void
 // --- Usage
-$cliFormatter->format($value)
+$cliFormatter->format($value);
 ```
 
 ---
@@ -126,7 +126,7 @@ $cliFormatter->format($value)
 // --- Contract
 protected function formatType(mixed $value, int $depth): string
 // --- Usage
-$cliFormatter->formatType($value, $depth)
+$cliFormatter->formatType($value, $depth);
 ```
 
 ### 🟢 CliDumper
@@ -144,7 +144,7 @@ $cliFormatter->formatType($value, $depth)
 #### How to use the Class:
 
 ```php
-$cliDumper = new CliDumper(Formatter $formatter)
+$cliDumper = new CliDumper(Formatter $formatter);
 ```
 
 ---
@@ -159,7 +159,7 @@ $cliDumper = new CliDumper(Formatter $formatter)
 // --- Contract
 public function dump(mixed $value): void
 // --- Usage
-$cliDumper->dump($value)
+$cliDumper->dump($value);
 ```
 
 ## 📦 Sakoo\Framework\Core\VarDump
@@ -194,7 +194,7 @@ $cliDumper->dump($value)
 // --- Contract
 public static function dieDump(mixed $vars): never
 // --- Usage
-VarDump::dieDump($vars)
+VarDump::dieDump($vars);
 ```
 
 ---
@@ -209,7 +209,7 @@ VarDump::dieDump($vars)
 // --- Contract
 public static function dump(mixed $vars): void
 // --- Usage
-VarDump::dump($vars)
+VarDump::dump($vars);
 ```
 
 ## 📦 Sakoo\Framework\Core\VarDump\Http
@@ -229,7 +229,7 @@ VarDump::dump($vars)
 #### How to use the Class:
 
 ```php
-$httpDumper = new HttpDumper(Formatter $formatter)
+$httpDumper = new HttpDumper(Formatter $formatter);
 ```
 
 ---
@@ -244,7 +244,7 @@ $httpDumper = new HttpDumper(Formatter $formatter)
 // --- Contract
 public function dump(mixed $value): void
 // --- Usage
-$httpDumper->dump($value)
+$httpDumper->dump($value);
 ```
 
 ### 🟢 HttpFormatter
@@ -262,7 +262,7 @@ $httpDumper->dump($value)
 #### How to use the Class:
 
 ```php
-$httpFormatter = new HttpFormatter()
+$httpFormatter = new HttpFormatter();
 ```
 
 ---
@@ -277,7 +277,7 @@ $httpFormatter = new HttpFormatter()
 // --- Contract
 public function format(mixed $value): void
 // --- Usage
-$httpFormatter->format($value)
+$httpFormatter->format($value);
 ```
 
 ## 📦 Sakoo\Framework\Core\Watcher
@@ -305,7 +305,7 @@ $httpFormatter->format($value)
 #### How to use the Class:
 
 ```php
-$watcher = new Watcher(WatcherDriver $driver)
+$watcher = new Watcher(WatcherDriver $driver);
 ```
 
 ---
@@ -324,7 +324,7 @@ $watcher = new Watcher(WatcherDriver $driver)
 // --- Contract
 public function watch(array $files, FileSystemAction $callback): self
 // --- Usage
-$watcher->watch($files, $callback)
+$watcher->watch($files, $callback);
 ```
 
 ---
@@ -339,7 +339,7 @@ $watcher->watch($files, $callback)
 // --- Contract
 public function run(): void
 // --- Usage
-$watcher->run()
+$watcher->run();
 ```
 
 ---
@@ -354,7 +354,7 @@ $watcher->run()
 // --- Contract
 public function check(): void
 // --- Usage
-$watcher->check()
+$watcher->check();
 ```
 
 ### 🟢 EventTypes
@@ -375,7 +375,7 @@ $watcher->check()
 // --- Contract
 public static function cases(): array
 // --- Usage
-EventTypes::cases()
+EventTypes::cases();
 ```
 
 ## 📦 Sakoo\Framework\Core\Watcher\Inotify
@@ -399,7 +399,7 @@ EventTypes::cases()
 #### How to use the Class:
 
 ```php
-$event = new Event(File $file, array $event)
+$event = new Event(File $file, array $event);
 ```
 
 ---
@@ -414,7 +414,7 @@ $event = new Event(File $file, array $event)
 // --- Contract
 public function getFile(): File
 // --- Usage
-$event->getFile()
+$event->getFile();
 ```
 
 ---
@@ -429,7 +429,7 @@ $event->getFile()
 // --- Contract
 public function getHandlerId(): int
 // --- Usage
-$event->getHandlerId()
+$event->getHandlerId();
 ```
 
 ---
@@ -448,7 +448,7 @@ $event->getHandlerId()
 // --- Contract
 public function getType(): EventTypes
 // --- Usage
-$event->getType()
+$event->getType();
 ```
 
 ---
@@ -463,7 +463,7 @@ $event->getType()
 // --- Contract
 public function getGroupId(): int
 // --- Usage
-$event->getGroupId()
+$event->getGroupId();
 ```
 
 ---
@@ -478,7 +478,7 @@ $event->getGroupId()
 // --- Contract
 public function getName(): string
 // --- Usage
-$event->getName()
+$event->getName();
 ```
 
 ### 🟢 File
@@ -500,7 +500,7 @@ $event->getName()
 #### How to use the Class:
 
 ```php
-$file = new File(int $id, string $path, FileSystemAction $callback, Locker $locker)
+$file = new File(int $id, string $path, FileSystemAction $callback, Locker $locker);
 ```
 
 ---
@@ -515,7 +515,7 @@ $file = new File(int $id, string $path, FileSystemAction $callback, Locker $lock
 // --- Contract
 public function getId(): int
 // --- Usage
-$file->getId()
+$file->getId();
 ```
 
 ---
@@ -530,7 +530,7 @@ $file->getId()
 // --- Contract
 public function getCallback(): FileSystemAction
 // --- Usage
-$file->getCallback()
+$file->getCallback();
 ```
 
 ---
@@ -545,7 +545,7 @@ $file->getCallback()
 // --- Contract
 public function getPath(): string
 // --- Usage
-$file->getPath()
+$file->getPath();
 ```
 
 ---
@@ -560,7 +560,7 @@ $file->getPath()
 // --- Contract
 public function getLocker(): Locker
 // --- Usage
-$file->getLocker()
+$file->getLocker();
 ```
 
 ### 🟢 Inotify
@@ -586,7 +586,7 @@ $file->getLocker()
 #### How to use the Class:
 
 ```php
-$inotify = new Inotify()
+$inotify = new Inotify();
 ```
 
 ---
@@ -601,7 +601,7 @@ $inotify = new Inotify()
 // --- Contract
 public function watch(string $file, FileSystemAction $callback): void
 // --- Usage
-$inotify->watch($file, $callback)
+$inotify->watch($file, $callback);
 ```
 
 ---
@@ -620,7 +620,7 @@ $inotify->watch($file, $callback)
 // --- Contract
 public function wait(): IterableInterface
 // --- Usage
-$inotify->wait()
+$inotify->wait();
 ```
 
 ---
@@ -635,7 +635,7 @@ $inotify->wait()
 // --- Contract
 public function blind(int $id): bool
 // --- Usage
-$inotify->blind($id)
+$inotify->blind($id);
 ```
 
 ## 📦 Sakoo\Framework\Core\Path
@@ -666,7 +666,7 @@ $inotify->blind($id)
 // --- Contract
 public static function getRootDir(): string|false
 // --- Usage
-Path::getRootDir()
+Path::getRootDir();
 ```
 
 ---
@@ -681,7 +681,7 @@ Path::getRootDir()
 // --- Contract
 public static function getCoreDir(): string|false
 // --- Usage
-Path::getCoreDir()
+Path::getCoreDir();
 ```
 
 ---
@@ -696,7 +696,7 @@ Path::getCoreDir()
 // --- Contract
 public static function getVendorDir(): string
 // --- Usage
-Path::getVendorDir()
+Path::getVendorDir();
 ```
 
 ---
@@ -711,7 +711,7 @@ Path::getVendorDir()
 // --- Contract
 public static function getStorageDir(): string
 // --- Usage
-Path::getStorageDir()
+Path::getStorageDir();
 ```
 
 ---
@@ -730,7 +730,7 @@ Path::getStorageDir()
 // --- Contract
 public static function getLogsDir(): string
 // --- Usage
-Path::getLogsDir()
+Path::getLogsDir();
 ```
 
 ---
@@ -745,7 +745,7 @@ Path::getLogsDir()
 // --- Contract
 public static function getTempTestDir(): string
 // --- Usage
-Path::getTempTestDir()
+Path::getTempTestDir();
 ```
 
 ---
@@ -764,7 +764,7 @@ Path::getTempTestDir()
 // --- Contract
 public static function getProjectPHPFiles(): array
 // --- Usage
-Path::getProjectPHPFiles()
+Path::getProjectPHPFiles();
 ```
 
 ---
@@ -783,7 +783,7 @@ Path::getProjectPHPFiles()
 // --- Contract
 public static function getCorePHPFiles(): array
 // --- Usage
-Path::getCorePHPFiles()
+Path::getCorePHPFiles();
 ```
 
 ---
@@ -802,7 +802,7 @@ Path::getCorePHPFiles()
 // --- Contract
 public static function getPHPFilesOf(string $path): array
 // --- Usage
-Path::getPHPFilesOf($path)
+Path::getPHPFilesOf($path);
 ```
 
 ---
@@ -821,7 +821,7 @@ Path::getPHPFilesOf($path)
 // --- Contract
 public static function namespaceToPath(string $namespace): string
 // --- Usage
-Path::namespaceToPath($namespace)
+Path::namespaceToPath($namespace);
 ```
 
 ---
@@ -844,7 +844,7 @@ Path::namespaceToPath($namespace)
 // --- Contract
 public static function pathToNamespace(string $path): string
 // --- Usage
-Path::pathToNamespace($path)
+Path::pathToNamespace($path);
 ```
 
 ## 📦 Sakoo\Framework\Core\FileSystem\Storages\Local
@@ -872,7 +872,7 @@ Path::pathToNamespace($path)
 #### How to use the Class:
 
 ```php
-$local = new Local(string $path)
+$local = new Local(string $path);
 ```
 
 ---
@@ -891,7 +891,7 @@ $local = new Local(string $path)
 // --- Contract
 public function create(bool $asDirectory): bool
 // --- Usage
-$local->create($asDirectory)
+$local->create($asDirectory);
 ```
 
 ---
@@ -910,7 +910,7 @@ $local->create($asDirectory)
 // --- Contract
 public function mkdir(bool $recursive): bool
 // --- Usage
-$local->mkdir($recursive)
+$local->mkdir($recursive);
 ```
 
 ---
@@ -925,7 +925,7 @@ $local->mkdir($recursive)
 // --- Contract
 public function exists(): bool
 // --- Usage
-$local->exists()
+$local->exists();
 ```
 
 ---
@@ -940,7 +940,7 @@ $local->exists()
 // --- Contract
 public function remove(): bool
 // --- Usage
-$local->remove()
+$local->remove();
 ```
 
 ---
@@ -955,7 +955,7 @@ $local->remove()
 // --- Contract
 public function isDir(): bool
 // --- Usage
-$local->isDir()
+$local->isDir();
 ```
 
 ---
@@ -970,7 +970,7 @@ $local->isDir()
 // --- Contract
 public function move(string $to): bool
 // --- Usage
-$local->move($to)
+$local->move($to);
 ```
 
 ---
@@ -987,7 +987,7 @@ $local->move($to)
 // --- Contract
 public function copy(string $to): bool
 // --- Usage
-$local->copy($to)
+$local->copy($to);
 ```
 
 ---
@@ -1002,7 +1002,7 @@ $local->copy($to)
 // --- Contract
 public function parentDir(): string
 // --- Usage
-$local->parentDir()
+$local->parentDir();
 ```
 
 ---
@@ -1017,7 +1017,7 @@ $local->parentDir()
 // --- Contract
 public function rename(string $to): bool
 // --- Usage
-$local->rename($to)
+$local->rename($to);
 ```
 
 ---
@@ -1038,7 +1038,7 @@ $local->rename($to)
 // --- Contract
 public function files(): array
 // --- Usage
-$local->files()
+$local->files();
 ```
 
 ---
@@ -1055,7 +1055,7 @@ $local->files()
 // --- Contract
 public function write(string $data): bool
 // --- Usage
-$local->write($data)
+$local->write($data);
 ```
 
 ---
@@ -1072,7 +1072,7 @@ $local->write($data)
 // --- Contract
 public function append(string $data): bool
 // --- Usage
-$local->append($data)
+$local->append($data);
 ```
 
 ---
@@ -1093,7 +1093,7 @@ $local->append($data)
 // --- Contract
 public function readLines(): array|false
 // --- Usage
-$local->readLines()
+$local->readLines();
 ```
 
 ---
@@ -1108,7 +1108,7 @@ $local->readLines()
 // --- Contract
 public function setPermission(string|int $permission): bool
 // --- Usage
-$local->setPermission($permission)
+$local->setPermission($permission);
 ```
 
 ---
@@ -1123,7 +1123,7 @@ $local->setPermission($permission)
 // --- Contract
 public function getPermission(): mixed
 // --- Usage
-$local->getPermission()
+$local->getPermission();
 ```
 
 ---
@@ -1138,7 +1138,7 @@ $local->getPermission()
 // --- Contract
 public function getPath(): string
 // --- Usage
-$local->getPath()
+$local->getPath();
 ```
 
 ## 📦 Sakoo\Framework\Core\FileSystem
@@ -1173,7 +1173,7 @@ $local->getPath()
 // --- Contract
 public static function open(Disk $storage, string $path): Storage
 // --- Usage
-File::open($storage, $path)
+File::open($storage, $path);
 ```
 
 ### 🟢 Disk
@@ -1198,7 +1198,7 @@ File::open($storage, $path)
 // --- Contract
 public static function cases(): array
 // --- Usage
-Disk::cases()
+Disk::cases();
 ```
 
 ---
@@ -1206,7 +1206,7 @@ Disk::cases()
 #### How to use the Class:
 
 ```php
-$disk = Disk::from(string|int $value)
+$disk = Disk::from(string|int $value);
 ```
 
 ---
@@ -1214,7 +1214,7 @@ $disk = Disk::from(string|int $value)
 #### How to use the Class:
 
 ```php
-$disk = Disk::tryFrom(string|int $value)
+$disk = Disk::tryFrom(string|int $value);
 ```
 
 ### 🟢 Permission
@@ -1247,7 +1247,7 @@ $disk = Disk::tryFrom(string|int $value)
 // --- Contract
 public static function allNothing(): string
 // --- Usage
-Permission::allNothing()
+Permission::allNothing();
 ```
 
 ---
@@ -1262,7 +1262,7 @@ Permission::allNothing()
 // --- Contract
 public static function allExecute(): string
 // --- Usage
-Permission::allExecute()
+Permission::allExecute();
 ```
 
 ---
@@ -1277,7 +1277,7 @@ Permission::allExecute()
 // --- Contract
 public static function allWrite(): string
 // --- Usage
-Permission::allWrite()
+Permission::allWrite();
 ```
 
 ---
@@ -1292,7 +1292,7 @@ Permission::allWrite()
 // --- Contract
 public static function allExecuteWrite(): string
 // --- Usage
-Permission::allExecuteWrite()
+Permission::allExecuteWrite();
 ```
 
 ---
@@ -1307,7 +1307,7 @@ Permission::allExecuteWrite()
 // --- Contract
 public static function allRead(): string
 // --- Usage
-Permission::allRead()
+Permission::allRead();
 ```
 
 ---
@@ -1322,7 +1322,7 @@ Permission::allRead()
 // --- Contract
 public static function allExecuteRead(): string
 // --- Usage
-Permission::allExecuteRead()
+Permission::allExecuteRead();
 ```
 
 ---
@@ -1337,7 +1337,7 @@ Permission::allExecuteRead()
 // --- Contract
 public static function allWriteRead(): string
 // --- Usage
-Permission::allWriteRead()
+Permission::allWriteRead();
 ```
 
 ---
@@ -1352,7 +1352,7 @@ Permission::allWriteRead()
 // --- Contract
 public static function allExecuteWriteRead(): string
 // --- Usage
-Permission::allExecuteWriteRead()
+Permission::allExecuteWriteRead();
 ```
 
 ---
@@ -1371,7 +1371,7 @@ Permission::allExecuteWriteRead()
 // --- Contract
 public static function getExecutables(): array
 // --- Usage
-Permission::getExecutables()
+Permission::getExecutables();
 ```
 
 ---
@@ -1390,7 +1390,7 @@ Permission::getExecutables()
 // --- Contract
 public static function getNotExecutables(): array
 // --- Usage
-Permission::getNotExecutables()
+Permission::getNotExecutables();
 ```
 
 ---
@@ -1409,7 +1409,7 @@ Permission::getNotExecutables()
 // --- Contract
 public static function getWritables(): array
 // --- Usage
-Permission::getWritables()
+Permission::getWritables();
 ```
 
 ---
@@ -1428,7 +1428,7 @@ Permission::getWritables()
 // --- Contract
 public static function getNotWritables(): array
 // --- Usage
-Permission::getNotWritables()
+Permission::getNotWritables();
 ```
 
 ---
@@ -1447,7 +1447,7 @@ Permission::getNotWritables()
 // --- Contract
 public static function getReadables(): array
 // --- Usage
-Permission::getReadables()
+Permission::getReadables();
 ```
 
 ---
@@ -1466,7 +1466,7 @@ Permission::getReadables()
 // --- Contract
 public static function getNotReadables(): array
 // --- Usage
-Permission::getNotReadables()
+Permission::getNotReadables();
 ```
 
 ---
@@ -1481,7 +1481,7 @@ Permission::getNotReadables()
 // --- Contract
 public static function make(int $user, int $group, int $others): string
 // --- Usage
-Permission::make($user, $group, $others)
+Permission::make($user, $group, $others);
 ```
 
 ---
@@ -1496,7 +1496,7 @@ Permission::make($user, $group, $others)
 // --- Contract
 public static function getFileDefault(): string
 // --- Usage
-Permission::getFileDefault()
+Permission::getFileDefault();
 ```
 
 ---
@@ -1511,7 +1511,7 @@ Permission::getFileDefault()
 // --- Contract
 public static function getDirectoryDefault(): string
 // --- Usage
-Permission::getDirectoryDefault()
+Permission::getDirectoryDefault();
 ```
 
 ## 📦 Sakoo\Framework\Core\Assert
@@ -1550,7 +1550,7 @@ Permission::getDirectoryDefault()
 // --- Contract
 public static function that(mixed $value): AssertionChain
 // --- Usage
-Assert::that($value)
+Assert::that($value);
 ```
 
 ---
@@ -1565,7 +1565,7 @@ Assert::that($value)
 // --- Contract
 public static function lazy(): LazyAssertion
 // --- Usage
-Assert::lazy()
+Assert::lazy();
 ```
 
 ---
@@ -1582,7 +1582,7 @@ Assert::lazy()
 // --- Contract
 protected static function throwIf(bool $condition, string $message): void
 // --- Usage
-Assert::throwIf($condition, $message)
+Assert::throwIf($condition, $message);
 ```
 
 ---
@@ -1599,7 +1599,7 @@ Assert::throwIf($condition, $message)
 // --- Contract
 protected static function throwUnless(bool $condition, string $message): void
 // --- Usage
-Assert::throwUnless($condition, $message)
+Assert::throwUnless($condition, $message);
 ```
 
 ---
@@ -1614,7 +1614,7 @@ Assert::throwUnless($condition, $message)
 // --- Contract
 public static function true(mixed $value, string $message): void
 // --- Usage
-Assert::true($value, $message)
+Assert::true($value, $message);
 ```
 
 ---
@@ -1629,7 +1629,7 @@ Assert::true($value, $message)
 // --- Contract
 public static function false(mixed $value, string $message): void
 // --- Usage
-Assert::false($value, $message)
+Assert::false($value, $message);
 ```
 
 ---
@@ -1644,7 +1644,7 @@ Assert::false($value, $message)
 // --- Contract
 public static function bool(mixed $value, string $message): void
 // --- Usage
-Assert::bool($value, $message)
+Assert::bool($value, $message);
 ```
 
 ---
@@ -1659,7 +1659,7 @@ Assert::bool($value, $message)
 // --- Contract
 public static function notBool(mixed $value, string $message): void
 // --- Usage
-Assert::notBool($value, $message)
+Assert::notBool($value, $message);
 ```
 
 ---
@@ -1674,7 +1674,7 @@ Assert::notBool($value, $message)
 // --- Contract
 public static function callable(mixed $value, string $message): void
 // --- Usage
-Assert::callable($value, $message)
+Assert::callable($value, $message);
 ```
 
 ---
@@ -1689,7 +1689,7 @@ Assert::callable($value, $message)
 // --- Contract
 public static function notCallable(mixed $value, string $message): void
 // --- Usage
-Assert::notCallable($value, $message)
+Assert::notCallable($value, $message);
 ```
 
 ---
@@ -1704,7 +1704,7 @@ Assert::notCallable($value, $message)
 // --- Contract
 public static function dir(string $value, string $message): void
 // --- Usage
-Assert::dir($value, $message)
+Assert::dir($value, $message);
 ```
 
 ---
@@ -1719,7 +1719,7 @@ Assert::dir($value, $message)
 // --- Contract
 public static function notDir(string $value, string $message): void
 // --- Usage
-Assert::notDir($value, $message)
+Assert::notDir($value, $message);
 ```
 
 ---
@@ -1734,7 +1734,7 @@ Assert::notDir($value, $message)
 // --- Contract
 public static function file(string $value, string $message): void
 // --- Usage
-Assert::file($value, $message)
+Assert::file($value, $message);
 ```
 
 ---
@@ -1749,7 +1749,7 @@ Assert::file($value, $message)
 // --- Contract
 public static function notFile(string $value, string $message): void
 // --- Usage
-Assert::notFile($value, $message)
+Assert::notFile($value, $message);
 ```
 
 ---
@@ -1764,7 +1764,7 @@ Assert::notFile($value, $message)
 // --- Contract
 public static function link(string $value, string $message): void
 // --- Usage
-Assert::link($value, $message)
+Assert::link($value, $message);
 ```
 
 ---
@@ -1779,7 +1779,7 @@ Assert::link($value, $message)
 // --- Contract
 public static function notLink(string $value, string $message): void
 // --- Usage
-Assert::notLink($value, $message)
+Assert::notLink($value, $message);
 ```
 
 ---
@@ -1794,7 +1794,7 @@ Assert::notLink($value, $message)
 // --- Contract
 public static function uploadedFile(string $value, string $message): void
 // --- Usage
-Assert::uploadedFile($value, $message)
+Assert::uploadedFile($value, $message);
 ```
 
 ---
@@ -1809,7 +1809,7 @@ Assert::uploadedFile($value, $message)
 // --- Contract
 public static function notUploadedFile(string $value, string $message): void
 // --- Usage
-Assert::notUploadedFile($value, $message)
+Assert::notUploadedFile($value, $message);
 ```
 
 ---
@@ -1824,7 +1824,7 @@ Assert::notUploadedFile($value, $message)
 // --- Contract
 public static function executableFile(string $value, string $message): void
 // --- Usage
-Assert::executableFile($value, $message)
+Assert::executableFile($value, $message);
 ```
 
 ---
@@ -1839,7 +1839,7 @@ Assert::executableFile($value, $message)
 // --- Contract
 public static function notExecutableFile(string $value, string $message): void
 // --- Usage
-Assert::notExecutableFile($value, $message)
+Assert::notExecutableFile($value, $message);
 ```
 
 ---
@@ -1854,7 +1854,7 @@ Assert::notExecutableFile($value, $message)
 // --- Contract
 public static function writableFile(string $value, string $message): void
 // --- Usage
-Assert::writableFile($value, $message)
+Assert::writableFile($value, $message);
 ```
 
 ---
@@ -1869,7 +1869,7 @@ Assert::writableFile($value, $message)
 // --- Contract
 public static function notWritableFile(string $value, string $message): void
 // --- Usage
-Assert::notWritableFile($value, $message)
+Assert::notWritableFile($value, $message);
 ```
 
 ---
@@ -1884,7 +1884,7 @@ Assert::notWritableFile($value, $message)
 // --- Contract
 public static function readableFile(string $value, string $message): void
 // --- Usage
-Assert::readableFile($value, $message)
+Assert::readableFile($value, $message);
 ```
 
 ---
@@ -1899,7 +1899,7 @@ Assert::readableFile($value, $message)
 // --- Contract
 public static function notReadableFile(string $value, string $message): void
 // --- Usage
-Assert::notReadableFile($value, $message)
+Assert::notReadableFile($value, $message);
 ```
 
 ---
@@ -1914,7 +1914,7 @@ Assert::notReadableFile($value, $message)
 // --- Contract
 public static function exists(string $value, string $message): void
 // --- Usage
-Assert::exists($value, $message)
+Assert::exists($value, $message);
 ```
 
 ---
@@ -1929,7 +1929,7 @@ Assert::exists($value, $message)
 // --- Contract
 public static function notExists(string $value, string $message): void
 // --- Usage
-Assert::notExists($value, $message)
+Assert::notExists($value, $message);
 ```
 
 ---
@@ -1944,7 +1944,7 @@ Assert::notExists($value, $message)
 // --- Contract
 public static function length(string $value, int $length, string $message): void
 // --- Usage
-Assert::length($value, $length, $message)
+Assert::length($value, $length, $message);
 ```
 
 ---
@@ -1963,7 +1963,7 @@ Assert::length($value, $length, $message)
 // --- Contract
 public static function count(Countable|array $value, int $count, string $message): void
 // --- Usage
-Assert::count($value, $count, $message)
+Assert::count($value, $count, $message);
 ```
 
 ---
@@ -1978,7 +1978,7 @@ Assert::count($value, $count, $message)
 // --- Contract
 public static function equals(mixed $value, mixed $expected, string $message): void
 // --- Usage
-Assert::equals($value, $expected, $message)
+Assert::equals($value, $expected, $message);
 ```
 
 ---
@@ -1993,7 +1993,7 @@ Assert::equals($value, $expected, $message)
 // --- Contract
 public static function notEquals(mixed $value, mixed $expected, string $message): void
 // --- Usage
-Assert::notEquals($value, $expected, $message)
+Assert::notEquals($value, $expected, $message);
 ```
 
 ---
@@ -2008,7 +2008,7 @@ Assert::notEquals($value, $expected, $message)
 // --- Contract
 public static function same(mixed $value, mixed $expected, string $message): void
 // --- Usage
-Assert::same($value, $expected, $message)
+Assert::same($value, $expected, $message);
 ```
 
 ---
@@ -2023,7 +2023,7 @@ Assert::same($value, $expected, $message)
 // --- Contract
 public static function notSame(mixed $value, mixed $expected, string $message): void
 // --- Usage
-Assert::notSame($value, $expected, $message)
+Assert::notSame($value, $expected, $message);
 ```
 
 ---
@@ -2038,7 +2038,7 @@ Assert::notSame($value, $expected, $message)
 // --- Contract
 public static function empty(mixed $value, string $message): void
 // --- Usage
-Assert::empty($value, $message)
+Assert::empty($value, $message);
 ```
 
 ---
@@ -2053,7 +2053,7 @@ Assert::empty($value, $message)
 // --- Contract
 public static function notEmpty(mixed $value, string $message): void
 // --- Usage
-Assert::notEmpty($value, $message)
+Assert::notEmpty($value, $message);
 ```
 
 ---
@@ -2068,7 +2068,7 @@ Assert::notEmpty($value, $message)
 // --- Contract
 public static function null(mixed $value, string $message): void
 // --- Usage
-Assert::null($value, $message)
+Assert::null($value, $message);
 ```
 
 ---
@@ -2083,7 +2083,7 @@ Assert::null($value, $message)
 // --- Contract
 public static function notNull(mixed $value, string $message): void
 // --- Usage
-Assert::notNull($value, $message)
+Assert::notNull($value, $message);
 ```
 
 ---
@@ -2098,7 +2098,7 @@ Assert::notNull($value, $message)
 // --- Contract
 public static function numeric(mixed $value, string $message): void
 // --- Usage
-Assert::numeric($value, $message)
+Assert::numeric($value, $message);
 ```
 
 ---
@@ -2113,7 +2113,7 @@ Assert::numeric($value, $message)
 // --- Contract
 public static function notNumeric(mixed $value, string $message): void
 // --- Usage
-Assert::notNumeric($value, $message)
+Assert::notNumeric($value, $message);
 ```
 
 ---
@@ -2128,7 +2128,7 @@ Assert::notNumeric($value, $message)
 // --- Contract
 public static function finite(float $value, string $message): void
 // --- Usage
-Assert::finite($value, $message)
+Assert::finite($value, $message);
 ```
 
 ---
@@ -2143,7 +2143,7 @@ Assert::finite($value, $message)
 // --- Contract
 public static function infinite(float $value, string $message): void
 // --- Usage
-Assert::infinite($value, $message)
+Assert::infinite($value, $message);
 ```
 
 ---
@@ -2158,7 +2158,7 @@ Assert::infinite($value, $message)
 // --- Contract
 public static function float(mixed $value, string $message): void
 // --- Usage
-Assert::float($value, $message)
+Assert::float($value, $message);
 ```
 
 ---
@@ -2173,7 +2173,7 @@ Assert::float($value, $message)
 // --- Contract
 public static function notFloat(mixed $value, string $message): void
 // --- Usage
-Assert::notFloat($value, $message)
+Assert::notFloat($value, $message);
 ```
 
 ---
@@ -2188,7 +2188,7 @@ Assert::notFloat($value, $message)
 // --- Contract
 public static function int(mixed $value, string $message): void
 // --- Usage
-Assert::int($value, $message)
+Assert::int($value, $message);
 ```
 
 ---
@@ -2203,7 +2203,7 @@ Assert::int($value, $message)
 // --- Contract
 public static function notInt(mixed $value, string $message): void
 // --- Usage
-Assert::notInt($value, $message)
+Assert::notInt($value, $message);
 ```
 
 ---
@@ -2218,7 +2218,7 @@ Assert::notInt($value, $message)
 // --- Contract
 public static function greater(int $value, int $expected, string $message): void
 // --- Usage
-Assert::greater($value, $expected, $message)
+Assert::greater($value, $expected, $message);
 ```
 
 ---
@@ -2233,7 +2233,7 @@ Assert::greater($value, $expected, $message)
 // --- Contract
 public static function greaterOrEquals(int $value, int $expected, string $message): void
 // --- Usage
-Assert::greaterOrEquals($value, $expected, $message)
+Assert::greaterOrEquals($value, $expected, $message);
 ```
 
 ---
@@ -2248,7 +2248,7 @@ Assert::greaterOrEquals($value, $expected, $message)
 // --- Contract
 public static function lower(int $value, int $expected, string $message): void
 // --- Usage
-Assert::lower($value, $expected, $message)
+Assert::lower($value, $expected, $message);
 ```
 
 ---
@@ -2263,7 +2263,7 @@ Assert::lower($value, $expected, $message)
 // --- Contract
 public static function lowerOrEquals(int $value, int $expected, string $message): void
 // --- Usage
-Assert::lowerOrEquals($value, $expected, $message)
+Assert::lowerOrEquals($value, $expected, $message);
 ```
 
 ---
@@ -2278,7 +2278,7 @@ Assert::lowerOrEquals($value, $expected, $message)
 // --- Contract
 public static function object(mixed $value, string $message): void
 // --- Usage
-Assert::object($value, $message)
+Assert::object($value, $message);
 ```
 
 ---
@@ -2293,7 +2293,7 @@ Assert::object($value, $message)
 // --- Contract
 public static function notObject(mixed $value, string $message): void
 // --- Usage
-Assert::notObject($value, $message)
+Assert::notObject($value, $message);
 ```
 
 ---
@@ -2308,7 +2308,7 @@ Assert::notObject($value, $message)
 // --- Contract
 public static function instanceOf(mixed $value, string $class, string $message): void
 // --- Usage
-Assert::instanceOf($value, $class, $message)
+Assert::instanceOf($value, $class, $message);
 ```
 
 ---
@@ -2323,7 +2323,7 @@ Assert::instanceOf($value, $class, $message)
 // --- Contract
 public static function notInstanceOf(mixed $value, string $class, string $message): void
 // --- Usage
-Assert::notInstanceOf($value, $class, $message)
+Assert::notInstanceOf($value, $class, $message);
 ```
 
 ---
@@ -2338,7 +2338,7 @@ Assert::notInstanceOf($value, $class, $message)
 // --- Contract
 public static function resource(mixed $value, string $message): void
 // --- Usage
-Assert::resource($value, $message)
+Assert::resource($value, $message);
 ```
 
 ---
@@ -2353,7 +2353,7 @@ Assert::resource($value, $message)
 // --- Contract
 public static function notResource(mixed $value, string $message): void
 // --- Usage
-Assert::notResource($value, $message)
+Assert::notResource($value, $message);
 ```
 
 ---
@@ -2368,7 +2368,7 @@ Assert::notResource($value, $message)
 // --- Contract
 public static function scalar(mixed $value, string $message): void
 // --- Usage
-Assert::scalar($value, $message)
+Assert::scalar($value, $message);
 ```
 
 ---
@@ -2383,7 +2383,7 @@ Assert::scalar($value, $message)
 // --- Contract
 public static function notScalar(mixed $value, string $message): void
 // --- Usage
-Assert::notScalar($value, $message)
+Assert::notScalar($value, $message);
 ```
 
 ---
@@ -2398,7 +2398,7 @@ Assert::notScalar($value, $message)
 // --- Contract
 public static function string(mixed $value, string $message): void
 // --- Usage
-Assert::string($value, $message)
+Assert::string($value, $message);
 ```
 
 ---
@@ -2413,7 +2413,7 @@ Assert::string($value, $message)
 // --- Contract
 public static function notString(mixed $value, string $message): void
 // --- Usage
-Assert::notString($value, $message)
+Assert::notString($value, $message);
 ```
 
 ---
@@ -2428,7 +2428,7 @@ Assert::notString($value, $message)
 // --- Contract
 public static function array(mixed $value, string $message): void
 // --- Usage
-Assert::array($value, $message)
+Assert::array($value, $message);
 ```
 
 ---
@@ -2443,7 +2443,7 @@ Assert::array($value, $message)
 // --- Contract
 public static function notArray(mixed $value, string $message): void
 // --- Usage
-Assert::notArray($value, $message)
+Assert::notArray($value, $message);
 ```
 
 ---
@@ -2458,7 +2458,7 @@ Assert::notArray($value, $message)
 // --- Contract
 public static function countable(mixed $value, string $message): void
 // --- Usage
-Assert::countable($value, $message)
+Assert::countable($value, $message);
 ```
 
 ---
@@ -2473,7 +2473,7 @@ Assert::countable($value, $message)
 // --- Contract
 public static function notCountable(mixed $value, string $message): void
 // --- Usage
-Assert::notCountable($value, $message)
+Assert::notCountable($value, $message);
 ```
 
 ---
@@ -2488,7 +2488,7 @@ Assert::notCountable($value, $message)
 // --- Contract
 public static function iterable(mixed $value, string $message): void
 // --- Usage
-Assert::iterable($value, $message)
+Assert::iterable($value, $message);
 ```
 
 ---
@@ -2503,7 +2503,7 @@ Assert::iterable($value, $message)
 // --- Contract
 public static function notIterable(mixed $value, string $message): void
 // --- Usage
-Assert::notIterable($value, $message)
+Assert::notIterable($value, $message);
 ```
 
 ## 📦 Sakoo\Framework\Core\Assert\Exception
@@ -2534,7 +2534,7 @@ Assert::notIterable($value, $message)
 // --- Contract
 public static function init(array $exceptions): self
 // --- Usage
-LazyAssertionException::init($exceptions)
+LazyAssertionException::init($exceptions);
 ```
 
 ### 🟥 InvalidArgumentException
@@ -2572,7 +2572,7 @@ LazyAssertionException::init($exceptions)
 #### How to use the Class:
 
 ```php
-$regex = new Regex(string $pattern)
+$regex = new Regex(string $pattern);
 ```
 
 ---
@@ -2587,7 +2587,7 @@ $regex = new Regex(string $pattern)
 // --- Contract
 public function safeAdd(string $value): static
 // --- Usage
-$regex->safeAdd($value)
+$regex->safeAdd($value);
 ```
 
 ---
@@ -2602,7 +2602,7 @@ $regex->safeAdd($value)
 // --- Contract
 public function add(string $value): static
 // --- Usage
-$regex->add($value)
+$regex->add($value);
 ```
 
 ---
@@ -2617,7 +2617,7 @@ $regex->add($value)
 // --- Contract
 public function startOfLine(): static
 // --- Usage
-$regex->startOfLine()
+$regex->startOfLine();
 ```
 
 ---
@@ -2632,7 +2632,7 @@ $regex->startOfLine()
 // --- Contract
 public function endOfLine(): static
 // --- Usage
-$regex->endOfLine()
+$regex->endOfLine();
 ```
 
 ---
@@ -2647,7 +2647,7 @@ $regex->endOfLine()
 // --- Contract
 public function startsWith(callable|string $value): static
 // --- Usage
-$regex->startsWith($value)
+$regex->startsWith($value);
 ```
 
 ---
@@ -2662,7 +2662,7 @@ $regex->startsWith($value)
 // --- Contract
 public function endsWith(callable|string $value): static
 // --- Usage
-$regex->endsWith($value)
+$regex->endsWith($value);
 ```
 
 ---
@@ -2677,7 +2677,7 @@ $regex->endsWith($value)
 // --- Contract
 public function digit(int $length): static
 // --- Usage
-$regex->digit($length)
+$regex->digit($length);
 ```
 
 ---
@@ -2696,7 +2696,7 @@ $regex->digit($length)
 // --- Contract
 public function oneOf(array $value): static
 // --- Usage
-$regex->oneOf($value)
+$regex->oneOf($value);
 ```
 
 ---
@@ -2711,7 +2711,7 @@ $regex->oneOf($value)
 // --- Contract
 public function wrap(callable|string $value, bool $nonCapturing): static
 // --- Usage
-$regex->wrap($value, $nonCapturing)
+$regex->wrap($value, $nonCapturing);
 ```
 
 ---
@@ -2726,7 +2726,7 @@ $regex->wrap($value, $nonCapturing)
 // --- Contract
 public function bracket(callable|string $value): static
 // --- Usage
-$regex->bracket($value)
+$regex->bracket($value);
 ```
 
 ---
@@ -2741,7 +2741,7 @@ $regex->bracket($value)
 // --- Contract
 public function maybe(string $value): static
 // --- Usage
-$regex->maybe($value)
+$regex->maybe($value);
 ```
 
 ---
@@ -2756,7 +2756,7 @@ $regex->maybe($value)
 // --- Contract
 public function anything(): static
 // --- Usage
-$regex->anything()
+$regex->anything();
 ```
 
 ---
@@ -2771,7 +2771,7 @@ $regex->anything()
 // --- Contract
 public function something(): static
 // --- Usage
-$regex->something()
+$regex->something();
 ```
 
 ---
@@ -2786,7 +2786,7 @@ $regex->something()
 // --- Contract
 public function unixLineBreak(): static
 // --- Usage
-$regex->unixLineBreak()
+$regex->unixLineBreak();
 ```
 
 ---
@@ -2801,7 +2801,7 @@ $regex->unixLineBreak()
 // --- Contract
 public function windowsLineBreak(): static
 // --- Usage
-$regex->windowsLineBreak()
+$regex->windowsLineBreak();
 ```
 
 ---
@@ -2816,7 +2816,7 @@ $regex->windowsLineBreak()
 // --- Contract
 public function tab(): static
 // --- Usage
-$regex->tab()
+$regex->tab();
 ```
 
 ---
@@ -2831,7 +2831,7 @@ $regex->tab()
 // --- Contract
 public function space(): static
 // --- Usage
-$regex->space()
+$regex->space();
 ```
 
 ---
@@ -2846,7 +2846,7 @@ $regex->space()
 // --- Contract
 public function word(): static
 // --- Usage
-$regex->word()
+$regex->word();
 ```
 
 ---
@@ -2861,7 +2861,7 @@ $regex->word()
 // --- Contract
 public function chars(string $values): static
 // --- Usage
-$regex->chars($values)
+$regex->chars($values);
 ```
 
 ---
@@ -2876,7 +2876,7 @@ $regex->chars($values)
 // --- Contract
 public function anythingWithout(callable|string $value): static
 // --- Usage
-$regex->anythingWithout($value)
+$regex->anythingWithout($value);
 ```
 
 ---
@@ -2891,7 +2891,7 @@ $regex->anythingWithout($value)
 // --- Contract
 public function somethingWithout(callable|string $value): static
 // --- Usage
-$regex->somethingWithout($value)
+$regex->somethingWithout($value);
 ```
 
 ---
@@ -2906,7 +2906,7 @@ $regex->somethingWithout($value)
 // --- Contract
 public function anythingWith(callable|string $value): static
 // --- Usage
-$regex->anythingWith($value)
+$regex->anythingWith($value);
 ```
 
 ---
@@ -2921,7 +2921,7 @@ $regex->anythingWith($value)
 // --- Contract
 public function somethingWith(callable|string $value): static
 // --- Usage
-$regex->somethingWith($value)
+$regex->somethingWith($value);
 ```
 
 ---
@@ -2936,7 +2936,7 @@ $regex->somethingWith($value)
 // --- Contract
 public function escapeChars(string $value): string
 // --- Usage
-$regex->escapeChars($value)
+$regex->escapeChars($value);
 ```
 
 ---
@@ -2951,7 +2951,7 @@ $regex->escapeChars($value)
 // --- Contract
 public function lookahead(callable|string $value): static
 // --- Usage
-$regex->lookahead($value)
+$regex->lookahead($value);
 ```
 
 ---
@@ -2966,7 +2966,7 @@ $regex->lookahead($value)
 // --- Contract
 public function lookbehind(callable|string $value): static
 // --- Usage
-$regex->lookbehind($value)
+$regex->lookbehind($value);
 ```
 
 ---
@@ -2981,7 +2981,7 @@ $regex->lookbehind($value)
 // --- Contract
 public function negativeLookahead(callable|string $value): static
 // --- Usage
-$regex->negativeLookahead($value)
+$regex->negativeLookahead($value);
 ```
 
 ---
@@ -2996,7 +2996,7 @@ $regex->negativeLookahead($value)
 // --- Contract
 public function negativeLookbehind(callable|string $value): static
 // --- Usage
-$regex->negativeLookbehind($value)
+$regex->negativeLookbehind($value);
 ```
 
 ---
@@ -3015,7 +3015,7 @@ $regex->negativeLookbehind($value)
 // --- Contract
 public function match(string $value): array
 // --- Usage
-$regex->match($value)
+$regex->match($value);
 ```
 
 ---
@@ -3034,7 +3034,7 @@ $regex->match($value)
 // --- Contract
 public function matchAll(string $value): array
 // --- Usage
-$regex->matchAll($value)
+$regex->matchAll($value);
 ```
 
 ---
@@ -3049,7 +3049,7 @@ $regex->matchAll($value)
 // --- Contract
 public function test(string $value): bool
 // --- Usage
-$regex->test($value)
+$regex->test($value);
 ```
 
 ---
@@ -3068,7 +3068,7 @@ $regex->test($value)
 // --- Contract
 public function replace(Stringable|string $string, string $replace): array|string|null
 // --- Usage
-$regex->replace($string, $replace)
+$regex->replace($string, $replace);
 ```
 
 ---
@@ -3087,7 +3087,7 @@ $regex->replace($string, $replace)
 // --- Contract
 public function split(Stringable|string $subject): array|false
 // --- Usage
-$regex->split($subject)
+$regex->split($subject);
 ```
 
 ---
@@ -3102,7 +3102,7 @@ $regex->split($subject)
 // --- Contract
 public function get(): string
 // --- Usage
-$regex->get()
+$regex->get();
 ```
 
 ### 🟢 RegexHelper
@@ -3127,7 +3127,7 @@ $regex->get()
 // --- Contract
 public static function findCamelCase(): Regex
 // --- Usage
-RegexHelper::findCamelCase()
+RegexHelper::findCamelCase();
 ```
 
 ---
@@ -3142,7 +3142,7 @@ RegexHelper::findCamelCase()
 // --- Contract
 public static function getSpaceBetweenWords(): Regex
 // --- Usage
-RegexHelper::getSpaceBetweenWords()
+RegexHelper::getSpaceBetweenWords();
 ```
 
 ---
@@ -3157,7 +3157,7 @@ RegexHelper::getSpaceBetweenWords()
 // --- Contract
 public static function getSpecialChars(): Regex
 // --- Usage
-RegexHelper::getSpecialChars()
+RegexHelper::getSpecialChars();
 ```
 
 ## 📦 Sakoo\Framework\Core\Env
@@ -3188,7 +3188,7 @@ RegexHelper::getSpecialChars()
 // --- Contract
 public static function get(string $key, mixed $default): mixed
 // --- Usage
-Env::get($key, $default)
+Env::get($key, $default);
 ```
 
 ---
@@ -3207,7 +3207,7 @@ Env::get($key, $default)
 // --- Contract
 public static function load(Storage $file): void
 // --- Usage
-Env::load($file)
+Env::load($file);
 ```
 
 ## 📦 Sakoo\Framework\Core\Testing
@@ -3235,7 +3235,7 @@ Env::load($file)
 #### How to use the Class:
 
 ```php
-$exceptionAssertion = new ExceptionAssertion(TestCase $phpunit,  $fn)
+$exceptionAssertion = new ExceptionAssertion(TestCase $phpunit,  $fn);
 ```
 
 ---
@@ -3250,7 +3250,7 @@ $exceptionAssertion = new ExceptionAssertion(TestCase $phpunit,  $fn)
 // --- Contract
 public function withCode(int $code): static
 // --- Usage
-$exceptionAssertion->withCode($code)
+$exceptionAssertion->withCode($code);
 ```
 
 ---
@@ -3265,7 +3265,7 @@ $exceptionAssertion->withCode($code)
 // --- Contract
 public function withType(string $type): static
 // --- Usage
-$exceptionAssertion->withType($type)
+$exceptionAssertion->withType($type);
 ```
 
 ---
@@ -3280,7 +3280,7 @@ $exceptionAssertion->withType($type)
 // --- Contract
 public function withMessage(string $message): static
 // --- Usage
-$exceptionAssertion->withMessage($message)
+$exceptionAssertion->withMessage($message);
 ```
 
 ---
@@ -3295,7 +3295,7 @@ $exceptionAssertion->withMessage($message)
 // --- Contract
 public function validate(): void
 // --- Usage
-$exceptionAssertion->validate()
+$exceptionAssertion->validate();
 ```
 
 ## 📦 Sakoo\Framework\Core\Container
@@ -3331,7 +3331,7 @@ $exceptionAssertion->validate()
 #### How to use the Class:
 
 ```php
-$container = new Container(string $cachePath)
+$container = new Container(string $cachePath);
 ```
 
 ---
@@ -3350,7 +3350,7 @@ $container = new Container(string $cachePath)
 // --- Contract
 public function get(string $id): object
 // --- Usage
-$container->get($id)
+$container->get($id);
 ```
 
 ---
@@ -3365,7 +3365,7 @@ $container->get($id)
 // --- Contract
 public function has(string $id): bool
 // --- Usage
-$container->has($id)
+$container->has($id);
 ```
 
 ---
@@ -3384,7 +3384,7 @@ $container->has($id)
 // --- Contract
 public function bind(string $interface, callable|object|string $factory): void
 // --- Usage
-$container->bind($interface, $factory)
+$container->bind($interface, $factory);
 ```
 
 ---
@@ -3403,7 +3403,7 @@ $container->bind($interface, $factory)
 // --- Contract
 public function singleton(string $interface, callable|object|string $factory): void
 // --- Usage
-$container->singleton($interface, $factory)
+$container->singleton($interface, $factory);
 ```
 
 ---
@@ -3430,7 +3430,7 @@ $container->singleton($interface, $factory)
 // --- Contract
 public function resolve(string $interface): object
 // --- Usage
-$container->resolve($interface)
+$container->resolve($interface);
 ```
 
 ---
@@ -3461,7 +3461,7 @@ $container->resolve($interface)
 // --- Contract
 public function new(string $class, array $params): object
 // --- Usage
-$container->new($class, $params)
+$container->new($class, $params);
 ```
 
 ---
@@ -3476,7 +3476,7 @@ $container->new($class, $params)
 // --- Contract
 public function clear(): void
 // --- Usage
-$container->clear()
+$container->clear();
 ```
 
 ---
@@ -3493,7 +3493,7 @@ $container->clear()
 // --- Contract
 public function loadCache(): void
 // --- Usage
-$container->loadCache()
+$container->loadCache();
 ```
 
 ---
@@ -3508,7 +3508,7 @@ $container->loadCache()
 // --- Contract
 public function flushCache(): bool
 // --- Usage
-$container->flushCache()
+$container->flushCache();
 ```
 
 ---
@@ -3523,7 +3523,7 @@ $container->flushCache()
 // --- Contract
 public function cacheExists(): bool
 // --- Usage
-$container->cacheExists()
+$container->cacheExists();
 ```
 
 ---
@@ -3546,7 +3546,7 @@ $container->cacheExists()
 // --- Contract
 public function dumpCache(): void
 // --- Usage
-$container->dumpCache()
+$container->dumpCache();
 ```
 
 ## 📦 Sakoo\Framework\Core\Container\Exceptions
@@ -3598,7 +3598,7 @@ $container->dumpCache()
 #### How to use the Class:
 
 ```php
-$parameterSet = new ParameterSet(Container $container)
+$parameterSet = new ParameterSet(Container $container);
 ```
 
 ---
@@ -3629,7 +3629,7 @@ $parameterSet = new ParameterSet(Container $container)
 // --- Contract
 public function resolve(array $parameters): array
 // --- Usage
-$parameterSet->resolve($parameters)
+$parameterSet->resolve($parameters);
 ```
 
 ### 🟢 Parameter
@@ -3647,7 +3647,7 @@ $parameterSet->resolve($parameters)
 #### How to use the Class:
 
 ```php
-$parameter = new Parameter(Container $container)
+$parameter = new Parameter(Container $container);
 ```
 
 ---
@@ -3674,7 +3674,7 @@ $parameter = new Parameter(Container $container)
 // --- Contract
 public function resolve(ReflectionParameter $parameter): mixed
 // --- Usage
-$parameter->resolve($parameter)
+$parameter->resolve($parameter);
 ```
 
 ## 📦 Sakoo\Framework\Core\Markup
@@ -3702,7 +3702,7 @@ $parameter->resolve($parameter)
 #### How to use the Class:
 
 ```php
-$markdown = new Markdown()
+$markdown = new Markdown();
 ```
 
 ---
@@ -3717,7 +3717,7 @@ $markdown = new Markdown()
 // --- Contract
 public function write(string $value): void
 // --- Usage
-$markdown->write($value)
+$markdown->write($value);
 ```
 
 ---
@@ -3732,7 +3732,7 @@ $markdown->write($value)
 // --- Contract
 public function writeLine(string $value): void
 // --- Usage
-$markdown->writeLine($value)
+$markdown->writeLine($value);
 ```
 
 ---
@@ -3747,7 +3747,7 @@ $markdown->writeLine($value)
 // --- Contract
 public function br(): void
 // --- Usage
-$markdown->br()
+$markdown->br();
 ```
 
 ---
@@ -3762,7 +3762,7 @@ $markdown->br()
 // --- Contract
 public function fbr(): void
 // --- Usage
-$markdown->fbr()
+$markdown->fbr();
 ```
 
 ---
@@ -3777,7 +3777,7 @@ $markdown->fbr()
 // --- Contract
 public function callout(string $value): void
 // --- Usage
-$markdown->callout($value)
+$markdown->callout($value);
 ```
 
 ---
@@ -3790,7 +3790,7 @@ $markdown->callout($value)
 // --- Contract
 public function h1(string $value): void
 // --- Usage
-$markdown->h1($value)
+$markdown->h1($value);
 ```
 
 ---
@@ -3803,7 +3803,7 @@ $markdown->h1($value)
 // --- Contract
 public function h2(string $value): void
 // --- Usage
-$markdown->h2($value)
+$markdown->h2($value);
 ```
 
 ---
@@ -3816,7 +3816,7 @@ $markdown->h2($value)
 // --- Contract
 public function h3(string $value): void
 // --- Usage
-$markdown->h3($value)
+$markdown->h3($value);
 ```
 
 ---
@@ -3829,7 +3829,7 @@ $markdown->h3($value)
 // --- Contract
 public function h4(string $value): void
 // --- Usage
-$markdown->h4($value)
+$markdown->h4($value);
 ```
 
 ---
@@ -3842,7 +3842,7 @@ $markdown->h4($value)
 // --- Contract
 public function h5(string $value): void
 // --- Usage
-$markdown->h5($value)
+$markdown->h5($value);
 ```
 
 ---
@@ -3855,7 +3855,7 @@ $markdown->h5($value)
 // --- Contract
 public function h6(string $value): void
 // --- Usage
-$markdown->h6($value)
+$markdown->h6($value);
 ```
 
 ---
@@ -3870,7 +3870,7 @@ $markdown->h6($value)
 // --- Contract
 public function ul(string $value): void
 // --- Usage
-$markdown->ul($value)
+$markdown->ul($value);
 ```
 
 ---
@@ -3885,7 +3885,7 @@ $markdown->ul($value)
 // --- Contract
 public function link(string $url, string $text): void
 // --- Usage
-$markdown->link($url, $text)
+$markdown->link($url, $text);
 ```
 
 ---
@@ -3900,7 +3900,7 @@ $markdown->link($url, $text)
 // --- Contract
 public function image(string $path, string $alt): void
 // --- Usage
-$markdown->image($path, $alt)
+$markdown->image($path, $alt);
 ```
 
 ---
@@ -3915,7 +3915,7 @@ $markdown->image($path, $alt)
 // --- Contract
 public function checklist(string $value, bool $checked): void
 // --- Usage
-$markdown->checklist($value, $checked)
+$markdown->checklist($value, $checked);
 ```
 
 ---
@@ -3930,7 +3930,7 @@ $markdown->checklist($value, $checked)
 // --- Contract
 public function hr(): void
 // --- Usage
-$markdown->hr()
+$markdown->hr();
 ```
 
 ---
@@ -3945,7 +3945,7 @@ $markdown->hr()
 // --- Contract
 public function code(string $value, string $language): void
 // --- Usage
-$markdown->code($value, $language)
+$markdown->code($value, $language);
 ```
 
 ---
@@ -3960,7 +3960,7 @@ $markdown->code($value, $language)
 // --- Contract
 public function inlineCode(string $value): void
 // --- Usage
-$markdown->inlineCode($value)
+$markdown->inlineCode($value);
 ```
 
 ---
@@ -3975,7 +3975,7 @@ $markdown->inlineCode($value)
 // --- Contract
 public function tiny(string $value): void
 // --- Usage
-$markdown->tiny($value)
+$markdown->tiny($value);
 ```
 
 ---
@@ -3990,7 +3990,7 @@ $markdown->tiny($value)
 // --- Contract
 public function get(): string
 // --- Usage
-$markdown->get()
+$markdown->get();
 ```
 
 ## 📦 Sakoo\Framework\Core\Finder
@@ -4022,7 +4022,7 @@ $markdown->get()
 #### How to use the Class:
 
 ```php
-$fileFinder = new FileFinder(string $path)
+$fileFinder = new FileFinder(string $path);
 ```
 
 ---
@@ -4037,7 +4037,7 @@ $fileFinder = new FileFinder(string $path)
 // --- Contract
 public function pattern(string $pattern): FileFinder
 // --- Usage
-$fileFinder->pattern($pattern)
+$fileFinder->pattern($pattern);
 ```
 
 ---
@@ -4052,7 +4052,7 @@ $fileFinder->pattern($pattern)
 // --- Contract
 public function ignoreVCS(bool $value): FileFinder
 // --- Usage
-$fileFinder->ignoreVCS($value)
+$fileFinder->ignoreVCS($value);
 ```
 
 ---
@@ -4067,7 +4067,7 @@ $fileFinder->ignoreVCS($value)
 // --- Contract
 public function ignoreVCSIgnored(bool $value): FileFinder
 // --- Usage
-$fileFinder->ignoreVCSIgnored($value)
+$fileFinder->ignoreVCSIgnored($value);
 ```
 
 ---
@@ -4082,7 +4082,7 @@ $fileFinder->ignoreVCSIgnored($value)
 // --- Contract
 public function ignoreDotFiles(bool $value): FileFinder
 // --- Usage
-$fileFinder->ignoreDotFiles($value)
+$fileFinder->ignoreDotFiles($value);
 ```
 
 ---
@@ -4101,7 +4101,7 @@ $fileFinder->ignoreDotFiles($value)
 // --- Contract
 public function getFiles(): array
 // --- Usage
-$fileFinder->getFiles()
+$fileFinder->getFiles();
 ```
 
 ---
@@ -4120,7 +4120,7 @@ $fileFinder->getFiles()
 // --- Contract
 public function find(): array
 // --- Usage
-$fileFinder->find()
+$fileFinder->find();
 ```
 
 ### 🟢 SplFileObject
@@ -4153,7 +4153,7 @@ $fileFinder->find()
 // --- Contract
 public function isClassFile(): bool
 // --- Usage
-$splFileObject->isClassFile()
+$splFileObject->isClassFile();
 ```
 
 ---
@@ -4176,7 +4176,7 @@ $splFileObject->isClassFile()
 // --- Contract
 public function getNamespace(): string
 // --- Usage
-$splFileObject->getNamespace()
+$splFileObject->getNamespace();
 ```
 
 ### 🟢 GitIgnore
@@ -4202,7 +4202,7 @@ $splFileObject->getNamespace()
 #### How to use the Class:
 
 ```php
-$gitIgnore = new GitIgnore(string $path)
+$gitIgnore = new GitIgnore(string $path);
 ```
 
 ---
@@ -4221,7 +4221,7 @@ $gitIgnore = new GitIgnore(string $path)
 // --- Contract
 public function isIgnored(string $file): bool
 // --- Usage
-$gitIgnore->isIgnored($file)
+$gitIgnore->isIgnored($file);
 ```
 
 ## 📦 Sakoo\Framework\Core\Locker
@@ -4252,7 +4252,7 @@ $gitIgnore->isIgnored($file)
 // --- Contract
 public function lock(): void
 // --- Usage
-$locker->lock()
+$locker->lock();
 ```
 
 ---
@@ -4267,7 +4267,7 @@ $locker->lock()
 // --- Contract
 public function unlock(): void
 // --- Usage
-$locker->unlock()
+$locker->unlock();
 ```
 
 ---
@@ -4282,7 +4282,7 @@ $locker->unlock()
 // --- Contract
 public function isLocked(): bool
 // --- Usage
-$locker->isLocked()
+$locker->isLocked();
 ```
 
 ## 📦 Sakoo\Framework\Core\Doc
@@ -4310,7 +4310,7 @@ $locker->isLocked()
 #### How to use the Class:
 
 ```php
-$doc = new Doc(array $files, Formatter $formatter, Storage $docFile)
+$doc = new Doc(array $files, Formatter $formatter, Storage $docFile);
 ```
 
 ---
@@ -4325,7 +4325,7 @@ $doc = new Doc(array $files, Formatter $formatter, Storage $docFile)
 // --- Contract
 public function generate(): void
 // --- Usage
-$doc->generate()
+$doc->generate();
 ```
 
 ## 📦 Sakoo\Framework\Core\Doc\Formatters
@@ -4372,7 +4372,7 @@ $doc->generate()
 // --- Contract
 public function format(array $namespaces): string
 // --- Usage
-$docFormatter->format($namespaces)
+$docFormatter->format($namespaces);
 ```
 
 ---
@@ -4380,7 +4380,7 @@ $docFormatter->format($namespaces)
 #### How to use the Class:
 
 ```php
-$docFormatter = new DocFormatter(Markup $markup)
+$docFormatter = new DocFormatter(Markup $markup);
 ```
 
 ### 🟢 TocFormatter
@@ -4421,7 +4421,7 @@ $docFormatter = new DocFormatter(Markup $markup)
 // --- Contract
 public function format(array $namespaces): string
 // --- Usage
-$tocFormatter->format($namespaces)
+$tocFormatter->format($namespaces);
 ```
 
 ---
@@ -4429,7 +4429,7 @@ $tocFormatter->format($namespaces)
 #### How to use the Class:
 
 ```php
-$tocFormatter = new TocFormatter(Markup $markup)
+$tocFormatter = new TocFormatter(Markup $markup);
 ```
 
 ## 📦 Sakoo\Framework\Core\Doc\Attributes
@@ -4453,10 +4453,266 @@ $tocFormatter = new TocFormatter(Markup $markup)
 #### How to use the Class:
 
 ```php
-$dontDocument = new DontDocument()
+$dontDocument = new DontDocument();
 ```
 
-## 📦 Sakoo\Framework\Core\Doc\Object
+## 📦 Sakoo\Framework\Core\Doc\Object\PhpDoc
+
+### 🟢 PhpDocLineObject
+
+---
+
+#### How to use the Class:
+
+```php
+$phpDocLineObject = new PhpDocLineObject(string $line);
+```
+
+---
+
+### - `isThrows` Function
+
+```php
+// --- Contract
+public function isThrows(): bool
+// --- Usage
+$phpDocLineObject->isThrows();
+```
+
+---
+
+### - `isMethod` Function
+
+```php
+// --- Contract
+public function isMethod(): bool
+// --- Usage
+$phpDocLineObject->isMethod();
+```
+
+---
+
+### - `isEmpty` Function
+
+```php
+// --- Contract
+public function isEmpty(): bool
+// --- Usage
+$phpDocLineObject->isEmpty();
+```
+
+### 🟢 PhpDocObject
+
+---
+
+#### How to use the Class:
+
+```php
+$phpDocObject = new PhpDocObject(ClassInterface|MethodInterface $component);
+```
+
+---
+
+### - `getLines` Function
+
+<sub><sup>@return PhpDocLineObject[] </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getLines(): array
+// --- Usage
+$phpDocObject->getLines();
+```
+
+## 📦 Sakoo\Framework\Core\Doc\Object\Class
+
+### 🟢 ClassObject
+
+<sub><sup>Reflection-backed value object representing a single PHP class for documentation. </sup></sub>
+
+
+
+<sub><sup>Wraps a ReflectionClass and exposes the information the documentation generator needs: the class short name, namespace, public/protected methods (as MethodObject instances), virtual methods parsed from [at-sign]method PHPDoc tags (as VirtualMethodObject instances), and metadata flags (isException, isInstantiable, isIllegal). </sup></sub>
+
+
+
+<sub><sup>isIllegal() determines whether the class should be excluded from generated docs: it returns true for classes carrying the DontDocument attribute, traits, abstracts, and interfaces — leaving only concrete, documentable classes in the output. </sup></sub>
+
+
+
+<sub><sup>getPhpDocs() parses the class-level doc comment into trimmed lines for use by formatters, and getVirtualMethods() extracts [at-sign]method tag lines from those docs and attempts to parse each one into a VirtualMethodObject. </sup></sub>
+
+
+
+---
+
+#### How to use the Class:
+
+```php
+$classObject = new ClassObject(ReflectionClass $class);
+```
+
+---
+
+### - `getMethods` Function
+
+<sub><sup>Returns all public and protected methods declared in the Sakoo framework namespace as MethodObject instances, skipping inherited non-framework methods. </sup></sub>
+
+
+
+<sub><sup>@return MethodObject[] </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getMethods(): array
+// --- Usage
+$classObject->getMethods();
+```
+
+---
+
+### - `getNamespace` Function
+
+<sub><sup>Returns the fully-qualified namespace name of the class (excluding the class name itself), used to group classes into NamespaceObject bags. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getNamespace(): string
+// --- Usage
+$classObject->getNamespace();
+```
+
+---
+
+### - `isIllegal` Function
+
+<sub><sup>Returns true when this class should be excluded from documentation. </sup></sub>
+
+
+
+<sub><sup>A class is illegal when it carries the DontDocument attribute, is a trait, is abstract, or is an interface. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function isIllegal(): bool
+// --- Usage
+$classObject->isIllegal();
+```
+
+---
+
+### - `isInstantiable` Function
+
+<sub><sup>Returns true when the class can be instantiated with new (not abstract, not interface). </sup></sub>
+
+
+
+```php
+// --- Contract
+public function isInstantiable(): bool
+// --- Usage
+$classObject->isInstantiable();
+```
+
+---
+
+### - `isException` Function
+
+<sub><sup>Returns true when the class is a subclass of the framework base Exception, used by formatters to apply the 🟥 icon. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function isException(): bool
+// --- Usage
+$classObject->isException();
+```
+
+---
+
+### - `getName` Function
+
+<sub><sup>Returns the unqualified short class name (without namespace prefix). </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getName(): string
+// --- Usage
+$classObject->getName();
+```
+
+---
+
+### - `getRawDoc` Function
+
+```php
+// --- Contract
+public function getRawDoc(): string
+// --- Usage
+$classObject->getRawDoc();
+```
+
+---
+
+### - `getPhpDocObject` Function
+
+```php
+// --- Contract
+public function getPhpDocObject(): PhpDocObject
+// --- Usage
+$classObject->getPhpDocObject();
+```
+
+---
+
+### - `getVirtualMethods` Function
+
+<sub><sup>Parses [at-sign]method tag lines from the class-level PHPDoc and returns them as VirtualMethodObject instances. Lines that fail to parse are silently skipped. </sup></sub>
+
+
+
+<sub><sup>@return VirtualMethodObject[] </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getVirtualMethods(): array
+// --- Usage
+$classObject->getVirtualMethods();
+```
+
+---
+
+### - `getInterfaces` Function
+
+<sub><sup>Returns all interfaces implemented by this class as a map of interface-name → ReflectionClass, used by MethodObject to locate inherited PHPDoc comments from interface definitions. </sup></sub>
+
+
+
+<sub><sup>@return array&lt;string, \ReflectionClass&lt;object&gt;&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getInterfaces(): array
+// --- Usage
+$classObject->getInterfaces();
+```
+
+## 📦 Sakoo\Framework\Core\Doc\Object\Parameter
 
 ### 🟢 ParameterObject
 
@@ -4473,7 +4729,7 @@ $dontDocument = new DontDocument()
 #### How to use the Class:
 
 ```php
-$parameterObject = new ParameterObject(ReflectionParameter $parameter)
+$parameterObject = new ParameterObject(ReflectionParameter $parameter);
 ```
 
 ---
@@ -4488,7 +4744,7 @@ $parameterObject = new ParameterObject(ReflectionParameter $parameter)
 // --- Contract
 public function getName(): string
 // --- Usage
-$parameterObject->getName()
+$parameterObject->getName();
 ```
 
 ---
@@ -4503,8 +4759,62 @@ $parameterObject->getName()
 // --- Contract
 public function getType(): TypeObject
 // --- Usage
-$parameterObject->getType()
+$parameterObject->getType();
 ```
+
+### 🟢 TypeObject
+
+<sub><sup>Resolves a ReflectionType to a documentation-friendly short name string. </sup></sub>
+
+
+
+<sub><sup>PHP&#039;s reflection API returns three distinct type classes — ReflectionNamedType, ReflectionUnionType, and ReflectionIntersectionType. This value object normalises them into a single nullable string suitable for documentation output: </sup></sub>
+
+
+
+<sub><sup>- Null (untyped)          → null - Built-in named type     → the type name as-is (e.g. &#039;string&#039;, &#039;int&#039;, &#039;array&#039;) - Non-built-in named type → the short class name without namespace prefix - Union type              → pipe-joined list of short names (e.g. &#039;string|int|Foo&#039;) - Intersection type       → not explicitly handled; getName() returns null </sup></sub>
+
+
+
+---
+
+#### How to use the Class:
+
+```php
+$typeObject = new TypeObject(ReflectionType $type);
+```
+
+---
+
+### - `getName` Function
+
+<sub><sup>Returns the human-readable type name, or null when no type hint was declared or the type cannot be resolved to a short representation. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getName(): string
+// --- Usage
+$typeObject->getName();
+```
+
+---
+
+### - `getReflectionUnionTypeName` Function
+
+<sub><sup>Joins each member of a union type into a pipe-separated string, using the short class name for non-built-in types. Trailing pipes are stripped. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getReflectionUnionTypeName(ReflectionUnionType $type): string
+// --- Usage
+$typeObject->getReflectionUnionTypeName($type);
+```
+
+## 📦 Sakoo\Framework\Core\Doc\Object\Method
 
 ### 🟢 MethodObject
 
@@ -4537,7 +4847,7 @@ $parameterObject->getType()
 #### How to use the Class:
 
 ```php
-$methodObject = new MethodObject(ClassObject $classObject, ReflectionMethod $method)
+$methodObject = new MethodObject(ClassObject $classObject, ReflectionMethod $method);
 ```
 
 ---
@@ -4552,7 +4862,7 @@ $methodObject = new MethodObject(ClassObject $classObject, ReflectionMethod $met
 // --- Contract
 public function getClass(): ClassObject
 // --- Usage
-$methodObject->getClass()
+$methodObject->getClass();
 ```
 
 ---
@@ -4571,7 +4881,7 @@ $methodObject->getClass()
 // --- Contract
 public function getMethodParameters(): array
 // --- Usage
-$methodObject->getMethodParameters()
+$methodObject->getMethodParameters();
 ```
 
 ---
@@ -4586,7 +4896,7 @@ $methodObject->getMethodParameters()
 // --- Contract
 public function getName(): string
 // --- Usage
-$methodObject->getName()
+$methodObject->getName();
 ```
 
 ---
@@ -4601,7 +4911,7 @@ $methodObject->getName()
 // --- Contract
 public function isPrivate(): bool
 // --- Usage
-$methodObject->isPrivate()
+$methodObject->isPrivate();
 ```
 
 ---
@@ -4616,7 +4926,7 @@ $methodObject->isPrivate()
 // --- Contract
 public function isProtected(): bool
 // --- Usage
-$methodObject->isProtected()
+$methodObject->isProtected();
 ```
 
 ---
@@ -4631,7 +4941,7 @@ $methodObject->isProtected()
 // --- Contract
 public function isPublic(): bool
 // --- Usage
-$methodObject->isPublic()
+$methodObject->isPublic();
 ```
 
 ---
@@ -4646,7 +4956,7 @@ $methodObject->isPublic()
 // --- Contract
 public function isStatic(): bool
 // --- Usage
-$methodObject->isStatic()
+$methodObject->isStatic();
 ```
 
 ---
@@ -4661,7 +4971,7 @@ $methodObject->isStatic()
 // --- Contract
 public function isConstructor(): bool
 // --- Usage
-$methodObject->isConstructor()
+$methodObject->isConstructor();
 ```
 
 ---
@@ -4676,7 +4986,7 @@ $methodObject->isConstructor()
 // --- Contract
 public function isMagicMethod(): bool
 // --- Usage
-$methodObject->isMagicMethod()
+$methodObject->isMagicMethod();
 ```
 
 ---
@@ -4691,30 +5001,29 @@ $methodObject->isMagicMethod()
 // --- Contract
 public function getMethodReturnTypes(): string
 // --- Usage
-$methodObject->getMethodReturnTypes()
+$methodObject->getMethodReturnTypes();
 ```
 
 ---
 
-### - `getPhpDocs` Function
-
-<sub><sup>Parses and returns the PHPDoc lines for this method. </sup></sub>
-
-
-
-<sub><sup>Looks first at the method&#039;s own doc comment, then falls back to any matching method on an implemented interface. Returns an empty array when no doc is found. </sup></sub>
-
-
-
-<sub><sup>@return string[] </sup></sub>
-
-
+### - `getRawDoc` Function
 
 ```php
 // --- Contract
-public function getPhpDocs(): array
+public function getRawDoc(): string
 // --- Usage
-$methodObject->getPhpDocs()
+$methodObject->getRawDoc();
+```
+
+---
+
+### - `getPhpDocObject` Function
+
+```php
+// --- Contract
+public function getPhpDocObject(): PhpDocObject
+// --- Usage
+$methodObject->getPhpDocObject();
 ```
 
 ---
@@ -4733,7 +5042,7 @@ $methodObject->getPhpDocs()
 // --- Contract
 public function getModifiers(): array
 // --- Usage
-$methodObject->getModifiers()
+$methodObject->getModifiers();
 ```
 
 ---
@@ -4748,7 +5057,7 @@ $methodObject->getModifiers()
 // --- Contract
 public function isFrameworkFunction(): bool
 // --- Usage
-$methodObject->isFrameworkFunction()
+$methodObject->isFrameworkFunction();
 ```
 
 ---
@@ -4763,7 +5072,7 @@ $methodObject->isFrameworkFunction()
 // --- Contract
 public function getDefaultValues(): string
 // --- Usage
-$methodObject->getDefaultValues()
+$methodObject->getDefaultValues();
 ```
 
 ---
@@ -4778,7 +5087,7 @@ $methodObject->getDefaultValues()
 // --- Contract
 public function getDefaultValueTypes(): string
 // --- Usage
-$methodObject->getDefaultValueTypes()
+$methodObject->getDefaultValueTypes();
 ```
 
 ---
@@ -4793,7 +5102,7 @@ $methodObject->getDefaultValueTypes()
 // --- Contract
 public function shouldNotDocument(): bool
 // --- Usage
-$methodObject->shouldNotDocument()
+$methodObject->shouldNotDocument();
 ```
 
 ---
@@ -4808,315 +5117,30 @@ $methodObject->shouldNotDocument()
 // --- Contract
 public function isStaticInstantiator(): bool
 // --- Usage
-$methodObject->isStaticInstantiator()
-```
-
-### 🟢 ClassObject
-
-<sub><sup>Reflection-backed value object representing a single PHP class for documentation. </sup></sub>
-
-
-
-<sub><sup>Wraps a ReflectionClass and exposes the information the documentation generator needs: the class short name, namespace, public/protected methods (as MethodObject instances), virtual methods parsed from @method PHPDoc tags (as VirtualMethodObject instances), and metadata flags (isException, isInstantiable, isIllegal). </sup></sub>
-
-
-
-<sub><sup>isIllegal() determines whether the class should be excluded from generated docs: it returns true for classes carrying the DontDocument attribute, traits, abstracts, and interfaces — leaving only concrete, documentable classes in the output. </sup></sub>
-
-
-
-<sub><sup>getPhpDocs() parses the class-level doc comment into trimmed lines for use by formatters, and getVirtualMethods() extracts @method tag lines from those docs and attempts to parse each one into a VirtualMethodObject. </sup></sub>
-
-
-
----
-
-#### How to use the Class:
-
-```php
-$classObject = new ClassObject(ReflectionClass $class)
-```
-
----
-
-### - `getMethods` Function
-
-<sub><sup>Returns all public and protected methods declared in the Sakoo framework namespace as MethodObject instances, skipping inherited non-framework methods. </sup></sub>
-
-
-
-<sub><sup>@return MethodObject[] </sup></sub>
-
-
-
-```php
-// --- Contract
-public function getMethods(): array
-// --- Usage
-$classObject->getMethods()
-```
-
----
-
-### - `getNamespace` Function
-
-<sub><sup>Returns the fully-qualified namespace name of the class (excluding the class name itself), used to group classes into NamespaceObject bags. </sup></sub>
-
-
-
-```php
-// --- Contract
-public function getNamespace(): string
-// --- Usage
-$classObject->getNamespace()
-```
-
----
-
-### - `isIllegal` Function
-
-<sub><sup>Returns true when this class should be excluded from documentation. </sup></sub>
-
-
-
-<sub><sup>A class is illegal when it carries the DontDocument attribute, is a trait, is abstract, or is an interface. </sup></sub>
-
-
-
-```php
-// --- Contract
-public function isIllegal(): bool
-// --- Usage
-$classObject->isIllegal()
-```
-
----
-
-### - `isInstantiable` Function
-
-<sub><sup>Returns true when the class can be instantiated with new (not abstract, not interface). </sup></sub>
-
-
-
-```php
-// --- Contract
-public function isInstantiable(): bool
-// --- Usage
-$classObject->isInstantiable()
-```
-
----
-
-### - `isException` Function
-
-<sub><sup>Returns true when the class is a subclass of the framework base Exception, used by formatters to apply the 🟥 icon. </sup></sub>
-
-
-
-```php
-// --- Contract
-public function isException(): bool
-// --- Usage
-$classObject->isException()
-```
-
----
-
-### - `getName` Function
-
-<sub><sup>Returns the unqualified short class name (without namespace prefix). </sup></sub>
-
-
-
-```php
-// --- Contract
-public function getName(): string
-// --- Usage
-$classObject->getName()
-```
-
----
-
-### - `getPhpDocs` Function
-
-<sub><sup>Parses the class-level PHPDoc block and returns its content as an ordered array of trimmed lines. Returns an empty array when no doc comment exists. </sup></sub>
-
-
-
-<sub><sup>@return string[] </sup></sub>
-
-
-
-```php
-// --- Contract
-public function getPhpDocs(): array
-// --- Usage
-$classObject->getPhpDocs()
-```
-
----
-
-### - `getVirtualMethods` Function
-
-<sub><sup>Parses @method tag lines from the class-level PHPDoc and returns them as VirtualMethodObject instances. Lines that fail to parse are silently skipped. </sup></sub>
-
-
-
-<sub><sup>@return VirtualMethodObject[] </sup></sub>
-
-
-
-```php
-// --- Contract
-public function getVirtualMethods(): array
-// --- Usage
-$classObject->getVirtualMethods()
-```
-
----
-
-### - `getInterfaces` Function
-
-<sub><sup>Returns all interfaces implemented by this class as a map of interface-name → ReflectionClass, used by MethodObject to locate inherited PHPDoc comments from interface definitions. </sup></sub>
-
-
-
-<sub><sup>@return array&lt;string, \ReflectionClass&lt;object&gt;&gt; </sup></sub>
-
-
-
-```php
-// --- Contract
-public function getInterfaces(): array
-// --- Usage
-$classObject->getInterfaces()
-```
-
-### 🟢 TypeObject
-
-<sub><sup>Resolves a ReflectionType to a documentation-friendly short name string. </sup></sub>
-
-
-
-<sub><sup>PHP&#039;s reflection API returns three distinct type classes — ReflectionNamedType, ReflectionUnionType, and ReflectionIntersectionType. This value object normalises them into a single nullable string suitable for documentation output: </sup></sub>
-
-
-
-<sub><sup>- Null (untyped)          → null - Built-in named type     → the type name as-is (e.g. &#039;string&#039;, &#039;int&#039;, &#039;array&#039;) - Non-built-in named type → the short class name without namespace prefix - Union type              → pipe-joined list of short names (e.g. &#039;string|int|Foo&#039;) - Intersection type       → not explicitly handled; getName() returns null </sup></sub>
-
-
-
----
-
-#### How to use the Class:
-
-```php
-$typeObject = new TypeObject(ReflectionType $type)
-```
-
----
-
-### - `getName` Function
-
-<sub><sup>Returns the human-readable type name, or null when no type hint was declared or the type cannot be resolved to a short representation. </sup></sub>
-
-
-
-```php
-// --- Contract
-public function getName(): string
-// --- Usage
-$typeObject->getName()
-```
-
----
-
-### - `getReflectionUnionTypeName` Function
-
-<sub><sup>Joins each member of a union type into a pipe-separated string, using the short class name for non-built-in types. Trailing pipes are stripped. </sup></sub>
-
-
-
-```php
-// --- Contract
-public function getReflectionUnionTypeName(ReflectionUnionType $type): string
-// --- Usage
-$typeObject->getReflectionUnionTypeName($type)
-```
-
-### 🟢 NamespaceObject
-
-<sub><sup>Immutable value object grouping a namespace string with its ClassObject members. </sup></sub>
-
-
-
-<sub><sup>Acts as a bag that the Doc generator populates during source-file introspection, grouping all documentable classes that share the same PHP namespace into one unit for formatters to iterate over. The namespace name is used as the section heading in generated documentation. </sup></sub>
-
-
-
----
-
-#### How to use the Class:
-
-```php
-$namespaceObject = new NamespaceObject(string $namespace, array $classes)
-```
-
----
-
-### - `getClasses` Function
-
-<sub><sup>Returns the ClassObject instances belonging to this namespace. </sup></sub>
-
-
-
-<sub><sup>@return ClassObject[] </sup></sub>
-
-
-
-```php
-// --- Contract
-public function getClasses(): array
-// --- Usage
-$namespaceObject->getClasses()
-```
-
----
-
-### - `getName` Function
-
-<sub><sup>Returns the fully-qualified namespace string (e.g. &#039;Sakoo\Framework\Core\Set&#039;). </sup></sub>
-
-
-
-```php
-// --- Contract
-public function getName(): string
-// --- Usage
-$namespaceObject->getName()
+$methodObject->isStaticInstantiator();
 ```
 
 ### 🟥 InvalidVirtualMethodDefinitionException
 
-<sub><sup>Thrown when a @method PHPDoc tag cannot be parsed into a VirtualMethodObject. </sup></sub>
+<sub><sup>Thrown when a [at-sign]method PHPDoc tag cannot be parsed into a VirtualMethodObject. </sup></sub>
 
 
 
-<sub><sup>Raised by VirtualMethodObject::parse() when the tag line is structurally invalid — for example when parentheses are missing or unbalanced. The Doc generator catches this exception and silently skips the malformed tag so a single bad @method annotation does not abort the entire documentation generation run. </sup></sub>
+<sub><sup>Raised by VirtualMethodObject::parse() when the tag line is structurally invalid — for example when parentheses are missing or unbalanced. The Doc generator catches this exception and silently skips the malformed tag so a single bad [at-sign]method annotation does not abort the entire documentation generation run. </sup></sub>
 
 
 
 ### 🟢 VirtualMethodObject
 
-<sub><sup>Parsed value object representing a virtual method declared via a @method PHPDoc tag. </sup></sub>
+<sub><sup>Parsed value object representing a virtual method declared via a [at-sign]method PHPDoc tag. </sup></sub>
 
 
 
-<sub><sup>PHP classes can document methods that do not exist in source using @method tags, typically on classes that use __call() magic. This class parses such a tag line into structured data (name, return type, parameters, static flag, description) so the documentation generator can render virtual methods alongside real ones. </sup></sub>
+<sub><sup>PHP classes can document methods that do not exist in source using [at-sign]method tags, typically on classes that use __call() magic. This class parses such a tag line into structured data (name, return type, parameters, static flag, description) so the documentation generator can render virtual methods alongside real ones. </sup></sub>
 
 
 
-<sub><sup>Parse rules (applied by parse() during construction): - Leading &#039;@method&#039; is stripped. - An optional &#039;static&#039; keyword sets isStatic = true. - An optional return-type token precedes the method name. - Parameters inside parentheses are extracted and further parsed by parseParams(). - Trailing text after the closing &#039;)&#039; is stored as the description. </sup></sub>
+<sub><sup>Parse rules (applied by parse() during construction): - Leading &#039;[at-sign]method&#039; is stripped. - An optional &#039;static&#039; keyword sets isStatic = true. - An optional return-type token precedes the method name. - Parameters inside parentheses are extracted and further parsed by parseParams(). - Trailing text after the closing &#039;)&#039; is stored as the description. </sup></sub>
 
 
 
@@ -5129,22 +5153,22 @@ $namespaceObject->getName()
 #### How to use the Class:
 
 ```php
-$virtualMethodObject = new VirtualMethodObject(ClassObject $classObject, string $line)
+$virtualMethodObject = new VirtualMethodObject(ClassInterface $class, string $line);
 ```
 
 ---
 
 ### - `getClass` Function
 
-<sub><sup>Returns the ClassObject that declared this @method tag. </sup></sub>
+<sub><sup>Returns the ClassInterface that declared this [at-sign]method tag. </sup></sub>
 
 
 
 ```php
 // --- Contract
-public function getClass(): ClassObject
+public function getClass(): ClassInterface
 // --- Usage
-$virtualMethodObject->getClass()
+$virtualMethodObject->getClass();
 ```
 
 ---
@@ -5159,7 +5183,7 @@ $virtualMethodObject->getClass()
 // --- Contract
 public function getName(): string
 // --- Usage
-$virtualMethodObject->getName()
+$virtualMethodObject->getName();
 ```
 
 ---
@@ -5174,7 +5198,7 @@ $virtualMethodObject->getName()
 // --- Contract
 public function isPrivate(): bool
 // --- Usage
-$virtualMethodObject->isPrivate()
+$virtualMethodObject->isPrivate();
 ```
 
 ---
@@ -5189,7 +5213,7 @@ $virtualMethodObject->isPrivate()
 // --- Contract
 public function isProtected(): bool
 // --- Usage
-$virtualMethodObject->isProtected()
+$virtualMethodObject->isProtected();
 ```
 
 ---
@@ -5204,14 +5228,14 @@ $virtualMethodObject->isProtected()
 // --- Contract
 public function isPublic(): bool
 // --- Usage
-$virtualMethodObject->isPublic()
+$virtualMethodObject->isPublic();
 ```
 
 ---
 
 ### - `isStatic` Function
 
-<sub><sup>Returns true when the @method tag included the &#039;static&#039; keyword. </sup></sub>
+<sub><sup>Returns true when the [at-sign]method tag included the &#039;static&#039; keyword. </sup></sub>
 
 
 
@@ -5219,7 +5243,7 @@ $virtualMethodObject->isPublic()
 // --- Contract
 public function isStatic(): bool
 // --- Usage
-$virtualMethodObject->isStatic()
+$virtualMethodObject->isStatic();
 ```
 
 ---
@@ -5234,7 +5258,7 @@ $virtualMethodObject->isStatic()
 // --- Contract
 public function isConstructor(): bool
 // --- Usage
-$virtualMethodObject->isConstructor()
+$virtualMethodObject->isConstructor();
 ```
 
 ---
@@ -5249,7 +5273,7 @@ $virtualMethodObject->isConstructor()
 // --- Contract
 public function isMagicMethod(): bool
 // --- Usage
-$virtualMethodObject->isMagicMethod()
+$virtualMethodObject->isMagicMethod();
 ```
 
 ---
@@ -5264,26 +5288,29 @@ $virtualMethodObject->isMagicMethod()
 // --- Contract
 public function getMethodReturnTypes(): string
 // --- Usage
-$virtualMethodObject->getMethodReturnTypes()
+$virtualMethodObject->getMethodReturnTypes();
 ```
 
 ---
 
-### - `getPhpDocs` Function
-
-<sub><sup>Returns the structured doc metadata for this virtual method as an associative array with &#039;description&#039;, &#039;params&#039;, and &#039;return&#039; keys. </sup></sub>
-
-
-
-<sub><sup>@return array&lt;string, mixed&gt; </sup></sub>
-
-
+### - `getRawDoc` Function
 
 ```php
 // --- Contract
-public function getPhpDocs(): array
+public function getRawDoc(): string
 // --- Usage
-$virtualMethodObject->getPhpDocs()
+$virtualMethodObject->getRawDoc();
+```
+
+---
+
+### - `getPhpDocObject` Function
+
+```php
+// --- Contract
+public function getPhpDocObject(): PhpDocObject
+// --- Usage
+$virtualMethodObject->getPhpDocObject();
 ```
 
 ---
@@ -5302,7 +5329,7 @@ $virtualMethodObject->getPhpDocs()
 // --- Contract
 public function getModifiers(): array
 // --- Usage
-$virtualMethodObject->getModifiers()
+$virtualMethodObject->getModifiers();
 ```
 
 ---
@@ -5317,7 +5344,7 @@ $virtualMethodObject->getModifiers()
 // --- Contract
 public function isFrameworkFunction(): bool
 // --- Usage
-$virtualMethodObject->isFrameworkFunction()
+$virtualMethodObject->isFrameworkFunction();
 ```
 
 ---
@@ -5332,7 +5359,7 @@ $virtualMethodObject->isFrameworkFunction()
 // --- Contract
 public function getDefaultValues(): string
 // --- Usage
-$virtualMethodObject->getDefaultValues()
+$virtualMethodObject->getDefaultValues();
 ```
 
 ---
@@ -5347,7 +5374,7 @@ $virtualMethodObject->getDefaultValues()
 // --- Contract
 public function getDefaultValueTypes(): string
 // --- Usage
-$virtualMethodObject->getDefaultValueTypes()
+$virtualMethodObject->getDefaultValueTypes();
 ```
 
 ---
@@ -5362,7 +5389,7 @@ $virtualMethodObject->getDefaultValueTypes()
 // --- Contract
 public function shouldNotDocument(): bool
 // --- Usage
-$virtualMethodObject->shouldNotDocument()
+$virtualMethodObject->shouldNotDocument();
 ```
 
 ---
@@ -5377,7 +5404,61 @@ $virtualMethodObject->shouldNotDocument()
 // --- Contract
 public function isStaticInstantiator(): bool
 // --- Usage
-$virtualMethodObject->isStaticInstantiator()
+$virtualMethodObject->isStaticInstantiator();
+```
+
+## 📦 Sakoo\Framework\Core\Doc\Object
+
+### 🟢 NamespaceObject
+
+<sub><sup>Immutable value object grouping a namespace string with its ClassObject members. </sup></sub>
+
+
+
+<sub><sup>Acts as a bag that the Doc generator populates during source-file introspection, grouping all documentable classes that share the same PHP namespace into one unit for formatters to iterate over. The namespace name is used as the section heading in generated documentation. </sup></sub>
+
+
+
+---
+
+#### How to use the Class:
+
+```php
+$namespaceObject = new NamespaceObject(string $namespace, array $classes);
+```
+
+---
+
+### - `getClasses` Function
+
+<sub><sup>Returns the ClassObject instances belonging to this namespace. </sup></sub>
+
+
+
+<sub><sup>@return ClassObject[] </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getClasses(): array
+// --- Usage
+$namespaceObject->getClasses();
+```
+
+---
+
+### - `getName` Function
+
+<sub><sup>Returns the fully-qualified namespace string (e.g. &#039;Sakoo\Framework\Core\Set&#039;). </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getName(): string
+// --- Usage
+$namespaceObject->getName();
 ```
 
 ## 📦 Sakoo\Framework\Core\Commands
@@ -5405,7 +5486,7 @@ $virtualMethodObject->isStaticInstantiator()
 #### How to use the Class:
 
 ```php
-$containerCacheCommand = new ContainerCacheCommand(ContainerInterface $container)
+$containerCacheCommand = new ContainerCacheCommand(ContainerInterface $container);
 ```
 
 ---
@@ -5420,7 +5501,7 @@ $containerCacheCommand = new ContainerCacheCommand(ContainerInterface $container
 // --- Contract
 public static function getName(): string
 // --- Usage
-ContainerCacheCommand::getName()
+ContainerCacheCommand::getName();
 ```
 
 ---
@@ -5435,7 +5516,7 @@ ContainerCacheCommand::getName()
 // --- Contract
 public static function getDescription(): string
 // --- Usage
-ContainerCacheCommand::getDescription()
+ContainerCacheCommand::getDescription();
 ```
 
 ---
@@ -5450,7 +5531,7 @@ ContainerCacheCommand::getDescription()
 // --- Contract
 public function run(Input $input, Output $output): int
 // --- Usage
-$containerCacheCommand->run($input, $output)
+$containerCacheCommand->run($input, $output);
 ```
 
 ---
@@ -5465,7 +5546,7 @@ $containerCacheCommand->run($input, $output)
 // --- Contract
 public function help(Input $input, Output $output): int
 // --- Usage
-$containerCacheCommand->help($input, $output)
+$containerCacheCommand->help($input, $output);
 ```
 
 ---
@@ -5480,7 +5561,7 @@ $containerCacheCommand->help($input, $output)
 // --- Contract
 public function setRunningApplication(Application $app): void
 // --- Usage
-$containerCacheCommand->setRunningApplication($app)
+$containerCacheCommand->setRunningApplication($app);
 ```
 
 ---
@@ -5495,7 +5576,7 @@ $containerCacheCommand->setRunningApplication($app)
 // --- Contract
 public function getApplication(): Application
 // --- Usage
-$containerCacheCommand->getApplication()
+$containerCacheCommand->getApplication();
 ```
 
 ### 🟢 ZenCommand
@@ -5520,7 +5601,7 @@ $containerCacheCommand->getApplication()
 // --- Contract
 public static function getName(): string
 // --- Usage
-ZenCommand::getName()
+ZenCommand::getName();
 ```
 
 ---
@@ -5535,7 +5616,7 @@ ZenCommand::getName()
 // --- Contract
 public static function getDescription(): string
 // --- Usage
-ZenCommand::getDescription()
+ZenCommand::getDescription();
 ```
 
 ---
@@ -5550,7 +5631,7 @@ ZenCommand::getDescription()
 // --- Contract
 public function run(Input $input, Output $output): int
 // --- Usage
-$zenCommand->run($input, $output)
+$zenCommand->run($input, $output);
 ```
 
 ---
@@ -5565,7 +5646,7 @@ $zenCommand->run($input, $output)
 // --- Contract
 public function help(Input $input, Output $output): int
 // --- Usage
-$zenCommand->help($input, $output)
+$zenCommand->help($input, $output);
 ```
 
 ---
@@ -5580,7 +5661,7 @@ $zenCommand->help($input, $output)
 // --- Contract
 public function setRunningApplication(Application $app): void
 // --- Usage
-$zenCommand->setRunningApplication($app)
+$zenCommand->setRunningApplication($app);
 ```
 
 ---
@@ -5595,7 +5676,7 @@ $zenCommand->setRunningApplication($app)
 // --- Contract
 public function getApplication(): Application
 // --- Usage
-$zenCommand->getApplication()
+$zenCommand->getApplication();
 ```
 
 ### 🟢 DevCommand
@@ -5624,7 +5705,7 @@ $zenCommand->getApplication()
 // --- Contract
 public static function getName(): string
 // --- Usage
-DevCommand::getName()
+DevCommand::getName();
 ```
 
 ---
@@ -5639,7 +5720,7 @@ DevCommand::getName()
 // --- Contract
 public static function getDescription(): string
 // --- Usage
-DevCommand::getDescription()
+DevCommand::getDescription();
 ```
 
 ---
@@ -5654,7 +5735,7 @@ DevCommand::getDescription()
 // --- Contract
 public function run(Input $input, Output $output): int
 // --- Usage
-$devCommand->run($input, $output)
+$devCommand->run($input, $output);
 ```
 
 ---
@@ -5669,7 +5750,7 @@ $devCommand->run($input, $output)
 // --- Contract
 public function help(Input $input, Output $output): int
 // --- Usage
-$devCommand->help($input, $output)
+$devCommand->help($input, $output);
 ```
 
 ---
@@ -5684,7 +5765,7 @@ $devCommand->help($input, $output)
 // --- Contract
 public function setRunningApplication(Application $app): void
 // --- Usage
-$devCommand->setRunningApplication($app)
+$devCommand->setRunningApplication($app);
 ```
 
 ---
@@ -5699,7 +5780,7 @@ $devCommand->setRunningApplication($app)
 // --- Contract
 public function getApplication(): Application
 // --- Usage
-$devCommand->getApplication()
+$devCommand->getApplication();
 ```
 
 ### 🟢 DocGenCommand
@@ -5729,7 +5810,7 @@ $devCommand->getApplication()
 #### How to use the Class:
 
 ```php
-$docGenCommand = new DocGenCommand(string $docPath, string $sidebarPath, string $footerPath)
+$docGenCommand = new DocGenCommand(string $docPath, string $sidebarPath, string $footerPath);
 ```
 
 ---
@@ -5744,7 +5825,7 @@ $docGenCommand = new DocGenCommand(string $docPath, string $sidebarPath, string 
 // --- Contract
 public static function getName(): string
 // --- Usage
-DocGenCommand::getName()
+DocGenCommand::getName();
 ```
 
 ---
@@ -5759,7 +5840,7 @@ DocGenCommand::getName()
 // --- Contract
 public static function getDescription(): string
 // --- Usage
-DocGenCommand::getDescription()
+DocGenCommand::getDescription();
 ```
 
 ---
@@ -5774,7 +5855,7 @@ DocGenCommand::getDescription()
 // --- Contract
 public function run(Input $input, Output $output): int
 // --- Usage
-$docGenCommand->run($input, $output)
+$docGenCommand->run($input, $output);
 ```
 
 ---
@@ -5789,7 +5870,7 @@ $docGenCommand->run($input, $output)
 // --- Contract
 public function help(Input $input, Output $output): int
 // --- Usage
-$docGenCommand->help($input, $output)
+$docGenCommand->help($input, $output);
 ```
 
 ---
@@ -5804,7 +5885,7 @@ $docGenCommand->help($input, $output)
 // --- Contract
 public function setRunningApplication(Application $app): void
 // --- Usage
-$docGenCommand->setRunningApplication($app)
+$docGenCommand->setRunningApplication($app);
 ```
 
 ---
@@ -5819,7 +5900,7 @@ $docGenCommand->setRunningApplication($app)
 // --- Contract
 public function getApplication(): Application
 // --- Usage
-$docGenCommand->getApplication()
+$docGenCommand->getApplication();
 ```
 
 ## 📦 Sakoo\Framework\Core\Commands\Watcher
@@ -5847,7 +5928,7 @@ $docGenCommand->getApplication()
 #### How to use the Class:
 
 ```php
-$phpBundler = new PhpBundler(Input $input, Output $output)
+$phpBundler = new PhpBundler(Input $input, Output $output);
 ```
 
 ---
@@ -5862,7 +5943,7 @@ $phpBundler = new PhpBundler(Input $input, Output $output)
 // --- Contract
 public function fileModified(Event $event): void
 // --- Usage
-$phpBundler->fileModified($event)
+$phpBundler->fileModified($event);
 ```
 
 ---
@@ -5877,7 +5958,7 @@ $phpBundler->fileModified($event)
 // --- Contract
 public function fileMoved(Event $event): void
 // --- Usage
-$phpBundler->fileMoved($event)
+$phpBundler->fileMoved($event);
 ```
 
 ---
@@ -5892,7 +5973,7 @@ $phpBundler->fileMoved($event)
 // --- Contract
 public function fileDeleted(Event $event): void
 // --- Usage
-$phpBundler->fileDeleted($event)
+$phpBundler->fileDeleted($event);
 ```
 
 ### 🟢 WatchCommand
@@ -5914,7 +5995,7 @@ $phpBundler->fileDeleted($event)
 #### How to use the Class:
 
 ```php
-$watchCommand = new WatchCommand(Watcher $watcher)
+$watchCommand = new WatchCommand(Watcher $watcher);
 ```
 
 ---
@@ -5929,7 +6010,7 @@ $watchCommand = new WatchCommand(Watcher $watcher)
 // --- Contract
 public static function getName(): string
 // --- Usage
-WatchCommand::getName()
+WatchCommand::getName();
 ```
 
 ---
@@ -5944,7 +6025,7 @@ WatchCommand::getName()
 // --- Contract
 public static function getDescription(): string
 // --- Usage
-WatchCommand::getDescription()
+WatchCommand::getDescription();
 ```
 
 ---
@@ -5959,7 +6040,7 @@ WatchCommand::getDescription()
 // --- Contract
 public function run(Input $input, Output $output): int
 // --- Usage
-$watchCommand->run($input, $output)
+$watchCommand->run($input, $output);
 ```
 
 ---
@@ -5974,7 +6055,7 @@ $watchCommand->run($input, $output)
 // --- Contract
 public function help(Input $input, Output $output): int
 // --- Usage
-$watchCommand->help($input, $output)
+$watchCommand->help($input, $output);
 ```
 
 ---
@@ -5989,7 +6070,7 @@ $watchCommand->help($input, $output)
 // --- Contract
 public function setRunningApplication(Application $app): void
 // --- Usage
-$watchCommand->setRunningApplication($app)
+$watchCommand->setRunningApplication($app);
 ```
 
 ---
@@ -6004,7 +6085,7 @@ $watchCommand->setRunningApplication($app)
 // --- Contract
 public function getApplication(): Application
 // --- Usage
-$watchCommand->getApplication()
+$watchCommand->getApplication();
 ```
 
 ## 📦 Sakoo\Framework\Core\Profiler
@@ -6028,7 +6109,7 @@ $watchCommand->getApplication()
 #### How to use the Class:
 
 ```php
-$profiler = new Profiler(ClockInterface $clock)
+$profiler = new Profiler(ClockInterface $clock);
 ```
 
 ---
@@ -6043,7 +6124,7 @@ $profiler = new Profiler(ClockInterface $clock)
 // --- Contract
 public function start(string $key): void
 // --- Usage
-$profiler->start($key)
+$profiler->start($key);
 ```
 
 ---
@@ -6058,7 +6139,7 @@ $profiler->start($key)
 // --- Contract
 public function elapsedTime(string $key): int
 // --- Usage
-$profiler->elapsedTime($key)
+$profiler->elapsedTime($key);
 ```
 
 ## 📦 Sakoo\Framework\Core\Set\Exceptions
@@ -6114,7 +6195,7 @@ $profiler->elapsedTime($key)
 #### How to use the Class:
 
 ```php
-$set = new Set(array $items)
+$set = new Set(array $items);
 ```
 
 ---
@@ -6129,7 +6210,7 @@ $set = new Set(array $items)
 // --- Contract
 public function exists(string|int $name): bool
 // --- Usage
-$set->exists($name)
+$set->exists($name);
 ```
 
 ---
@@ -6144,7 +6225,7 @@ $set->exists($name)
 // --- Contract
 public function count(): int
 // --- Usage
-$set->count()
+$set->count();
 ```
 
 ---
@@ -6159,7 +6240,7 @@ $set->count()
 // --- Contract
 public function each(callable $callback): void
 // --- Usage
-$set->each($callback)
+$set->each($callback);
 ```
 
 ---
@@ -6188,7 +6269,7 @@ $set->each($callback)
 // --- Contract
 public function map(callable $callback): self
 // --- Usage
-$set->map($callback)
+$set->map($callback);
 ```
 
 ---
@@ -6209,7 +6290,7 @@ $set->map($callback)
 // --- Contract
 public function pluck(string $key): self
 // --- Usage
-$set->pluck($key)
+$set->pluck($key);
 ```
 
 ---
@@ -6234,7 +6315,7 @@ $set->pluck($key)
 // --- Contract
 public function add(mixed $key, mixed $value): self
 // --- Usage
-$set->add($key, $value)
+$set->add($key, $value);
 ```
 
 ---
@@ -6253,7 +6334,7 @@ $set->add($key, $value)
 // --- Contract
 public function remove(string|int $key): self
 // --- Usage
-$set->remove($key)
+$set->remove($key);
 ```
 
 ---
@@ -6278,7 +6359,7 @@ $set->remove($key)
 // --- Contract
 public function get(string|int $key, mixed $default): mixed
 // --- Usage
-$set->get($key, $default)
+$set->get($key, $default);
 ```
 
 ---
@@ -6297,7 +6378,7 @@ $set->get($key, $default)
 // --- Contract
 public function toArray(): array
 // --- Usage
-$set->toArray()
+$set->toArray();
 ```
 
 ---
@@ -6316,7 +6397,7 @@ $set->toArray()
 // --- Contract
 public function getIterator(): ArrayIterator
 // --- Usage
-$set->getIterator()
+$set->getIterator();
 ```
 
 ---
@@ -6339,7 +6420,7 @@ $set->getIterator()
 // --- Contract
 public function sort(Sorter $sorter): self
 // --- Usage
-$set->sort($sorter)
+$set->sort($sorter);
 ```
 
 ---
@@ -6362,7 +6443,7 @@ $set->sort($sorter)
 // --- Contract
 public function search(mixed $needle, Searcher $searcher): self
 // --- Usage
-$set->search($needle, $searcher)
+$set->search($needle, $searcher);
 ```
 
 ---
@@ -6383,7 +6464,7 @@ $set->search($needle, $searcher)
 // --- Contract
 public function filter(callable $callback): self
 // --- Usage
-$set->filter($callback)
+$set->filter($callback);
 ```
 
 ---
@@ -6396,7 +6477,7 @@ $set->filter($callback)
 // --- Contract
 public function first(): mixed
 // --- Usage
-$set->first()
+$set->first();
 ```
 
 ---
@@ -6409,7 +6490,7 @@ $set->first()
 // --- Contract
 public function second(): mixed
 // --- Usage
-$set->second()
+$set->second();
 ```
 
 ---
@@ -6422,7 +6503,7 @@ $set->second()
 // --- Contract
 public function third(): mixed
 // --- Usage
-$set->third()
+$set->third();
 ```
 
 ---
@@ -6435,7 +6516,7 @@ $set->third()
 // --- Contract
 public function fourth(): mixed
 // --- Usage
-$set->fourth()
+$set->fourth();
 ```
 
 ---
@@ -6448,7 +6529,7 @@ $set->fourth()
 // --- Contract
 public function fifth(): mixed
 // --- Usage
-$set->fifth()
+$set->fifth();
 ```
 
 ---
@@ -6461,7 +6542,7 @@ $set->fifth()
 // --- Contract
 public function sixth(): mixed
 // --- Usage
-$set->sixth()
+$set->sixth();
 ```
 
 ---
@@ -6474,7 +6555,7 @@ $set->sixth()
 // --- Contract
 public function seventh(): mixed
 // --- Usage
-$set->seventh()
+$set->seventh();
 ```
 
 ---
@@ -6487,7 +6568,7 @@ $set->seventh()
 // --- Contract
 public function eighth(): mixed
 // --- Usage
-$set->eighth()
+$set->eighth();
 ```
 
 ---
@@ -6500,7 +6581,7 @@ $set->eighth()
 // --- Contract
 public function ninth(): mixed
 // --- Usage
-$set->ninth()
+$set->ninth();
 ```
 
 ---
@@ -6513,7 +6594,7 @@ $set->ninth()
 // --- Contract
 public function tenth(): mixed
 // --- Usage
-$set->tenth()
+$set->tenth();
 ```
 
 ## 📦 Sakoo\Framework\Core\Exception
@@ -6553,7 +6634,7 @@ $set->tenth()
 #### How to use the Class:
 
 ```php
-$str = new Str(string $value)
+$str = new Str(string $value);
 ```
 
 ---
@@ -6568,7 +6649,7 @@ $str = new Str(string $value)
 // --- Contract
 public function length(): int
 // --- Usage
-$str->length()
+$str->length();
 ```
 
 ---
@@ -6583,7 +6664,7 @@ $str->length()
 // --- Contract
 public function uppercaseWords(): static
 // --- Usage
-$str->uppercaseWords()
+$str->uppercaseWords();
 ```
 
 ---
@@ -6598,7 +6679,7 @@ $str->uppercaseWords()
 // --- Contract
 public function uppercase(): static
 // --- Usage
-$str->uppercase()
+$str->uppercase();
 ```
 
 ---
@@ -6613,7 +6694,7 @@ $str->uppercase()
 // --- Contract
 public function lowercase(): static
 // --- Usage
-$str->lowercase()
+$str->lowercase();
 ```
 
 ---
@@ -6628,7 +6709,7 @@ $str->lowercase()
 // --- Contract
 public function upperFirst(): static
 // --- Usage
-$str->upperFirst()
+$str->upperFirst();
 ```
 
 ---
@@ -6643,7 +6724,7 @@ $str->upperFirst()
 // --- Contract
 public function lowerFirst(): static
 // --- Usage
-$str->lowerFirst()
+$str->lowerFirst();
 ```
 
 ---
@@ -6658,7 +6739,7 @@ $str->lowerFirst()
 // --- Contract
 public function reverse(): static
 // --- Usage
-$str->reverse()
+$str->reverse();
 ```
 
 ---
@@ -6673,7 +6754,7 @@ $str->reverse()
 // --- Contract
 public function contains(string $substring): bool
 // --- Usage
-$str->contains($substring)
+$str->contains($substring);
 ```
 
 ---
@@ -6688,7 +6769,7 @@ $str->contains($substring)
 // --- Contract
 public function replace(string $search, string $replace): static
 // --- Usage
-$str->replace($search, $replace)
+$str->replace($search, $replace);
 ```
 
 ---
@@ -6703,7 +6784,7 @@ $str->replace($search, $replace)
 // --- Contract
 public function trim(): static
 // --- Usage
-$str->trim()
+$str->trim();
 ```
 
 ---
@@ -6722,7 +6803,7 @@ $str->trim()
 // --- Contract
 public function slug(): static
 // --- Usage
-$str->slug()
+$str->slug();
 ```
 
 ---
@@ -6741,7 +6822,7 @@ $str->slug()
 // --- Contract
 public function camelCase(): static
 // --- Usage
-$str->camelCase()
+$str->camelCase();
 ```
 
 ---
@@ -6760,7 +6841,7 @@ $str->camelCase()
 // --- Contract
 public function snakeCase(): static
 // --- Usage
-$str->snakeCase()
+$str->snakeCase();
 ```
 
 ---
@@ -6775,7 +6856,7 @@ $str->snakeCase()
 // --- Contract
 public function kebabCase(): static
 // --- Usage
-$str->kebabCase()
+$str->kebabCase();
 ```
 
 ---
@@ -6790,7 +6871,7 @@ $str->kebabCase()
 // --- Contract
 public function get(): string
 // --- Usage
-$str->get()
+$str->get();
 ```
 
 ---
@@ -6809,7 +6890,7 @@ $str->get()
 // --- Contract
 public static function fromType(mixed $value): self
 // --- Usage
-Str::fromType($value)
+Str::fromType($value);
 ```
 
 ## 📦 Sakoo\Framework\Core\Kernel
@@ -6836,7 +6917,7 @@ Str::fromType($value)
 // --- Contract
 public static function cases(): array
 // --- Usage
-Mode::cases()
+Mode::cases();
 ```
 
 ---
@@ -6844,7 +6925,7 @@ Mode::cases()
 #### How to use the Class:
 
 ```php
-$mode = Mode::from(string|int $value)
+$mode = Mode::from(string|int $value);
 ```
 
 ---
@@ -6852,7 +6933,7 @@ $mode = Mode::from(string|int $value)
 #### How to use the Class:
 
 ```php
-$mode = Mode::tryFrom(string|int $value)
+$mode = Mode::tryFrom(string|int $value);
 ```
 
 ### 🟢 Environment
@@ -6877,7 +6958,7 @@ $mode = Mode::tryFrom(string|int $value)
 // --- Contract
 public static function cases(): array
 // --- Usage
-Environment::cases()
+Environment::cases();
 ```
 
 ---
@@ -6885,7 +6966,7 @@ Environment::cases()
 #### How to use the Class:
 
 ```php
-$environment = Environment::from(string|int $value)
+$environment = Environment::from(string|int $value);
 ```
 
 ---
@@ -6893,7 +6974,7 @@ $environment = Environment::from(string|int $value)
 #### How to use the Class:
 
 ```php
-$environment = Environment::tryFrom(string|int $value)
+$environment = Environment::tryFrom(string|int $value);
 ```
 
 ### 🟢 Kernel
@@ -6927,7 +7008,7 @@ $environment = Environment::tryFrom(string|int $value)
 #### How to use the Class:
 
 ```php
-$kernel = Kernel::prepare(Mode $mode, Environment $environment)
+$kernel = Kernel::prepare(Mode $mode, Environment $environment);
 ```
 
 ---
@@ -6935,7 +7016,7 @@ $kernel = Kernel::prepare(Mode $mode, Environment $environment)
 #### How to use the Class:
 
 ```php
-$kernel = Kernel::getInstance()
+$kernel = Kernel::getInstance();
 ```
 
 ---
@@ -6950,7 +7031,7 @@ $kernel = Kernel::getInstance()
 // --- Contract
 public function run(): void
 // --- Usage
-$kernel->run()
+$kernel->run();
 ```
 
 ---
@@ -6965,7 +7046,7 @@ $kernel->run()
 // --- Contract
 public function getMode(): Mode
 // --- Usage
-$kernel->getMode()
+$kernel->getMode();
 ```
 
 ---
@@ -6980,7 +7061,7 @@ $kernel->getMode()
 // --- Contract
 public function getEnvironment(): Environment
 // --- Usage
-$kernel->getEnvironment()
+$kernel->getEnvironment();
 ```
 
 ---
@@ -6995,7 +7076,7 @@ $kernel->getEnvironment()
 // --- Contract
 public function getProfiler(): ProfilerInterface
 // --- Usage
-$kernel->getProfiler()
+$kernel->getProfiler();
 ```
 
 ---
@@ -7010,7 +7091,7 @@ $kernel->getProfiler()
 // --- Contract
 public function getContainer(): ContainerInterface
 // --- Usage
-$kernel->getContainer()
+$kernel->getContainer();
 ```
 
 ---
@@ -7025,7 +7106,7 @@ $kernel->getContainer()
 // --- Contract
 public function getReplicaId(): string
 // --- Usage
-$kernel->getReplicaId()
+$kernel->getReplicaId();
 ```
 
 ---
@@ -7040,7 +7121,7 @@ $kernel->getReplicaId()
 // --- Contract
 public function setExceptionHandler(callable $handler): static
 // --- Usage
-$kernel->setExceptionHandler($handler)
+$kernel->setExceptionHandler($handler);
 ```
 
 ---
@@ -7055,7 +7136,7 @@ $kernel->setExceptionHandler($handler)
 // --- Contract
 public function setErrorHandler(callable $handler): static
 // --- Usage
-$kernel->setErrorHandler($handler)
+$kernel->setErrorHandler($handler);
 ```
 
 ---
@@ -7070,7 +7151,7 @@ $kernel->setErrorHandler($handler)
 // --- Contract
 public function setServerTimezone(string $timezone): static
 // --- Usage
-$kernel->setServerTimezone($timezone)
+$kernel->setServerTimezone($timezone);
 ```
 
 ---
@@ -7089,7 +7170,7 @@ $kernel->setServerTimezone($timezone)
 // --- Contract
 public function setServiceLoaders(array $serviceLoaders): static
 // --- Usage
-$kernel->setServiceLoaders($serviceLoaders)
+$kernel->setServiceLoaders($serviceLoaders);
 ```
 
 ---
@@ -7104,7 +7185,7 @@ $kernel->setServiceLoaders($serviceLoaders)
 // --- Contract
 public function setReplicaId(string $replicaId): static
 // --- Usage
-$kernel->setReplicaId($replicaId)
+$kernel->setReplicaId($replicaId);
 ```
 
 ---
@@ -7119,7 +7200,7 @@ $kernel->setReplicaId($replicaId)
 // --- Contract
 public function isInTestMode(): bool
 // --- Usage
-$kernel->isInTestMode()
+$kernel->isInTestMode();
 ```
 
 ---
@@ -7134,7 +7215,7 @@ $kernel->isInTestMode()
 // --- Contract
 public function isInHttpMode(): bool
 // --- Usage
-$kernel->isInHttpMode()
+$kernel->isInHttpMode();
 ```
 
 ---
@@ -7149,7 +7230,7 @@ $kernel->isInHttpMode()
 // --- Contract
 public function isInConsoleMode(): bool
 // --- Usage
-$kernel->isInConsoleMode()
+$kernel->isInConsoleMode();
 ```
 
 ---
@@ -7164,7 +7245,7 @@ $kernel->isInConsoleMode()
 // --- Contract
 public function isInDebugEnv(): bool
 // --- Usage
-$kernel->isInDebugEnv()
+$kernel->isInDebugEnv();
 ```
 
 ---
@@ -7179,7 +7260,7 @@ $kernel->isInDebugEnv()
 // --- Contract
 public function isInProductionEnv(): bool
 // --- Usage
-$kernel->isInProductionEnv()
+$kernel->isInProductionEnv();
 ```
 
 ## 📦 Sakoo\Framework\Core\Kernel\Exceptions
@@ -7284,7 +7365,7 @@ $kernel->isInProductionEnv()
 // --- Contract
 public static function setTestNow(string $datetime): void
 // --- Usage
-Clock::setTestNow($datetime)
+Clock::setTestNow($datetime);
 ```
 
 ---
@@ -7305,7 +7386,7 @@ Clock::setTestNow($datetime)
 // --- Contract
 public function now(): DateTimeImmutable
 // --- Usage
-$clock->now()
+$clock->now();
 ```
 
 ## 📦 Sakoo\Framework\Core\ServiceLoader
@@ -7340,7 +7421,7 @@ $clock->now()
 // --- Contract
 public function load(Container $container): void
 // --- Usage
-$varDumpLoader->load($container)
+$varDumpLoader->load($container);
 ```
 
 ### 🟢 MainLoader
@@ -7373,7 +7454,7 @@ $varDumpLoader->load($container)
 // --- Contract
 public function load(Container $container): void
 // --- Usage
-$mainLoader->load($container)
+$mainLoader->load($container);
 ```
 
 ### 🟢 WatcherLoader
@@ -7406,7 +7487,7 @@ $mainLoader->load($container)
 // --- Contract
 public function load(Container $container): void
 // --- Usage
-$watcherLoader->load($container)
+$watcherLoader->load($container);
 ```
 
 ## 📦 Sakoo\Framework\Core\Console
@@ -7438,7 +7519,7 @@ $watcherLoader->load($container)
 #### How to use the Class:
 
 ```php
-$application = new Application(Input $input, Output $output)
+$application = new Application(Input $input, Output $output);
 ```
 
 ---
@@ -7453,7 +7534,7 @@ $application = new Application(Input $input, Output $output)
 // --- Contract
 public function run(): int
 // --- Usage
-$application->run()
+$application->run();
 ```
 
 ---
@@ -7472,7 +7553,7 @@ $application->run()
 // --- Contract
 public function addCommands(array $commands): void
 // --- Usage
-$application->addCommands($commands)
+$application->addCommands($commands);
 ```
 
 ---
@@ -7487,7 +7568,7 @@ $application->addCommands($commands)
 // --- Contract
 public function addCommand(Command $command): void
 // --- Usage
-$application->addCommand($command)
+$application->addCommand($command);
 ```
 
 ---
@@ -7508,7 +7589,7 @@ $application->addCommand($command)
 // --- Contract
 public function setDefaultCommand(string $command): void
 // --- Usage
-$application->setDefaultCommand($command)
+$application->setDefaultCommand($command);
 ```
 
 ---
@@ -7527,7 +7608,7 @@ $application->setDefaultCommand($command)
 // --- Contract
 public function getCommands(): array
 // --- Usage
-$application->getCommands()
+$application->getCommands();
 ```
 
 ### 🟢 Output
@@ -7553,7 +7634,7 @@ $application->getCommands()
 #### How to use the Class:
 
 ```php
-$output = new Output(bool $forceColors)
+$output = new Output(bool $forceColors);
 ```
 
 ---
@@ -7568,7 +7649,7 @@ $output = new Output(bool $forceColors)
 // --- Contract
 public function newLine(): void
 // --- Usage
-$output->newLine()
+$output->newLine();
 ```
 
 ---
@@ -7583,7 +7664,7 @@ $output->newLine()
 // --- Contract
 public function write(string $message): void
 // --- Usage
-$output->write($message)
+$output->write($message);
 ```
 
 ---
@@ -7602,7 +7683,7 @@ $output->write($message)
 // --- Contract
 public function text(array|string $message, int $foreground, int $background, int $style): void
 // --- Usage
-$output->text($message, $foreground, $background, $style)
+$output->text($message, $foreground, $background, $style);
 ```
 
 ---
@@ -7621,7 +7702,7 @@ $output->text($message, $foreground, $background, $style)
 // --- Contract
 public function block(array|string $message, int $foreground, int $background, int $style): void
 // --- Usage
-$output->block($message, $foreground, $background, $style)
+$output->block($message, $foreground, $background, $style);
 ```
 
 ---
@@ -7640,7 +7721,7 @@ $output->block($message, $foreground, $background, $style)
 // --- Contract
 public function success(array|string $message): void
 // --- Usage
-$output->success($message)
+$output->success($message);
 ```
 
 ---
@@ -7659,7 +7740,7 @@ $output->success($message)
 // --- Contract
 public function info(array|string $message): void
 // --- Usage
-$output->info($message)
+$output->info($message);
 ```
 
 ---
@@ -7678,7 +7759,7 @@ $output->info($message)
 // --- Contract
 public function warning(array|string $message): void
 // --- Usage
-$output->warning($message)
+$output->warning($message);
 ```
 
 ---
@@ -7697,7 +7778,7 @@ $output->warning($message)
 // --- Contract
 public function error(array|string $message): void
 // --- Usage
-$output->error($message)
+$output->error($message);
 ```
 
 ---
@@ -7712,7 +7793,7 @@ $output->error($message)
 // --- Contract
 public function setSilentMode(bool $isSilentMode): void
 // --- Usage
-$output->setSilentMode($isSilentMode)
+$output->setSilentMode($isSilentMode);
 ```
 
 ---
@@ -7727,7 +7808,7 @@ $output->setSilentMode($isSilentMode)
 // --- Contract
 public function supportsColors(): bool
 // --- Usage
-$output->supportsColors()
+$output->supportsColors();
 ```
 
 ---
@@ -7746,7 +7827,7 @@ $output->supportsColors()
 // --- Contract
 public function getBuffer(): array
 // --- Usage
-$output->getBuffer()
+$output->getBuffer();
 ```
 
 ---
@@ -7761,7 +7842,7 @@ $output->getBuffer()
 // --- Contract
 public function getDisplay(): string
 // --- Usage
-$output->getDisplay()
+$output->getDisplay();
 ```
 
 ---
@@ -7780,7 +7861,7 @@ $output->getDisplay()
 // --- Contract
 public function formatText(array|string $message, int $foreground, int $background, int $style): string
 // --- Usage
-$output->formatText($message, $foreground, $background, $style)
+$output->formatText($message, $foreground, $background, $style);
 ```
 
 ### 🟢 Input
@@ -7806,7 +7887,7 @@ $output->formatText($message, $foreground, $background, $style)
 #### How to use the Class:
 
 ```php
-$input = new Input(array $args)
+$input = new Input(array $args);
 ```
 
 ---
@@ -7825,7 +7906,7 @@ $input = new Input(array $args)
 // --- Contract
 public function getArguments(): array
 // --- Usage
-$input->getArguments()
+$input->getArguments();
 ```
 
 ---
@@ -7840,7 +7921,7 @@ $input->getArguments()
 // --- Contract
 public function getArgument(int $position): string
 // --- Usage
-$input->getArgument($position)
+$input->getArgument($position);
 ```
 
 ---
@@ -7859,7 +7940,7 @@ $input->getArgument($position)
 // --- Contract
 public function getOptions(): array
 // --- Usage
-$input->getOptions()
+$input->getOptions();
 ```
 
 ---
@@ -7874,7 +7955,7 @@ $input->getOptions()
 // --- Contract
 public function hasOption(string $name): bool
 // --- Usage
-$input->hasOption($name)
+$input->hasOption($name);
 ```
 
 ---
@@ -7889,7 +7970,7 @@ $input->hasOption($name)
 // --- Contract
 public function getOption(string $name): string
 // --- Usage
-$input->getOption($name)
+$input->getOption($name);
 ```
 
 ---
@@ -7904,7 +7985,7 @@ $input->getOption($name)
 // --- Contract
 public function getUserInput(): string
 // --- Usage
-$input->getUserInput()
+$input->getUserInput();
 ```
 
 ---
@@ -7923,7 +8004,7 @@ $input->getUserInput()
 // --- Contract
 public function radio(array $options, string $title): string
 // --- Usage
-$input->radio($options, $title)
+$input->radio($options, $title);
 ```
 
 ## 📦 Sakoo\Framework\Core\Console\Exceptions
@@ -7967,7 +8048,7 @@ $input->radio($options, $title)
 #### How to use the Class:
 
 ```php
-$radioButton = new RadioButton(string $prompt, array $options)
+$radioButton = new RadioButton(string $prompt, array $options);
 ```
 
 ---
@@ -7982,7 +8063,7 @@ $radioButton = new RadioButton(string $prompt, array $options)
 // --- Contract
 public function show(): string
 // --- Usage
-$radioButton->show()
+$radioButton->show();
 ```
 
 ## 📦 Sakoo\Framework\Core\Console\Commands
@@ -8009,7 +8090,7 @@ $radioButton->show()
 // --- Contract
 public static function getName(): string
 // --- Usage
-HelpCommand::getName()
+HelpCommand::getName();
 ```
 
 ---
@@ -8024,7 +8105,7 @@ HelpCommand::getName()
 // --- Contract
 public static function getDescription(): string
 // --- Usage
-HelpCommand::getDescription()
+HelpCommand::getDescription();
 ```
 
 ---
@@ -8039,7 +8120,7 @@ HelpCommand::getDescription()
 // --- Contract
 public function run(Input $input, Output $output): int
 // --- Usage
-$helpCommand->run($input, $output)
+$helpCommand->run($input, $output);
 ```
 
 ---
@@ -8054,7 +8135,7 @@ $helpCommand->run($input, $output)
 // --- Contract
 public function help(Input $input, Output $output): int
 // --- Usage
-$helpCommand->help($input, $output)
+$helpCommand->help($input, $output);
 ```
 
 ---
@@ -8069,7 +8150,7 @@ $helpCommand->help($input, $output)
 // --- Contract
 public function setRunningApplication(Application $app): void
 // --- Usage
-$helpCommand->setRunningApplication($app)
+$helpCommand->setRunningApplication($app);
 ```
 
 ---
@@ -8084,7 +8165,7 @@ $helpCommand->setRunningApplication($app)
 // --- Contract
 public function getApplication(): Application
 // --- Usage
-$helpCommand->getApplication()
+$helpCommand->getApplication();
 ```
 
 ### 🟢 VersionCommand
@@ -8109,7 +8190,7 @@ $helpCommand->getApplication()
 // --- Contract
 public static function getName(): string
 // --- Usage
-VersionCommand::getName()
+VersionCommand::getName();
 ```
 
 ---
@@ -8124,7 +8205,7 @@ VersionCommand::getName()
 // --- Contract
 public static function getDescription(): string
 // --- Usage
-VersionCommand::getDescription()
+VersionCommand::getDescription();
 ```
 
 ---
@@ -8139,7 +8220,7 @@ VersionCommand::getDescription()
 // --- Contract
 public function run(Input $input, Output $output): int
 // --- Usage
-$versionCommand->run($input, $output)
+$versionCommand->run($input, $output);
 ```
 
 ---
@@ -8154,7 +8235,7 @@ $versionCommand->run($input, $output)
 // --- Contract
 public function help(Input $input, Output $output): int
 // --- Usage
-$versionCommand->help($input, $output)
+$versionCommand->help($input, $output);
 ```
 
 ---
@@ -8169,7 +8250,7 @@ $versionCommand->help($input, $output)
 // --- Contract
 public function setRunningApplication(Application $app): void
 // --- Usage
-$versionCommand->setRunningApplication($app)
+$versionCommand->setRunningApplication($app);
 ```
 
 ---
@@ -8184,7 +8265,7 @@ $versionCommand->setRunningApplication($app)
 // --- Contract
 public function getApplication(): Application
 // --- Usage
-$versionCommand->getApplication()
+$versionCommand->getApplication();
 ```
 
 ### 🟢 NotFoundCommand
@@ -8209,7 +8290,7 @@ $versionCommand->getApplication()
 // --- Contract
 public static function getName(): string
 // --- Usage
-NotFoundCommand::getName()
+NotFoundCommand::getName();
 ```
 
 ---
@@ -8224,7 +8305,7 @@ NotFoundCommand::getName()
 // --- Contract
 public static function getDescription(): string
 // --- Usage
-NotFoundCommand::getDescription()
+NotFoundCommand::getDescription();
 ```
 
 ---
@@ -8239,7 +8320,7 @@ NotFoundCommand::getDescription()
 // --- Contract
 public function run(Input $input, Output $output): int
 // --- Usage
-$notFoundCommand->run($input, $output)
+$notFoundCommand->run($input, $output);
 ```
 
 ---
@@ -8254,7 +8335,7 @@ $notFoundCommand->run($input, $output)
 // --- Contract
 public function help(Input $input, Output $output): int
 // --- Usage
-$notFoundCommand->help($input, $output)
+$notFoundCommand->help($input, $output);
 ```
 
 ---
@@ -8269,7 +8350,7 @@ $notFoundCommand->help($input, $output)
 // --- Contract
 public function setRunningApplication(Application $app): void
 // --- Usage
-$notFoundCommand->setRunningApplication($app)
+$notFoundCommand->setRunningApplication($app);
 ```
 
 ---
@@ -8284,6 +8365,6 @@ $notFoundCommand->setRunningApplication($app)
 // --- Contract
 public function getApplication(): Application
 // --- Usage
-$notFoundCommand->getApplication()
+$notFoundCommand->getApplication();
 ```
 

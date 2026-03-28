@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sakoo\Framework\Core\Doc\Object;
+namespace Sakoo\Framework\Core\Doc\Object\Parameter;
 
 /**
  * Resolves a ReflectionType to a documentation-friendly short name string.

@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Sakoo\Framework\Core\Doc\Object;
+namespace Sakoo\Framework\Core\Doc\Object\Method;
 
 use Sakoo\Framework\Core\Doc\Attributes\DontDocument;
-use Sakoo\Framework\Core\Regex\Regex;
+use Sakoo\Framework\Core\Doc\Object\Class\ClassObject;
+use Sakoo\Framework\Core\Doc\Object\Parameter\ParameterObject;
+use Sakoo\Framework\Core\Doc\Object\Parameter\TypeObject;
+use Sakoo\Framework\Core\Doc\Object\PhpDoc\PhpDocObject;
 
 /**
  * Reflection-backed value object representing a real PHP method for documentation.
@@ -124,44 +127,14 @@ readonly class MethodObject implements MethodInterface
 		return (new TypeObject($type))->getName() ?? '';
 	}
 
-	/**
-	 * Parses and returns the PHPDoc lines for this method.
-	 *
-	 * Looks first at the method's own doc comment, then falls back to any matching
-	 * method on an implemented interface. Returns an empty array when no doc is found.
-	 *
-	 * @return string[]
-	 */
-	public function getPhpDocs(): array
+	public function getRawDoc(): string
 	{
-		$phpDoc = $this->method->getDocComment();
+		return $this->method->getDocComment() ?: '';
+	}
 
-		if (!$phpDoc) {
-			foreach ($this->classObject->getInterfaces() as $interface) {
-				if ($interface->hasMethod($this->getName())) {
-					$phpDoc = $interface->getMethod($this->getName())->getDocComment();
-				}
-			}
-
-			if (!$phpDoc) {
-				return [];
-			}
-		}
-
-		$match = (new Regex())
-			->startsWith('/**')
-			->add('([\s\S]+)')
-			->endsWith('*/')
-			->match($phpDoc);
-
-		$lines = explode("\n", $match ? $match[1] : '');
-		$result = [];
-
-		foreach ($lines as $line) {
-			$result[] = trim($line, "/* \t\r\n");
-		}
-
-		return $result;
+	public function getPhpDocObject(): PhpDocObject
+	{
+		return new PhpDocObject($this);
 	}
 
 	/**

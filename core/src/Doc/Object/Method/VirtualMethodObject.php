@@ -2,18 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Sakoo\Framework\Core\Doc\Object;
+namespace Sakoo\Framework\Core\Doc\Object\Method;
+
+use Sakoo\Framework\Core\Doc\Object\Class\ClassInterface;
+use Sakoo\Framework\Core\Doc\Object\PhpDoc\PhpDocObject;
+use Sakoo\Framework\Core\Doc\Object\tag;
 
 /**
- * Parsed value object representing a virtual method declared via a @method PHPDoc tag.
+ * Parsed value object representing a virtual method declared via a [at-sign]method PHPDoc tag.
  *
- * PHP classes can document methods that do not exist in source using @method tags,
+ * PHP classes can document methods that do not exist in source using [at-sign]method tags,
  * typically on classes that use __call() magic. This class parses such a tag line
  * into structured data (name, return type, parameters, static flag, description) so
  * the documentation generator can render virtual methods alongside real ones.
  *
  * Parse rules (applied by parse() during construction):
- * - Leading '@method' is stripped.
+ * - Leading '[at-sign]method' is stripped.
  * - An optional 'static' keyword sets isStatic = true.
  * - An optional return-type token precedes the method name.
  * - Parameters inside parentheses are extracted and further parsed by parseParams().
@@ -34,17 +38,17 @@ class VirtualMethodObject implements MethodInterface
 	/**
 	 * @throws InvalidVirtualMethodDefinitionException when $line cannot be parsed
 	 */
-	public function __construct(private ClassObject $classObject, private string $line)
+	public function __construct(private ClassInterface $class, private string $line)
 	{
 		$this->parse();
 	}
 
 	/**
-	 * Returns the ClassObject that declared this @method tag.
+	 * Returns the ClassInterface that declared this [at-sign]method tag.
 	 */
-	public function getClass(): ClassObject
+	public function getClass(): ClassInterface
 	{
-		return $this->classObject;
+		return $this->class;
 	}
 
 	/**
@@ -80,7 +84,7 @@ class VirtualMethodObject implements MethodInterface
 	}
 
 	/**
-	 * Returns true when the @method tag included the 'static' keyword.
+	 * Returns true when the [at-sign]method tag included the 'static' keyword.
 	 */
 	public function isStatic(): bool
 	{
@@ -111,19 +115,14 @@ class VirtualMethodObject implements MethodInterface
 		return $this->returnType;
 	}
 
-	/**
-	 * Returns the structured doc metadata for this virtual method as an associative
-	 * array with 'description', 'params', and 'return' keys.
-	 *
-	 * @return array<string, mixed>
-	 */
-	public function getPhpDocs(): array
+	public function getRawDoc(): string
 	{
-		return [
-			'description' => $this->description,
-			'params' => $this->params,
-			'return' => $this->returnType,
-		];
+		return $this->description ?: '';
+	}
+
+	public function getPhpDocObject(): PhpDocObject
+	{
+		return new PhpDocObject($this);
 	}
 
 	/**
@@ -194,7 +193,7 @@ class VirtualMethodObject implements MethodInterface
 	}
 
 	/**
-	 * Parses the raw @method tag line into the instance's fields.
+	 * Parses the raw [at-sign]method tag line into the instance's fields.
 	 *
 	 * @throws InvalidVirtualMethodDefinitionException when parentheses are missing or unbalanced
 	 */

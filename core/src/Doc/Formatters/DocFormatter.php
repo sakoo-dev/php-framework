@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Sakoo\Framework\Core\Doc\Formatters;
 
-use Sakoo\Framework\Core\Doc\Object\ClassObject;
-use Sakoo\Framework\Core\Doc\Object\MethodInterface;
-use Sakoo\Framework\Core\Doc\Object\MethodObject;
+use Sakoo\Framework\Core\Doc\Object\Class\ClassObject;
+use Sakoo\Framework\Core\Doc\Object\Method\MethodInterface;
+use Sakoo\Framework\Core\Doc\Object\Method\MethodObject;
 use Sakoo\Framework\Core\Doc\Object\NamespaceObject;
+use Sakoo\Framework\Core\Doc\Object\PhpDoc\PhpDocObject;
 
 /**
  * Full API reference formatter for the documentation generator.
@@ -75,24 +76,24 @@ class DocFormatter extends Formatter
 
 		if ($method->isStaticInstantiator()) {
 			$this->markup->h4('How to use the Class:');
-			$this->markup->code("$instancePointer = " . $class->getName() . '::' . $method->getName() . "($parameters)", 'php');
+			$this->markup->code("$instancePointer = " . $class->getName() . '::' . $method->getName() . "($parameters);", 'php');
 
 			return;
 		}
 
 		if ($method->isConstructor()) {
 			$this->markup->h4('How to use the Class:');
-			$this->markup->code("$instancePointer = new " . $class->getName() . "($parameters)", 'php');
+			$this->markup->code("$instancePointer = new " . $class->getName() . "($parameters);", 'php');
 
 			return;
 		}
 
 		$this->markup->h3('- `' . $method->getName() . '` Function');
-		$this->printPHPDocs($method);
+		$this->printPHPDocs($method->getPhpDocObject());
 		$code = '// --- Contract' . PHP_EOL;
 		$code .= "{$modifiers}function " . $method->getName() . "($parameters)$returnTypes" . PHP_EOL;
 		$code .= '// --- Usage' . PHP_EOL;
-		$code .= ($method->isStatic() ? $class->getName() . '::' : "$instancePointer->") . $method->getName() . "($parametersVars)";
+		$code .= ($method->isStatic() ? $class->getName() . '::' : "$instancePointer->") . $method->getName() . "($parametersVars);";
 
 		$this->markup->code($code, 'php');
 	}
@@ -126,7 +127,7 @@ class DocFormatter extends Formatter
 		foreach ($namespace->getClasses() as $class) {
 			$icon = $class->isException() ? '🟥' : '🟢';
 			$this->markup->h3($icon . ' ' . $class->getName());
-			$this->printPHPDocs($class);
+			$this->printPHPDocs($class->getPhpDocObject());
 			$this->parseClass($class);
 		}
 	}
@@ -136,12 +137,12 @@ class DocFormatter extends Formatter
 	 * a small-text paragraph. @throws lines are rendered as callout blocks.
 	 * Remaining text is concatenated into a paragraph flushed at the end.
 	 */
-	private function printPHPDocs(ClassObject|MethodInterface $component): void
+	private function printPHPDocs(PhpDocObject $phpDoc): void
 	{
 		$textBuffer = '';
 
-		foreach ($component->getPhpDocs() as $line) {
-			if (!$line) {
+		foreach ($phpDoc->getLines() as $line) {
+			if ($line->isEmpty()) {
 				if ($textBuffer) {
 					$this->markup->tiny(htmlspecialchars($textBuffer));
 					$textBuffer = '';
@@ -151,10 +152,10 @@ class DocFormatter extends Formatter
 				continue;
 			}
 
-			if (str_starts_with($line, '@throws')) {
-				$this->markup->callout(htmlspecialchars($line));
+			if ($line->isThrows()) {
+				$this->markup->callout(htmlspecialchars((string) $line));
 			} else {
-				$textBuffer .= $line . ' ';
+				$textBuffer .= ((string) $line) . ' ';
 			}
 		}
 

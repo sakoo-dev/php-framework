@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sakoo\Framework\Core\Doc\Object;
+namespace Sakoo\Framework\Core\Doc\Object\Parameter;
 
 /**
  * Reflection-backed value object representing a single method parameter.

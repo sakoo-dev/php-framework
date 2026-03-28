@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sakoo\Framework\Core\Doc;
 
 use Sakoo\Framework\Core\Doc\Formatters\Formatter;
-use Sakoo\Framework\Core\Doc\Object\ClassObject;
+use Sakoo\Framework\Core\Doc\Object\Class\ClassObject;
 use Sakoo\Framework\Core\Doc\Object\NamespaceObject;
 use Sakoo\Framework\Core\FileSystem\Storage;
 use Sakoo\Framework\Core\Finder\SplFileObject;

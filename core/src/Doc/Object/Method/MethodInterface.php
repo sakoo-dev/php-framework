@@ -2,13 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Sakoo\Framework\Core\Doc\Object;
+namespace Sakoo\Framework\Core\Doc\Object\Method;
+
+use Sakoo\Framework\Core\Doc\Object\Class\ClassInterface;
+use Sakoo\Framework\Core\Doc\Object\PHPDoc;
+use Sakoo\Framework\Core\Doc\Object\PhpDoc\PhpDocObject;
 
 /**
  * Contract for method value objects used by the documentation generator.
  *
  * Implemented by both MethodObject (backed by ReflectionMethod) and
- * VirtualMethodObject (parsed from @method PHPDoc tags). Formatters depend only
+ * VirtualMethodObject (parsed from [at-sign]method PHPDoc tags). Formatters depend only
  * on this interface so they can render both real and virtual methods with the same
  * traversal logic.
  *
@@ -24,9 +28,9 @@ namespace Sakoo\Framework\Core\Doc\Object;
 interface MethodInterface
 {
 	/**
-	 * Returns the ClassObject that owns this method.
+	 * Returns the ClassInterface that owns this method.
 	 */
-	public function getClass(): ClassObject;
+	public function getClass(): ClassInterface;
 
 	/**
 	 * Returns the method name as a plain string.
@@ -69,14 +73,9 @@ interface MethodInterface
 	 */
 	public function getMethodReturnTypes(): ?string;
 
-	/**
-	 * Returns the parsed PHPDoc lines for this method. For MethodObject this is an
-	 * array of trimmed strings; for VirtualMethodObject it is an associative array
-	 * with 'description', 'params', and 'return' keys.
-	 *
-	 * @return string[]
-	 */
-	public function getPhpDocs(): array;
+	public function getRawDoc(): string;
+
+	public function getPhpDocObject(): PhpDocObject;
 
 	/**
 	 * Returns the modifier names (e.g. ['public', 'static']) for this method.

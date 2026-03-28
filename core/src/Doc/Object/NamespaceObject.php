@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sakoo\Framework\Core\Doc\Object;
 
+use Sakoo\Framework\Core\Doc\Object\Class\ClassObject;
+
 /**
  * Immutable value object grouping a namespace string with its ClassObject members.
  *
