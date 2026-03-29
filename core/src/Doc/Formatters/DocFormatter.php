@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sakoo\Framework\Core\Doc\Formatters;
 
-use Sakoo\Framework\Core\Doc\Object\Class\ClassObject;
+use Sakoo\Framework\Core\Doc\Object\Class\ClassInterface;
 use Sakoo\Framework\Core\Doc\Object\Method\MethodInterface;
 use Sakoo\Framework\Core\Doc\Object\Method\MethodObject;
 use Sakoo\Framework\Core\Doc\Object\NamespaceObject;
@@ -89,7 +89,7 @@ class DocFormatter extends Formatter
 		}
 
 		$this->markup->h3('- `' . $method->getName() . '` Function');
-		$this->printPHPDocs($method->getPhpDocObject());
+		$this->parsePHPDocs($method->getPhpDocObject());
 		$code = '// --- Contract' . PHP_EOL;
 		$code .= "{$modifiers}function " . $method->getName() . "($parameters)$returnTypes" . PHP_EOL;
 		$code .= '// --- Usage' . PHP_EOL;
@@ -102,7 +102,7 @@ class DocFormatter extends Formatter
 	 * Iterates all virtual and real methods of $class, skipping undocumentable ones,
 	 * and renders each via parseMethod() followed by its PHPDoc text.
 	 */
-	private function parseClass(ClassObject $class): void
+	private function parseClass(ClassInterface $class): void
 	{
 		/** @var MethodInterface[] $methods */
 		$methods = array_merge($class->getVirtualMethods(), $class->getMethods());
@@ -113,7 +113,6 @@ class DocFormatter extends Formatter
 				continue;
 			}
 
-			$this->markup->hr();
 			$this->parseMethod($method);
 		}
 	}
@@ -125,9 +124,13 @@ class DocFormatter extends Formatter
 	private function parseNamespace(NamespaceObject $namespace): void
 	{
 		foreach ($namespace->getClasses() as $class) {
+			if ($class->shouldNotDocument()) {
+				continue;
+			}
+
 			$icon = $class->isException() ? '🟥' : '🟢';
 			$this->markup->h3($icon . ' ' . $class->getName());
-			$this->printPHPDocs($class->getPhpDocObject());
+			$this->parsePHPDocs($class->getPhpDocObject());
 			$this->parseClass($class);
 		}
 	}
@@ -137,7 +140,7 @@ class DocFormatter extends Formatter
 	 * a small-text paragraph. @throws lines are rendered as callout blocks.
 	 * Remaining text is concatenated into a paragraph flushed at the end.
 	 */
-	private function printPHPDocs(PhpDocObject $phpDoc): void
+	private function parsePHPDocs(PhpDocObject $phpDoc): void
 	{
 		$textBuffer = '';
 

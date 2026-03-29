@@ -9,17 +9,13 @@ use NeuronAI\Chat\History\ChatHistoryInterface;
 use NeuronAI\Chat\History\FileChatHistory;
 use NeuronAI\MCP\McpConnector;
 use NeuronAI\Providers\AIProviderInterface;
-use NeuronAI\Providers\Ollama\Ollama;
 use Sakoo\Framework\Core\Path\Path;
 
 abstract class BaseAgent extends Agent
 {
 	protected function provider(): AIProviderInterface
 	{
-		return new Ollama(
-			url: 'host.docker.internal:11434/api',
-			model: 'qwen3-vl:4b',
-		);
+		return resolve(AIProviderInterface::class);
 	}
 
 	protected function chatHistory(): ChatHistoryInterface
@@ -28,7 +24,7 @@ abstract class BaseAgent extends Agent
 
 		return new FileChatHistory(
 			directory: $path,
-			key: 'THREAD_ID',
+			key: date('YmdHis'),
 			contextWindow: 50000
 		);
 	}

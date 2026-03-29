@@ -7,9 +7,7 @@ namespace App\Assist\AI\Agent;
 use NeuronAI\Agent\SystemPrompt;
 use NeuronAI\MCP\McpConnector;
 use NeuronAI\Providers\AIProviderInterface;
-use NeuronAI\Providers\Ollama\Ollama;
 use NeuronAI\RAG\Embeddings\EmbeddingsProviderInterface;
-use NeuronAI\RAG\Embeddings\OllamaEmbeddingsProvider;
 use NeuronAI\RAG\RAG;
 use NeuronAI\RAG\VectorStore\FileVectorStore;
 use NeuronAI\RAG\VectorStore\VectorStoreInterface;
@@ -19,18 +17,12 @@ class ChatBotAgent extends RAG
 {
 	protected function provider(): AIProviderInterface
 	{
-		return new Ollama(
-			url: 'host.docker.internal:11434/api',
-			model: 'qwen3-vl:4b',
-		);
+		return resolve(AIProviderInterface::class);
 	}
 
 	protected function embeddings(): EmbeddingsProviderInterface
 	{
-		return new OllamaEmbeddingsProvider(
-			url: 'host.docker.internal:11434/api',
-			model: 'qwen3-embedding:8b',
-		);
+		return resolve(EmbeddingsProviderInterface::class);
 	}
 
 	protected function vectorStore(): VectorStoreInterface

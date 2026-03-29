@@ -20,8 +20,6 @@
 
 
 
----
-
 ### - `log` Function
 
 <sub><sup>Formats the log entry and appends it to today&#039;s rotating log file. </sup></sub>
@@ -63,8 +61,6 @@ $fileLogger->log($level, $message, $context);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
@@ -91,15 +87,11 @@ $logFormatter = new LogFormatter(string $level, Stringable|string $message, stri
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $cliFormatter = new CliFormatter(Output $output);
 ```
-
----
 
 ### - `format` Function
 
@@ -113,8 +105,6 @@ public function format(mixed $value): void
 // --- Usage
 $cliFormatter->format($value);
 ```
-
----
 
 ### - `formatType` Function
 
@@ -139,15 +129,11 @@ $cliFormatter->formatType($value, $depth);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $cliDumper = new CliDumper(Formatter $formatter);
 ```
-
----
 
 ### - `dump` Function
 
@@ -182,8 +168,6 @@ $cliDumper->dump($value);
 
 
 
----
-
 ### - `dieDump` Function
 
 <sub><sup>Renders each value in $vars through the active Dumper and then terminates the process. Equivalent to calling dump() followed by exit. </sup></sub>
@@ -196,8 +180,6 @@ public static function dieDump(mixed $vars): never
 // --- Usage
 VarDump::dieDump($vars);
 ```
-
----
 
 ### - `dump` Function
 
@@ -224,15 +206,11 @@ VarDump::dump($vars);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $httpDumper = new HttpDumper(Formatter $formatter);
 ```
-
----
 
 ### - `dump` Function
 
@@ -257,15 +235,11 @@ $httpDumper->dump($value);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $httpFormatter = new HttpFormatter();
 ```
-
----
 
 ### - `format` Function
 
@@ -300,15 +274,11 @@ $httpFormatter->format($value);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $watcher = new Watcher(WatcherDriver $driver);
 ```
-
----
 
 ### - `watch` Function
 
@@ -327,8 +297,6 @@ public function watch(array $files, FileSystemAction $callback): self
 $watcher->watch($files, $callback);
 ```
 
----
-
 ### - `run` Function
 
 <sub><sup>Enters an infinite event loop, repeatedly calling check() to wait for and dispatch filesystem events. This method never returns under normal operation. </sup></sub>
@@ -341,8 +309,6 @@ public function run(): void
 // --- Usage
 $watcher->run();
 ```
-
----
 
 ### - `check` Function
 
@@ -366,8 +332,6 @@ $watcher->check();
 <sub><sup>- MODIFY — the file&#039;s content was written or truncated. - MOVE   — the file was renamed or moved to a different path. - DELETE — the file was unlinked from the filesystem. </sup></sub>
 
 
-
----
 
 ### - `cases` Function
 
@@ -394,15 +358,11 @@ EventTypes::cases();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $event = new Event(File $file, array $event);
 ```
-
----
 
 ### - `getFile` Function
 
@@ -417,8 +377,6 @@ public function getFile(): File
 $event->getFile();
 ```
 
----
-
 ### - `getHandlerId` Function
 
 <sub><sup>Returns the inotify watch descriptor integer identifying the registered watch. Passed to WatcherDriver::blind() when a DELETE event is processed. </sup></sub>
@@ -431,8 +389,6 @@ public function getHandlerId(): int
 // --- Usage
 $event->getHandlerId();
 ```
-
----
 
 ### - `getType` Function
 
@@ -451,8 +407,6 @@ public function getType(): EventTypes
 $event->getType();
 ```
 
----
-
 ### - `getGroupId` Function
 
 <sub><sup>Returns the inotify rename cookie that correlates paired MOVED_FROM MOVED_TO events for atomic renames. Zero for all other event types. </sup></sub>
@@ -465,8 +419,6 @@ public function getGroupId(): int
 // --- Usage
 $event->getGroupId();
 ```
-
----
 
 ### - `getName` Function
 
@@ -495,15 +447,11 @@ $event->getName();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $file = new File(int $id, string $path, FileSystemAction $callback, Locker $locker);
 ```
-
----
 
 ### - `getId` Function
 
@@ -518,8 +466,6 @@ public function getId(): int
 $file->getId();
 ```
 
----
-
 ### - `getCallback` Function
 
 <sub><sup>Returns the FileSystemAction callback to invoke when a filesystem event is received for this file. </sup></sub>
@@ -533,8 +479,6 @@ public function getCallback(): FileSystemAction
 $file->getCallback();
 ```
 
----
-
 ### - `getPath` Function
 
 <sub><sup>Returns the absolute filesystem path this instance was registered to watch. </sup></sub>
@@ -547,8 +491,6 @@ public function getPath(): string
 // --- Usage
 $file->getPath();
 ```
-
----
 
 ### - `getLocker` Function
 
@@ -581,15 +523,11 @@ $file->getLocker();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $inotify = new Inotify();
 ```
-
----
 
 ### - `watch` Function
 
@@ -603,8 +541,6 @@ public function watch(string $file, FileSystemAction $callback): void
 // --- Usage
 $inotify->watch($file, $callback);
 ```
-
----
 
 ### - `wait` Function
 
@@ -622,8 +558,6 @@ public function wait(): IterableInterface
 // --- Usage
 $inotify->wait();
 ```
-
----
 
 ### - `blind` Function
 
@@ -654,8 +588,6 @@ $inotify->blind($id);
 
 
 
----
-
 ### - `getRootDir` Function
 
 <sub><sup>Returns the project root directory, which is the current working directory of the running PHP process. Returns false when getcwd() fails. </sup></sub>
@@ -668,8 +600,6 @@ public static function getRootDir(): string|false
 // --- Usage
 Path::getRootDir();
 ```
-
----
 
 ### - `getCoreDir` Function
 
@@ -684,8 +614,6 @@ public static function getCoreDir(): string|false
 Path::getCoreDir();
 ```
 
----
-
 ### - `getVendorDir` Function
 
 <sub><sup>Returns the absolute path to the project&#039;s vendor directory. </sup></sub>
@@ -699,8 +627,6 @@ public static function getVendorDir(): string
 Path::getVendorDir();
 ```
 
----
-
 ### - `getStorageDir` Function
 
 <sub><sup>Returns the absolute path to the project&#039;s storage directory. </sup></sub>
@@ -713,8 +639,6 @@ public static function getStorageDir(): string
 // --- Usage
 Path::getStorageDir();
 ```
-
----
 
 ### - `getLogsDir` Function
 
@@ -733,8 +657,6 @@ public static function getLogsDir(): string
 Path::getLogsDir();
 ```
 
----
-
 ### - `getTempTestDir` Function
 
 <sub><sup>Returns the temporary directory used exclusively during test runs. Isolating test artefacts here prevents leftover files from affecting production storage between runs. </sup></sub>
@@ -747,8 +669,6 @@ public static function getTempTestDir(): string
 // --- Usage
 Path::getTempTestDir();
 ```
-
----
 
 ### - `getProjectPHPFiles` Function
 
@@ -767,8 +687,6 @@ public static function getProjectPHPFiles(): array
 Path::getProjectPHPFiles();
 ```
 
----
-
 ### - `getCorePHPFiles` Function
 
 <sub><sup>Returns all PHP files found recursively under the framework core directory, excluding VCS directories, VCS-ignored paths, and dot-files. </sup></sub>
@@ -785,8 +703,6 @@ public static function getCorePHPFiles(): array
 // --- Usage
 Path::getCorePHPFiles();
 ```
-
----
 
 ### - `getPHPFilesOf` Function
 
@@ -805,8 +721,6 @@ public static function getPHPFilesOf(string $path): array
 Path::getPHPFilesOf($path);
 ```
 
----
-
 ### - `namespaceToPath` Function
 
 <sub><sup>Converts a fully-qualified framework namespace string to a relative file path. </sup></sub>
@@ -823,8 +737,6 @@ public static function namespaceToPath(string $namespace): string
 // --- Usage
 Path::namespaceToPath($namespace);
 ```
-
----
 
 ### - `pathToNamespace` Function
 
@@ -867,15 +779,11 @@ Path::pathToNamespace($path);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $local = new Local(string $path);
 ```
-
----
 
 ### - `create` Function
 
@@ -894,8 +802,6 @@ public function create(bool $asDirectory): bool
 $local->create($asDirectory);
 ```
 
----
-
 ### - `mkdir` Function
 
 <sub><sup>Creates the parent directory of the configured path. </sup></sub>
@@ -913,8 +819,6 @@ public function mkdir(bool $recursive): bool
 $local->mkdir($recursive);
 ```
 
----
-
 ### - `exists` Function
 
 <sub><sup>Returns true when a file or directory exists at the configured path. </sup></sub>
@@ -927,8 +831,6 @@ public function exists(): bool
 // --- Usage
 $local->exists();
 ```
-
----
 
 ### - `remove` Function
 
@@ -943,8 +845,6 @@ public function remove(): bool
 $local->remove();
 ```
 
----
-
 ### - `isDir` Function
 
 <sub><sup>Returns true when the configured path points to a directory. </sup></sub>
@@ -958,8 +858,6 @@ public function isDir(): bool
 $local->isDir();
 ```
 
----
-
 ### - `move` Function
 
 <sub><sup>Moves the node to $to, creating intermediate parent directories as needed. </sup></sub>
@@ -972,8 +870,6 @@ public function move(string $to): bool
 // --- Usage
 $local->move($to);
 ```
-
----
 
 ### - `copy` Function
 
@@ -990,8 +886,6 @@ public function copy(string $to): bool
 $local->copy($to);
 ```
 
----
-
 ### - `parentDir` Function
 
 <sub><sup>Returns the absolute path to the parent directory of the configured path. </sup></sub>
@@ -1005,8 +899,6 @@ public function parentDir(): string
 $local->parentDir();
 ```
 
----
-
 ### - `rename` Function
 
 <sub><sup>Renames (moves) the node to $to using PHP&#039;s rename(), which works atomically on most local filesystems when source and destination are on the same device. </sup></sub>
@@ -1019,8 +911,6 @@ public function rename(string $to): bool
 // --- Usage
 $local->rename($to);
 ```
-
----
 
 ### - `files` Function
 
@@ -1041,8 +931,6 @@ public function files(): array
 $local->files();
 ```
 
----
-
 ### - `write` Function
 
 <sub><sup>Overwrites the file with $data using an exclusive lock. Throws when the path is a directory. </sup></sub>
@@ -1058,8 +946,6 @@ public function write(string $data): bool
 $local->write($data);
 ```
 
----
-
 ### - `append` Function
 
 <sub><sup>Appends $data to the file using an exclusive lock. Throws when the path is a directory. </sup></sub>
@@ -1074,8 +960,6 @@ public function append(string $data): bool
 // --- Usage
 $local->append($data);
 ```
-
----
 
 ### - `readLines` Function
 
@@ -1096,8 +980,6 @@ public function readLines(): array|false
 $local->readLines();
 ```
 
----
-
 ### - `setPermission` Function
 
 <sub><sup>Sets the permission bits on the node. String permissions are converted from octal notation to an integer before calling chmod(). </sup></sub>
@@ -1111,8 +993,6 @@ public function setPermission(string|int $permission): bool
 $local->setPermission($permission);
 ```
 
----
-
 ### - `getPermission` Function
 
 <sub><sup>Returns the last four characters of the octal permission string for the node (e.g. &quot;0644&quot;), as reported by fileperms(). </sup></sub>
@@ -1125,8 +1005,6 @@ public function getPermission(): mixed
 // --- Usage
 $local->getPermission();
 ```
-
----
 
 ### - `getPath` Function
 
@@ -1156,8 +1034,6 @@ $local->getPath();
 <sub><sup>The private constructor prevents instantiation — this class is intentionally a pure static factory with no instance state. </sup></sub>
 
 
-
----
 
 ### - `open` Function
 
@@ -1190,8 +1066,6 @@ File::open($storage, $path);
 
 
 
----
-
 ### - `cases` Function
 
 ```php
@@ -1201,15 +1075,11 @@ public static function cases(): array
 Disk::cases();
 ```
 
----
-
 #### How to use the Class:
 
 ```php
 $disk = Disk::from(string|int $value);
 ```
-
----
 
 #### How to use the Class:
 
@@ -1235,8 +1105,6 @@ $disk = Disk::tryFrom(string|int $value);
 
 
 
----
-
 ### - `allNothing` Function
 
 <sub><sup>Returns the octal string &quot;0000&quot; — no permissions for user, group, or others. </sup></sub>
@@ -1249,8 +1117,6 @@ public static function allNothing(): string
 // --- Usage
 Permission::allNothing();
 ```
-
----
 
 ### - `allExecute` Function
 
@@ -1265,8 +1131,6 @@ public static function allExecute(): string
 Permission::allExecute();
 ```
 
----
-
 ### - `allWrite` Function
 
 <sub><sup>Returns the octal string &quot;0222&quot; — write-only for user, group, and others. </sup></sub>
@@ -1279,8 +1143,6 @@ public static function allWrite(): string
 // --- Usage
 Permission::allWrite();
 ```
-
----
 
 ### - `allExecuteWrite` Function
 
@@ -1295,8 +1157,6 @@ public static function allExecuteWrite(): string
 Permission::allExecuteWrite();
 ```
 
----
-
 ### - `allRead` Function
 
 <sub><sup>Returns the octal string &quot;0444&quot; — read-only for user, group, and others. </sup></sub>
@@ -1309,8 +1169,6 @@ public static function allRead(): string
 // --- Usage
 Permission::allRead();
 ```
-
----
 
 ### - `allExecuteRead` Function
 
@@ -1325,8 +1183,6 @@ public static function allExecuteRead(): string
 Permission::allExecuteRead();
 ```
 
----
-
 ### - `allWriteRead` Function
 
 <sub><sup>Returns the octal string &quot;0666&quot; — read and write for user, group, and others. </sup></sub>
@@ -1340,8 +1196,6 @@ public static function allWriteRead(): string
 Permission::allWriteRead();
 ```
 
----
-
 ### - `allExecuteWriteRead` Function
 
 <sub><sup>Returns the octal string &quot;0777&quot; — full permissions for user, group, and others. </sup></sub>
@@ -1354,8 +1208,6 @@ public static function allExecuteWriteRead(): string
 // --- Usage
 Permission::allExecuteWriteRead();
 ```
-
----
 
 ### - `getExecutables` Function
 
@@ -1374,8 +1226,6 @@ public static function getExecutables(): array
 Permission::getExecutables();
 ```
 
----
-
 ### - `getNotExecutables` Function
 
 <sub><sup>Returns the four permission strings that do not include the execute bit. </sup></sub>
@@ -1392,8 +1242,6 @@ public static function getNotExecutables(): array
 // --- Usage
 Permission::getNotExecutables();
 ```
-
----
 
 ### - `getWritables` Function
 
@@ -1412,8 +1260,6 @@ public static function getWritables(): array
 Permission::getWritables();
 ```
 
----
-
 ### - `getNotWritables` Function
 
 <sub><sup>Returns the four permission strings that do not include the write bit. </sup></sub>
@@ -1430,8 +1276,6 @@ public static function getNotWritables(): array
 // --- Usage
 Permission::getNotWritables();
 ```
-
----
 
 ### - `getReadables` Function
 
@@ -1450,8 +1294,6 @@ public static function getReadables(): array
 Permission::getReadables();
 ```
 
----
-
 ### - `getNotReadables` Function
 
 <sub><sup>Returns the four permission strings that do not include the read bit. </sup></sub>
@@ -1469,8 +1311,6 @@ public static function getNotReadables(): array
 Permission::getNotReadables();
 ```
 
----
-
 ### - `make` Function
 
 <sub><sup>Composes $user, $group, and $others permission bits into a four-character octal string prefixed with a leading zero (e.g. &quot;0755&quot;), ready for use with chmod(). </sup></sub>
@@ -1484,8 +1324,6 @@ public static function make(int $user, int $group, int $others): string
 Permission::make($user, $group, $others);
 ```
 
----
-
 ### - `getFileDefault` Function
 
 <sub><sup>Returns the default permission string for newly created files: &quot;0644&quot; (owner read/write, group and others read-only). </sup></sub>
@@ -1498,8 +1336,6 @@ public static function getFileDefault(): string
 // --- Usage
 Permission::getFileDefault();
 ```
-
----
 
 ### - `getDirectoryDefault` Function
 
@@ -1538,8 +1374,6 @@ Permission::getDirectoryDefault();
 
 
 
----
-
 ### - `that` Function
 
 <sub><sup>Returns an AssertionChain bound to $value, enabling fluent chained assertions without repeating the value on every call. </sup></sub>
@@ -1553,8 +1387,6 @@ public static function that(mixed $value): AssertionChain
 Assert::that($value);
 ```
 
----
-
 ### - `lazy` Function
 
 <sub><sup>Returns a LazyAssertion instance that accumulates all assertion failures and reports them together via LazyAssertionException when validate() is called. </sup></sub>
@@ -1567,8 +1399,6 @@ public static function lazy(): LazyAssertion
 // --- Usage
 Assert::lazy();
 ```
-
----
 
 ### - `throwIf` Function
 
@@ -1585,8 +1415,6 @@ protected static function throwIf(bool $condition, string $message): void
 Assert::throwIf($condition, $message);
 ```
 
----
-
 ### - `throwUnless` Function
 
 <sub><sup>Throws InvalidArgumentException when $condition is false. Used internally by all assertion traits as the single throw site for &quot;must be&quot; style assertions. </sup></sub>
@@ -1602,8 +1430,6 @@ protected static function throwUnless(bool $condition, string $message): void
 Assert::throwUnless($condition, $message);
 ```
 
----
-
 ### - `true` Function
 
 <sub><sup>Asserts that $value is strictly identical to true. </sup></sub>
@@ -1616,8 +1442,6 @@ public static function true(mixed $value, string $message): void
 // --- Usage
 Assert::true($value, $message);
 ```
-
----
 
 ### - `false` Function
 
@@ -1632,8 +1456,6 @@ public static function false(mixed $value, string $message): void
 Assert::false($value, $message);
 ```
 
----
-
 ### - `bool` Function
 
 <sub><sup>Asserts that $value is of type bool (true or false). </sup></sub>
@@ -1646,8 +1468,6 @@ public static function bool(mixed $value, string $message): void
 // --- Usage
 Assert::bool($value, $message);
 ```
-
----
 
 ### - `notBool` Function
 
@@ -1662,8 +1482,6 @@ public static function notBool(mixed $value, string $message): void
 Assert::notBool($value, $message);
 ```
 
----
-
 ### - `callable` Function
 
 <sub><sup>Asserts that $value is callable (a closure, invokable object, or valid callback). </sup></sub>
@@ -1676,8 +1494,6 @@ public static function callable(mixed $value, string $message): void
 // --- Usage
 Assert::callable($value, $message);
 ```
-
----
 
 ### - `notCallable` Function
 
@@ -1692,8 +1508,6 @@ public static function notCallable(mixed $value, string $message): void
 Assert::notCallable($value, $message);
 ```
 
----
-
 ### - `dir` Function
 
 <sub><sup>Asserts that $value is an existing directory path. </sup></sub>
@@ -1706,8 +1520,6 @@ public static function dir(string $value, string $message): void
 // --- Usage
 Assert::dir($value, $message);
 ```
-
----
 
 ### - `notDir` Function
 
@@ -1722,8 +1534,6 @@ public static function notDir(string $value, string $message): void
 Assert::notDir($value, $message);
 ```
 
----
-
 ### - `file` Function
 
 <sub><sup>Asserts that $value is an existing regular file. </sup></sub>
@@ -1736,8 +1546,6 @@ public static function file(string $value, string $message): void
 // --- Usage
 Assert::file($value, $message);
 ```
-
----
 
 ### - `notFile` Function
 
@@ -1752,8 +1560,6 @@ public static function notFile(string $value, string $message): void
 Assert::notFile($value, $message);
 ```
 
----
-
 ### - `link` Function
 
 <sub><sup>Asserts that $value is a symbolic link. </sup></sub>
@@ -1766,8 +1572,6 @@ public static function link(string $value, string $message): void
 // --- Usage
 Assert::link($value, $message);
 ```
-
----
 
 ### - `notLink` Function
 
@@ -1782,8 +1586,6 @@ public static function notLink(string $value, string $message): void
 Assert::notLink($value, $message);
 ```
 
----
-
 ### - `uploadedFile` Function
 
 <sub><sup>Asserts that $value was uploaded via HTTP POST (is_uploaded_file). </sup></sub>
@@ -1796,8 +1598,6 @@ public static function uploadedFile(string $value, string $message): void
 // --- Usage
 Assert::uploadedFile($value, $message);
 ```
-
----
 
 ### - `notUploadedFile` Function
 
@@ -1812,8 +1612,6 @@ public static function notUploadedFile(string $value, string $message): void
 Assert::notUploadedFile($value, $message);
 ```
 
----
-
 ### - `executableFile` Function
 
 <sub><sup>Asserts that $value is an executable file path. </sup></sub>
@@ -1826,8 +1624,6 @@ public static function executableFile(string $value, string $message): void
 // --- Usage
 Assert::executableFile($value, $message);
 ```
-
----
 
 ### - `notExecutableFile` Function
 
@@ -1842,8 +1638,6 @@ public static function notExecutableFile(string $value, string $message): void
 Assert::notExecutableFile($value, $message);
 ```
 
----
-
 ### - `writableFile` Function
 
 <sub><sup>Asserts that $value is a writable file or directory path. </sup></sub>
@@ -1856,8 +1650,6 @@ public static function writableFile(string $value, string $message): void
 // --- Usage
 Assert::writableFile($value, $message);
 ```
-
----
 
 ### - `notWritableFile` Function
 
@@ -1872,8 +1664,6 @@ public static function notWritableFile(string $value, string $message): void
 Assert::notWritableFile($value, $message);
 ```
 
----
-
 ### - `readableFile` Function
 
 <sub><sup>Asserts that $value is a readable file or directory path. </sup></sub>
@@ -1886,8 +1676,6 @@ public static function readableFile(string $value, string $message): void
 // --- Usage
 Assert::readableFile($value, $message);
 ```
-
----
 
 ### - `notReadableFile` Function
 
@@ -1902,8 +1690,6 @@ public static function notReadableFile(string $value, string $message): void
 Assert::notReadableFile($value, $message);
 ```
 
----
-
 ### - `exists` Function
 
 <sub><sup>Asserts that $value points to an existing file or directory (file_exists). </sup></sub>
@@ -1916,8 +1702,6 @@ public static function exists(string $value, string $message): void
 // --- Usage
 Assert::exists($value, $message);
 ```
-
----
 
 ### - `notExists` Function
 
@@ -1932,8 +1716,6 @@ public static function notExists(string $value, string $message): void
 Assert::notExists($value, $message);
 ```
 
----
-
 ### - `length` Function
 
 <sub><sup>Asserts that the multibyte character length of $value equals $length. </sup></sub>
@@ -1946,8 +1728,6 @@ public static function length(string $value, int $length, string $message): void
 // --- Usage
 Assert::length($value, $length, $message);
 ```
-
----
 
 ### - `count` Function
 
@@ -1966,8 +1746,6 @@ public static function count(Countable|array $value, int $count, string $message
 Assert::count($value, $count, $message);
 ```
 
----
-
 ### - `equals` Function
 
 <sub><sup>Asserts that $value is loosely equal (==) to $expected. </sup></sub>
@@ -1980,8 +1758,6 @@ public static function equals(mixed $value, mixed $expected, string $message): v
 // --- Usage
 Assert::equals($value, $expected, $message);
 ```
-
----
 
 ### - `notEquals` Function
 
@@ -1996,8 +1772,6 @@ public static function notEquals(mixed $value, mixed $expected, string $message)
 Assert::notEquals($value, $expected, $message);
 ```
 
----
-
 ### - `same` Function
 
 <sub><sup>Asserts that $value is strictly identical (===) to $expected. </sup></sub>
@@ -2010,8 +1784,6 @@ public static function same(mixed $value, mixed $expected, string $message): voi
 // --- Usage
 Assert::same($value, $expected, $message);
 ```
-
----
 
 ### - `notSame` Function
 
@@ -2026,8 +1798,6 @@ public static function notSame(mixed $value, mixed $expected, string $message): 
 Assert::notSame($value, $expected, $message);
 ```
 
----
-
 ### - `empty` Function
 
 <sub><sup>Asserts that $value is empty as evaluated by PHP&#039;s empty() construct. </sup></sub>
@@ -2040,8 +1810,6 @@ public static function empty(mixed $value, string $message): void
 // --- Usage
 Assert::empty($value, $message);
 ```
-
----
 
 ### - `notEmpty` Function
 
@@ -2056,8 +1824,6 @@ public static function notEmpty(mixed $value, string $message): void
 Assert::notEmpty($value, $message);
 ```
 
----
-
 ### - `null` Function
 
 <sub><sup>Asserts that $value is strictly null. </sup></sub>
@@ -2070,8 +1836,6 @@ public static function null(mixed $value, string $message): void
 // --- Usage
 Assert::null($value, $message);
 ```
-
----
 
 ### - `notNull` Function
 
@@ -2086,8 +1850,6 @@ public static function notNull(mixed $value, string $message): void
 Assert::notNull($value, $message);
 ```
 
----
-
 ### - `numeric` Function
 
 <sub><sup>Asserts that $value is numeric (an integer, float, or numeric string). </sup></sub>
@@ -2100,8 +1862,6 @@ public static function numeric(mixed $value, string $message): void
 // --- Usage
 Assert::numeric($value, $message);
 ```
-
----
 
 ### - `notNumeric` Function
 
@@ -2116,8 +1876,6 @@ public static function notNumeric(mixed $value, string $message): void
 Assert::notNumeric($value, $message);
 ```
 
----
-
 ### - `finite` Function
 
 <sub><sup>Asserts that $value is a finite float (not INF, -INF, or NAN). </sup></sub>
@@ -2130,8 +1888,6 @@ public static function finite(float $value, string $message): void
 // --- Usage
 Assert::finite($value, $message);
 ```
-
----
 
 ### - `infinite` Function
 
@@ -2146,8 +1902,6 @@ public static function infinite(float $value, string $message): void
 Assert::infinite($value, $message);
 ```
 
----
-
 ### - `float` Function
 
 <sub><sup>Asserts that $value is of type float. </sup></sub>
@@ -2160,8 +1914,6 @@ public static function float(mixed $value, string $message): void
 // --- Usage
 Assert::float($value, $message);
 ```
-
----
 
 ### - `notFloat` Function
 
@@ -2176,8 +1928,6 @@ public static function notFloat(mixed $value, string $message): void
 Assert::notFloat($value, $message);
 ```
 
----
-
 ### - `int` Function
 
 <sub><sup>Asserts that $value is of type int. </sup></sub>
@@ -2190,8 +1940,6 @@ public static function int(mixed $value, string $message): void
 // --- Usage
 Assert::int($value, $message);
 ```
-
----
 
 ### - `notInt` Function
 
@@ -2206,8 +1954,6 @@ public static function notInt(mixed $value, string $message): void
 Assert::notInt($value, $message);
 ```
 
----
-
 ### - `greater` Function
 
 <sub><sup>Asserts that $value is strictly greater than $expected. </sup></sub>
@@ -2220,8 +1966,6 @@ public static function greater(int $value, int $expected, string $message): void
 // --- Usage
 Assert::greater($value, $expected, $message);
 ```
-
----
 
 ### - `greaterOrEquals` Function
 
@@ -2236,8 +1980,6 @@ public static function greaterOrEquals(int $value, int $expected, string $messag
 Assert::greaterOrEquals($value, $expected, $message);
 ```
 
----
-
 ### - `lower` Function
 
 <sub><sup>Asserts that $value is strictly less than $expected. </sup></sub>
@@ -2250,8 +1992,6 @@ public static function lower(int $value, int $expected, string $message): void
 // --- Usage
 Assert::lower($value, $expected, $message);
 ```
-
----
 
 ### - `lowerOrEquals` Function
 
@@ -2266,8 +2006,6 @@ public static function lowerOrEquals(int $value, int $expected, string $message)
 Assert::lowerOrEquals($value, $expected, $message);
 ```
 
----
-
 ### - `object` Function
 
 <sub><sup>Asserts that $value is an object. </sup></sub>
@@ -2280,8 +2018,6 @@ public static function object(mixed $value, string $message): void
 // --- Usage
 Assert::object($value, $message);
 ```
-
----
 
 ### - `notObject` Function
 
@@ -2296,8 +2032,6 @@ public static function notObject(mixed $value, string $message): void
 Assert::notObject($value, $message);
 ```
 
----
-
 ### - `instanceOf` Function
 
 <sub><sup>Asserts that $value is an instance of or a subclass of $class. Accepts both objects and class-name strings. </sup></sub>
@@ -2310,8 +2044,6 @@ public static function instanceOf(mixed $value, string $class, string $message):
 // --- Usage
 Assert::instanceOf($value, $class, $message);
 ```
-
----
 
 ### - `notInstanceOf` Function
 
@@ -2326,8 +2058,6 @@ public static function notInstanceOf(mixed $value, string $class, string $messag
 Assert::notInstanceOf($value, $class, $message);
 ```
 
----
-
 ### - `resource` Function
 
 <sub><sup>Asserts that $value is a PHP resource (e.g. a file handle or stream). </sup></sub>
@@ -2340,8 +2070,6 @@ public static function resource(mixed $value, string $message): void
 // --- Usage
 Assert::resource($value, $message);
 ```
-
----
 
 ### - `notResource` Function
 
@@ -2356,8 +2084,6 @@ public static function notResource(mixed $value, string $message): void
 Assert::notResource($value, $message);
 ```
 
----
-
 ### - `scalar` Function
 
 <sub><sup>Asserts that $value is a scalar (int, float, string, or bool). </sup></sub>
@@ -2370,8 +2096,6 @@ public static function scalar(mixed $value, string $message): void
 // --- Usage
 Assert::scalar($value, $message);
 ```
-
----
 
 ### - `notScalar` Function
 
@@ -2386,8 +2110,6 @@ public static function notScalar(mixed $value, string $message): void
 Assert::notScalar($value, $message);
 ```
 
----
-
 ### - `string` Function
 
 <sub><sup>Asserts that $value is of type string. </sup></sub>
@@ -2400,8 +2122,6 @@ public static function string(mixed $value, string $message): void
 // --- Usage
 Assert::string($value, $message);
 ```
-
----
 
 ### - `notString` Function
 
@@ -2416,8 +2136,6 @@ public static function notString(mixed $value, string $message): void
 Assert::notString($value, $message);
 ```
 
----
-
 ### - `array` Function
 
 <sub><sup>Asserts that $value is a PHP array. </sup></sub>
@@ -2430,8 +2148,6 @@ public static function array(mixed $value, string $message): void
 // --- Usage
 Assert::array($value, $message);
 ```
-
----
 
 ### - `notArray` Function
 
@@ -2446,8 +2162,6 @@ public static function notArray(mixed $value, string $message): void
 Assert::notArray($value, $message);
 ```
 
----
-
 ### - `countable` Function
 
 <sub><sup>Asserts that $value is countable (an array or an object implementing Countable). </sup></sub>
@@ -2460,8 +2174,6 @@ public static function countable(mixed $value, string $message): void
 // --- Usage
 Assert::countable($value, $message);
 ```
-
----
 
 ### - `notCountable` Function
 
@@ -2476,8 +2188,6 @@ public static function notCountable(mixed $value, string $message): void
 Assert::notCountable($value, $message);
 ```
 
----
-
 ### - `iterable` Function
 
 <sub><sup>Asserts that $value is iterable (an array or an object implementing Traversable). </sup></sub>
@@ -2490,8 +2200,6 @@ public static function iterable(mixed $value, string $message): void
 // --- Usage
 Assert::iterable($value, $message);
 ```
-
----
 
 ### - `notIterable` Function
 
@@ -2517,8 +2225,6 @@ Assert::notIterable($value, $message);
 <sub><sup>Instead of stopping at the first failure, LazyAssertion accumulates every InvalidArgumentException keyed by chain name, then calls LazyAssertionException::init() to bundle them into a single, numbered message. This gives callers a complete picture of all validation errors in one throw. </sup></sub>
 
 
-
----
 
 ### - `init` Function
 
@@ -2567,15 +2273,11 @@ LazyAssertionException::init($exceptions);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $regex = new Regex(string $pattern);
 ```
-
----
 
 ### - `safeAdd` Function
 
@@ -2590,8 +2292,6 @@ public function safeAdd(string $value): static
 $regex->safeAdd($value);
 ```
 
----
-
 ### - `add` Function
 
 <sub><sup>Appends a raw, unescaped fragment directly to the pattern. </sup></sub>
@@ -2604,8 +2304,6 @@ public function add(string $value): static
 // --- Usage
 $regex->add($value);
 ```
-
----
 
 ### - `startOfLine` Function
 
@@ -2620,8 +2318,6 @@ public function startOfLine(): static
 $regex->startOfLine();
 ```
 
----
-
 ### - `endOfLine` Function
 
 <sub><sup>Appends the end-of-line anchor ($) to the pattern. </sup></sub>
@@ -2634,8 +2330,6 @@ public function endOfLine(): static
 // --- Usage
 $regex->endOfLine();
 ```
-
----
 
 ### - `startsWith` Function
 
@@ -2650,8 +2344,6 @@ public function startsWith(callable|string $value): static
 $regex->startsWith($value);
 ```
 
----
-
 ### - `endsWith` Function
 
 <sub><sup>Appends $value followed by an end-of-line anchor, asserting the pattern must match at the end of the subject. </sup></sub>
@@ -2665,8 +2357,6 @@ public function endsWith(callable|string $value): static
 $regex->endsWith($value);
 ```
 
----
-
 ### - `digit` Function
 
 <sub><sup>Appends a \d digit token. When $length is greater than zero, a {n} quantifier is appended to match exactly that many digits. </sup></sub>
@@ -2679,8 +2369,6 @@ public function digit(int $length): static
 // --- Usage
 $regex->digit($length);
 ```
-
----
 
 ### - `oneOf` Function
 
@@ -2699,8 +2387,6 @@ public function oneOf(array $value): static
 $regex->oneOf($value);
 ```
 
----
-
 ### - `wrap` Function
 
 <sub><sup>Wraps $value in a capturing group, or a non-capturing group when $nonCapturing is true. Callable $value receives the current Regex instance. </sup></sub>
@@ -2713,8 +2399,6 @@ public function wrap(callable|string $value, bool $nonCapturing): static
 // --- Usage
 $regex->wrap($value, $nonCapturing);
 ```
-
----
 
 ### - `bracket` Function
 
@@ -2729,8 +2413,6 @@ public function bracket(callable|string $value): static
 $regex->bracket($value);
 ```
 
----
-
 ### - `maybe` Function
 
 <sub><sup>Appends $value (escaped) followed by ? making the preceding token optional. </sup></sub>
@@ -2743,8 +2425,6 @@ public function maybe(string $value): static
 // --- Usage
 $regex->maybe($value);
 ```
-
----
 
 ### - `anything` Function
 
@@ -2759,8 +2439,6 @@ public function anything(): static
 $regex->anything();
 ```
 
----
-
 ### - `something` Function
 
 <sub><sup>Appends .+ matching any character one or more times (greedy). </sup></sub>
@@ -2773,8 +2451,6 @@ public function something(): static
 // --- Usage
 $regex->something();
 ```
-
----
 
 ### - `unixLineBreak` Function
 
@@ -2789,8 +2465,6 @@ public function unixLineBreak(): static
 $regex->unixLineBreak();
 ```
 
----
-
 ### - `windowsLineBreak` Function
 
 <sub><sup>Appends \r\n matching a Windows line break. </sup></sub>
@@ -2803,8 +2477,6 @@ public function windowsLineBreak(): static
 // --- Usage
 $regex->windowsLineBreak();
 ```
-
----
 
 ### - `tab` Function
 
@@ -2819,8 +2491,6 @@ public function tab(): static
 $regex->tab();
 ```
 
----
-
 ### - `space` Function
 
 <sub><sup>Appends \s matching any whitespace character. </sup></sub>
@@ -2833,8 +2503,6 @@ public function space(): static
 // --- Usage
 $regex->space();
 ```
-
----
 
 ### - `word` Function
 
@@ -2849,8 +2517,6 @@ public function word(): static
 $regex->word();
 ```
 
----
-
 ### - `chars` Function
 
 <sub><sup>Appends each of the given raw character fragments to the pattern in order. </sup></sub>
@@ -2863,8 +2529,6 @@ public function chars(string $values): static
 // --- Usage
 $regex->chars($values);
 ```
-
----
 
 ### - `anythingWithout` Function
 
@@ -2879,8 +2543,6 @@ public function anythingWithout(callable|string $value): static
 $regex->anythingWithout($value);
 ```
 
----
-
 ### - `somethingWithout` Function
 
 <sub><sup>Appends a negated character class [^...]+ matching any character NOT in the set defined by $value, one or more times. </sup></sub>
@@ -2893,8 +2555,6 @@ public function somethingWithout(callable|string $value): static
 // --- Usage
 $regex->somethingWithout($value);
 ```
-
----
 
 ### - `anythingWith` Function
 
@@ -2909,8 +2569,6 @@ public function anythingWith(callable|string $value): static
 $regex->anythingWith($value);
 ```
 
----
-
 ### - `somethingWith` Function
 
 <sub><sup>Appends a character class [...]+ matching any character IN the set defined by $value, one or more times. </sup></sub>
@@ -2923,8 +2581,6 @@ public function somethingWith(callable|string $value): static
 // --- Usage
 $regex->somethingWith($value);
 ```
-
----
 
 ### - `escapeChars` Function
 
@@ -2939,8 +2595,6 @@ public function escapeChars(string $value): string
 $regex->escapeChars($value);
 ```
 
----
-
 ### - `lookahead` Function
 
 <sub><sup>Appends a positive lookahead (?=...) asserting that $value matches immediately ahead of the current position without consuming characters. </sup></sub>
@@ -2953,8 +2607,6 @@ public function lookahead(callable|string $value): static
 // --- Usage
 $regex->lookahead($value);
 ```
-
----
 
 ### - `lookbehind` Function
 
@@ -2969,8 +2621,6 @@ public function lookbehind(callable|string $value): static
 $regex->lookbehind($value);
 ```
 
----
-
 ### - `negativeLookahead` Function
 
 <sub><sup>Appends a negative lookahead (?!...) asserting that $value does NOT match immediately ahead of the current position. </sup></sub>
@@ -2984,8 +2634,6 @@ public function negativeLookahead(callable|string $value): static
 $regex->negativeLookahead($value);
 ```
 
----
-
 ### - `negativeLookbehind` Function
 
 <sub><sup>Appends a negative lookbehind (?&lt;!...) asserting that $value does NOT match immediately behind the current position. </sup></sub>
@@ -2998,8 +2646,6 @@ public function negativeLookbehind(callable|string $value): static
 // --- Usage
 $regex->negativeLookbehind($value);
 ```
-
----
 
 ### - `match` Function
 
@@ -3018,8 +2664,6 @@ public function match(string $value): array
 $regex->match($value);
 ```
 
----
-
 ### - `matchAll` Function
 
 <sub><sup>Executes preg_match_all against $value and returns all match groups. </sup></sub>
@@ -3037,8 +2681,6 @@ public function matchAll(string $value): array
 $regex->matchAll($value);
 ```
 
----
-
 ### - `test` Function
 
 <sub><sup>Returns true when the pattern matches anywhere in $value, false otherwise. </sup></sub>
@@ -3051,8 +2693,6 @@ public function test(string $value): bool
 // --- Usage
 $regex->test($value);
 ```
-
----
 
 ### - `replace` Function
 
@@ -3071,8 +2711,6 @@ public function replace(Stringable|string $string, string $replace): array|strin
 $regex->replace($string, $replace);
 ```
 
----
-
 ### - `split` Function
 
 <sub><sup>Splits $subject on every occurrence of the pattern using preg_split. Returns false on failure. </sup></sub>
@@ -3089,8 +2727,6 @@ public function split(Stringable|string $subject): array|false
 // --- Usage
 $regex->split($subject);
 ```
-
----
 
 ### - `get` Function
 
@@ -3115,8 +2751,6 @@ $regex->get();
 
 
 
----
-
 ### - `findCamelCase` Function
 
 <sub><sup>Returns a Regex that matches the zero-width boundary between a lowercase letter and an uppercase letter — the split point used to separate camelCase words. </sup></sub>
@@ -3130,8 +2764,6 @@ public static function findCamelCase(): Regex
 RegexHelper::findCamelCase();
 ```
 
----
-
 ### - `getSpaceBetweenWords` Function
 
 <sub><sup>Returns a Regex that matches a single whitespace character preceded and followed by a word character — i.e. the space between two words rather than leading or trailing whitespace. </sup></sub>
@@ -3144,8 +2776,6 @@ public static function getSpaceBetweenWords(): Regex
 // --- Usage
 RegexHelper::getSpaceBetweenWords();
 ```
-
----
 
 ### - `getSpecialChars` Function
 
@@ -3176,8 +2806,6 @@ RegexHelper::getSpecialChars();
 
 
 
----
-
 ### - `get` Function
 
 <sub><sup>Returns the value of the environment variable identified by $key, or $default when the variable is not set or is an empty string. </sup></sub>
@@ -3190,8 +2818,6 @@ public static function get(string $key, mixed $default): mixed
 // --- Usage
 Env::get($key, $default);
 ```
-
----
 
 ### - `load` Function
 
@@ -3230,15 +2856,11 @@ Env::load($file);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $exceptionAssertion = new ExceptionAssertion(TestCase $phpunit,  $fn);
 ```
-
----
 
 ### - `withCode` Function
 
@@ -3253,8 +2875,6 @@ public function withCode(int $code): static
 $exceptionAssertion->withCode($code);
 ```
 
----
-
 ### - `withType` Function
 
 <sub><sup>Constrains the assertion to verify that the exception is an instance of $type. </sup></sub>
@@ -3268,8 +2888,6 @@ public function withType(string $type): static
 $exceptionAssertion->withType($type);
 ```
 
----
-
 ### - `withMessage` Function
 
 <sub><sup>Constrains the assertion to verify that the exception message equals $message. </sup></sub>
@@ -3282,8 +2900,6 @@ public function withMessage(string $message): static
 // --- Usage
 $exceptionAssertion->withMessage($message);
 ```
-
----
 
 ### - `validate` Function
 
@@ -3326,15 +2942,11 @@ $exceptionAssertion->validate();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $container = new Container(string $cachePath);
 ```
-
----
 
 ### - `get` Function
 
@@ -3353,8 +2965,6 @@ public function get(string $id): object
 $container->get($id);
 ```
 
----
-
 ### - `has` Function
 
 <sub><sup>Returns true when $id has a singleton or transient binding registered, false otherwise. Does not account for autowirable classes. </sup></sub>
@@ -3367,8 +2977,6 @@ public function has(string $id): bool
 // --- Usage
 $container->has($id);
 ```
-
----
 
 ### - `bind` Function
 
@@ -3387,8 +2995,6 @@ public function bind(string $interface, callable|object|string $factory): void
 $container->bind($interface, $factory);
 ```
 
----
-
 ### - `singleton` Function
 
 <sub><sup>Registers $factory as a singleton binding for $interface. The object is instantiated once and cached for all subsequent resolutions. Throws TypeMismatchException when a non-callable factory does not implement $interface. </sup></sub>
@@ -3405,8 +3011,6 @@ public function singleton(string $interface, callable|object|string $factory): v
 // --- Usage
 $container->singleton($interface, $factory);
 ```
-
----
 
 ### - `resolve` Function
 
@@ -3432,8 +3036,6 @@ public function resolve(string $interface): object
 // --- Usage
 $container->resolve($interface);
 ```
-
----
 
 ### - `new` Function
 
@@ -3464,8 +3066,6 @@ public function new(string $class, array $params): object
 $container->new($class, $params);
 ```
 
----
-
 ### - `clear` Function
 
 <sub><sup>Resets all bindings, singleton registrations, cached instances, and the on-disk cache, returning the container to a pristine state. </sup></sub>
@@ -3478,8 +3078,6 @@ public function clear(): void
 // --- Usage
 $container->clear();
 ```
-
----
 
 ### - `loadCache` Function
 
@@ -3496,8 +3094,6 @@ public function loadCache(): void
 $container->loadCache();
 ```
 
----
-
 ### - `flushCache` Function
 
 <sub><sup>Deletes the cache file from disk. Returns true on success, false when no cache file was present. </sup></sub>
@@ -3511,8 +3107,6 @@ public function flushCache(): bool
 $container->flushCache();
 ```
 
----
-
 ### - `cacheExists` Function
 
 <sub><sup>Returns true when a cache file exists at the configured cache path. </sup></sub>
@@ -3525,8 +3119,6 @@ public function cacheExists(): bool
 // --- Usage
 $container->cacheExists();
 ```
-
----
 
 ### - `dumpCache` Function
 
@@ -3593,15 +3185,11 @@ $container->dumpCache();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $parameterSet = new ParameterSet(Container $container);
 ```
-
----
 
 ### - `resolve` Function
 
@@ -3642,15 +3230,11 @@ $parameterSet->resolve($parameters);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $parameter = new Parameter(Container $container);
 ```
-
----
 
 ### - `resolve` Function
 
@@ -3697,15 +3281,11 @@ $parameter->resolve($parameter);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $markdown = new Markdown();
 ```
-
----
 
 ### - `write` Function
 
@@ -3720,8 +3300,6 @@ public function write(string $value): void
 $markdown->write($value);
 ```
 
----
-
 ### - `writeLine` Function
 
 <sub><sup>Appends $value to the buffer followed by a blank line (double PHP_EOL), producing a paragraph break in the rendered output. </sup></sub>
@@ -3734,8 +3312,6 @@ public function writeLine(string $value): void
 // --- Usage
 $markdown->writeLine($value);
 ```
-
----
 
 ### - `br` Function
 
@@ -3750,8 +3326,6 @@ public function br(): void
 $markdown->br();
 ```
 
----
-
 ### - `fbr` Function
 
 <sub><sup>Appends an HTML &lt;br&gt; tag for a forced inline line break that does not create a full paragraph gap. </sup></sub>
@@ -3764,8 +3338,6 @@ public function fbr(): void
 // --- Usage
 $markdown->fbr();
 ```
-
----
 
 ### - `callout` Function
 
@@ -3780,8 +3352,6 @@ public function callout(string $value): void
 $markdown->callout($value);
 ```
 
----
-
 ### - `h1` Function
 
 <sub><sup>Appends $value as a level-1 heading (# prefix).</sup></sub>
@@ -3792,8 +3362,6 @@ public function h1(string $value): void
 // --- Usage
 $markdown->h1($value);
 ```
-
----
 
 ### - `h2` Function
 
@@ -3806,8 +3374,6 @@ public function h2(string $value): void
 $markdown->h2($value);
 ```
 
----
-
 ### - `h3` Function
 
 <sub><sup>Appends $value as a level-3 heading (### prefix).</sup></sub>
@@ -3818,8 +3384,6 @@ public function h3(string $value): void
 // --- Usage
 $markdown->h3($value);
 ```
-
----
 
 ### - `h4` Function
 
@@ -3832,8 +3396,6 @@ public function h4(string $value): void
 $markdown->h4($value);
 ```
 
----
-
 ### - `h5` Function
 
 <sub><sup>Appends $value as a level-5 heading (##### prefix).</sup></sub>
@@ -3845,8 +3407,6 @@ public function h5(string $value): void
 $markdown->h5($value);
 ```
 
----
-
 ### - `h6` Function
 
 <sub><sup>Appends $value as a level-6 heading (###### prefix).</sup></sub>
@@ -3857,8 +3417,6 @@ public function h6(string $value): void
 // --- Usage
 $markdown->h6($value);
 ```
-
----
 
 ### - `ul` Function
 
@@ -3873,8 +3431,6 @@ public function ul(string $value): void
 $markdown->ul($value);
 ```
 
----
-
 ### - `link` Function
 
 <sub><sup>Appends an inline hyperlink [text](url) without a trailing newline. </sup></sub>
@@ -3887,8 +3443,6 @@ public function link(string $url, string $text): void
 // --- Usage
 $markdown->link($url, $text);
 ```
-
----
 
 ### - `image` Function
 
@@ -3903,8 +3457,6 @@ public function image(string $path, string $alt): void
 $markdown->image($path, $alt);
 ```
 
----
-
 ### - `checklist` Function
 
 <sub><sup>Appends $value as a GFM task-list item. The checkbox marker is &#039;X&#039; when $checked is true, empty otherwise. </sup></sub>
@@ -3917,8 +3469,6 @@ public function checklist(string $value, bool $checked): void
 // --- Usage
 $markdown->checklist($value, $checked);
 ```
-
----
 
 ### - `hr` Function
 
@@ -3933,8 +3483,6 @@ public function hr(): void
 $markdown->hr();
 ```
 
----
-
 ### - `code` Function
 
 <sub><sup>Appends $value as a fenced code block with the given $language identifier for syntax highlighting (e.g. &#039;php&#039;, &#039;bash&#039;). </sup></sub>
@@ -3947,8 +3495,6 @@ public function code(string $value, string $language): void
 // --- Usage
 $markdown->code($value, $language);
 ```
-
----
 
 ### - `inlineCode` Function
 
@@ -3963,8 +3509,6 @@ public function inlineCode(string $value): void
 $markdown->inlineCode($value);
 ```
 
----
-
 ### - `tiny` Function
 
 <sub><sup>Appends $value wrapped in &lt;sub&gt;&lt;sup&gt; tags to produce small subscript text, used for PHPDoc description paragraphs in generated documentation. </sup></sub>
@@ -3977,8 +3521,6 @@ public function tiny(string $value): void
 // --- Usage
 $markdown->tiny($value);
 ```
-
----
 
 ### - `get` Function
 
@@ -4017,15 +3559,11 @@ $markdown->get();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $fileFinder = new FileFinder(string $path);
 ```
-
----
 
 ### - `pattern` Function
 
@@ -4040,8 +3578,6 @@ public function pattern(string $pattern): FileFinder
 $fileFinder->pattern($pattern);
 ```
 
----
-
 ### - `ignoreVCS` Function
 
 <sub><sup>When $value is true (the default), directories used by VCS systems (.git, .svn, .hg, .bzr) are excluded from traversal entirely. </sup></sub>
@@ -4054,8 +3590,6 @@ public function ignoreVCS(bool $value): FileFinder
 // --- Usage
 $fileFinder->ignoreVCS($value);
 ```
-
----
 
 ### - `ignoreVCSIgnored` Function
 
@@ -4070,8 +3604,6 @@ public function ignoreVCSIgnored(bool $value): FileFinder
 $fileFinder->ignoreVCSIgnored($value);
 ```
 
----
-
 ### - `ignoreDotFiles` Function
 
 <sub><sup>When $value is true (the default), any file or directory whose name starts with &#039;.&#039; is excluded from traversal and results. </sup></sub>
@@ -4084,8 +3616,6 @@ public function ignoreDotFiles(bool $value): FileFinder
 // --- Usage
 $fileFinder->ignoreDotFiles($value);
 ```
-
----
 
 ### - `getFiles` Function
 
@@ -4103,8 +3633,6 @@ public function getFiles(): array
 // --- Usage
 $fileFinder->getFiles();
 ```
-
----
 
 ### - `find` Function
 
@@ -4141,8 +3669,6 @@ $fileFinder->find();
 
 
 
----
-
 ### - `isClassFile` Function
 
 <sub><sup>Returns true when the namespace derived from this file&#039;s path corresponds to an existing, autoloaded class. </sup></sub>
@@ -4155,8 +3681,6 @@ public function isClassFile(): bool
 // --- Usage
 $splFileObject->isClassFile();
 ```
-
----
 
 ### - `getNamespace` Function
 
@@ -4197,15 +3721,11 @@ $splFileObject->getNamespace();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $gitIgnore = new GitIgnore(string $path);
 ```
-
----
 
 ### - `isIgnored` Function
 
@@ -4240,8 +3760,6 @@ $gitIgnore->isIgnored($file);
 
 
 
----
-
 ### - `lock` Function
 
 <sub><sup>Acquires the lock, marking the critical section as entered. </sup></sub>
@@ -4255,8 +3773,6 @@ public function lock(): void
 $locker->lock();
 ```
 
----
-
 ### - `unlock` Function
 
 <sub><sup>Releases the lock, allowing the critical section to be entered again. </sup></sub>
@@ -4269,8 +3785,6 @@ public function unlock(): void
 // --- Usage
 $locker->unlock();
 ```
-
----
 
 ### - `isLocked` Function
 
@@ -4305,15 +3819,11 @@ $locker->isLocked();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $doc = new Doc(array $files, Formatter $formatter, Storage $docFile);
 ```
-
----
 
 ### - `generate` Function
 
@@ -4356,8 +3866,6 @@ $doc->generate();
 
 
 
----
-
 ### - `format` Function
 
 <sub><sup>Iterates all namespaces and their classes, renders each class&#039;s methods, and returns the complete Markdown API reference as a string. </sup></sub>
@@ -4374,8 +3882,6 @@ public function format(array $namespaces): string
 // --- Usage
 $docFormatter->format($namespaces);
 ```
-
----
 
 #### How to use the Class:
 
@@ -4405,8 +3911,6 @@ $docFormatter = new DocFormatter(Markup $markup);
 
 
 
----
-
 ### - `format` Function
 
 <sub><sup>Emits one Markdown list item per namespace and returns the accumulated sidebar string. </sup></sub>
@@ -4423,8 +3927,6 @@ public function format(array $namespaces): string
 // --- Usage
 $tocFormatter->format($namespaces);
 ```
-
----
 
 #### How to use the Class:
 
@@ -4448,8 +3950,6 @@ $tocFormatter = new TocFormatter(Markup $markup);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
@@ -4460,15 +3960,11 @@ $dontDocument = new DontDocument();
 
 ### 🟢 PhpDocLineObject
 
----
-
 #### How to use the Class:
 
 ```php
 $phpDocLineObject = new PhpDocLineObject(string $line);
 ```
-
----
 
 ### - `isThrows` Function
 
@@ -4479,8 +3975,6 @@ public function isThrows(): bool
 $phpDocLineObject->isThrows();
 ```
 
----
-
 ### - `isMethod` Function
 
 ```php
@@ -4489,8 +3983,6 @@ public function isMethod(): bool
 // --- Usage
 $phpDocLineObject->isMethod();
 ```
-
----
 
 ### - `isEmpty` Function
 
@@ -4503,15 +3995,11 @@ $phpDocLineObject->isEmpty();
 
 ### 🟢 PhpDocObject
 
----
-
 #### How to use the Class:
 
 ```php
 $phpDocObject = new PhpDocObject(ClassInterface|MethodInterface $component);
 ```
-
----
 
 ### - `getLines` Function
 
@@ -4546,15 +4034,11 @@ $phpDocObject->getLines();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $classObject = new ClassObject(ReflectionClass $class);
 ```
-
----
 
 ### - `getMethods` Function
 
@@ -4573,8 +4057,6 @@ public function getMethods(): array
 $classObject->getMethods();
 ```
 
----
-
 ### - `getNamespace` Function
 
 <sub><sup>Returns the fully-qualified namespace name of the class (excluding the class name itself), used to group classes into NamespaceObject bags. </sup></sub>
@@ -4587,8 +4069,6 @@ public function getNamespace(): string
 // --- Usage
 $classObject->getNamespace();
 ```
-
----
 
 ### - `isIllegal` Function
 
@@ -4607,8 +4087,6 @@ public function isIllegal(): bool
 $classObject->isIllegal();
 ```
 
----
-
 ### - `isInstantiable` Function
 
 <sub><sup>Returns true when the class can be instantiated with new (not abstract, not interface). </sup></sub>
@@ -4621,8 +4099,6 @@ public function isInstantiable(): bool
 // --- Usage
 $classObject->isInstantiable();
 ```
-
----
 
 ### - `isException` Function
 
@@ -4637,8 +4113,6 @@ public function isException(): bool
 $classObject->isException();
 ```
 
----
-
 ### - `getName` Function
 
 <sub><sup>Returns the unqualified short class name (without namespace prefix). </sup></sub>
@@ -4652,8 +4126,6 @@ public function getName(): string
 $classObject->getName();
 ```
 
----
-
 ### - `getRawDoc` Function
 
 ```php
@@ -4663,8 +4135,6 @@ public function getRawDoc(): string
 $classObject->getRawDoc();
 ```
 
----
-
 ### - `getPhpDocObject` Function
 
 ```php
@@ -4673,8 +4143,6 @@ public function getPhpDocObject(): PhpDocObject
 // --- Usage
 $classObject->getPhpDocObject();
 ```
-
----
 
 ### - `getVirtualMethods` Function
 
@@ -4693,8 +4161,6 @@ public function getVirtualMethods(): array
 $classObject->getVirtualMethods();
 ```
 
----
-
 ### - `getInterfaces` Function
 
 <sub><sup>Returns all interfaces implemented by this class as a map of interface-name → ReflectionClass, used by MethodObject to locate inherited PHPDoc comments from interface definitions. </sup></sub>
@@ -4712,6 +4178,15 @@ public function getInterfaces(): array
 $classObject->getInterfaces();
 ```
 
+### - `shouldNotDocument` Function
+
+```php
+// --- Contract
+public function shouldNotDocument(): bool
+// --- Usage
+$classObject->shouldNotDocument();
+```
+
 ## 📦 Sakoo\Framework\Core\Doc\Object\Parameter
 
 ### 🟢 ParameterObject
@@ -4724,15 +4199,11 @@ $classObject->getInterfaces();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $parameterObject = new ParameterObject(ReflectionParameter $parameter);
 ```
-
----
 
 ### - `getName` Function
 
@@ -4746,8 +4217,6 @@ public function getName(): string
 // --- Usage
 $parameterObject->getName();
 ```
-
----
 
 ### - `getType` Function
 
@@ -4776,15 +4245,11 @@ $parameterObject->getType();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $typeObject = new TypeObject(ReflectionType $type);
 ```
-
----
 
 ### - `getName` Function
 
@@ -4798,8 +4263,6 @@ public function getName(): string
 // --- Usage
 $typeObject->getName();
 ```
-
----
 
 ### - `getReflectionUnionTypeName` Function
 
@@ -4842,15 +4305,11 @@ $typeObject->getReflectionUnionTypeName($type);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $methodObject = new MethodObject(ClassObject $classObject, ReflectionMethod $method);
 ```
-
----
 
 ### - `getClass` Function
 
@@ -4864,8 +4323,6 @@ public function getClass(): ClassObject
 // --- Usage
 $methodObject->getClass();
 ```
-
----
 
 ### - `getMethodParameters` Function
 
@@ -4884,8 +4341,6 @@ public function getMethodParameters(): array
 $methodObject->getMethodParameters();
 ```
 
----
-
 ### - `getName` Function
 
 <sub><sup>Returns the method name as a plain string. </sup></sub>
@@ -4898,8 +4353,6 @@ public function getName(): string
 // --- Usage
 $methodObject->getName();
 ```
-
----
 
 ### - `isPrivate` Function
 
@@ -4914,8 +4367,6 @@ public function isPrivate(): bool
 $methodObject->isPrivate();
 ```
 
----
-
 ### - `isProtected` Function
 
 <sub><sup>Returns true when the method has protected visibility. </sup></sub>
@@ -4928,8 +4379,6 @@ public function isProtected(): bool
 // --- Usage
 $methodObject->isProtected();
 ```
-
----
 
 ### - `isPublic` Function
 
@@ -4944,8 +4393,6 @@ public function isPublic(): bool
 $methodObject->isPublic();
 ```
 
----
-
 ### - `isStatic` Function
 
 <sub><sup>Returns true when the method is declared static. </sup></sub>
@@ -4958,8 +4405,6 @@ public function isStatic(): bool
 // --- Usage
 $methodObject->isStatic();
 ```
-
----
 
 ### - `isConstructor` Function
 
@@ -4974,8 +4419,6 @@ public function isConstructor(): bool
 $methodObject->isConstructor();
 ```
 
----
-
 ### - `isMagicMethod` Function
 
 <sub><sup>Returns true when the method name begins with &#039;__&#039;. </sup></sub>
@@ -4988,8 +4431,6 @@ public function isMagicMethod(): bool
 // --- Usage
 $methodObject->isMagicMethod();
 ```
-
----
 
 ### - `getMethodReturnTypes` Function
 
@@ -5004,8 +4445,6 @@ public function getMethodReturnTypes(): string
 $methodObject->getMethodReturnTypes();
 ```
 
----
-
 ### - `getRawDoc` Function
 
 ```php
@@ -5015,8 +4454,6 @@ public function getRawDoc(): string
 $methodObject->getRawDoc();
 ```
 
----
-
 ### - `getPhpDocObject` Function
 
 ```php
@@ -5025,8 +4462,6 @@ public function getPhpDocObject(): PhpDocObject
 // --- Usage
 $methodObject->getPhpDocObject();
 ```
-
----
 
 ### - `getModifiers` Function
 
@@ -5045,8 +4480,6 @@ public function getModifiers(): array
 $methodObject->getModifiers();
 ```
 
----
-
 ### - `isFrameworkFunction` Function
 
 <sub><sup>Returns true when the declaring class belongs to the Sakoo framework namespace, filtering out methods inherited from third-party libraries. </sup></sub>
@@ -5059,8 +4492,6 @@ public function isFrameworkFunction(): bool
 // --- Usage
 $methodObject->isFrameworkFunction();
 ```
-
----
 
 ### - `getDefaultValues` Function
 
@@ -5075,8 +4506,6 @@ public function getDefaultValues(): string
 $methodObject->getDefaultValues();
 ```
 
----
-
 ### - `getDefaultValueTypes` Function
 
 <sub><sup>Returns a comma-separated list of typed parameter declarations (e.g. &#039;string $name, int $value&#039;), used in method contract examples. </sup></sub>
@@ -5090,8 +4519,6 @@ public function getDefaultValueTypes(): string
 $methodObject->getDefaultValueTypes();
 ```
 
----
-
 ### - `shouldNotDocument` Function
 
 <sub><sup>Returns true when this method should be excluded from generated documentation: private visibility, DontDocument attribute, or a non-constructor magic method. </sup></sub>
@@ -5104,8 +4531,6 @@ public function shouldNotDocument(): bool
 // --- Usage
 $methodObject->shouldNotDocument();
 ```
-
----
 
 ### - `isStaticInstantiator` Function
 
@@ -5148,15 +4573,11 @@ $methodObject->isStaticInstantiator();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $virtualMethodObject = new VirtualMethodObject(ClassInterface $class, string $line);
 ```
-
----
 
 ### - `getClass` Function
 
@@ -5171,8 +4592,6 @@ public function getClass(): ClassInterface
 $virtualMethodObject->getClass();
 ```
 
----
-
 ### - `getName` Function
 
 <sub><sup>Returns the parsed method name. </sup></sub>
@@ -5185,8 +4604,6 @@ public function getName(): string
 // --- Usage
 $virtualMethodObject->getName();
 ```
-
----
 
 ### - `isPrivate` Function
 
@@ -5201,8 +4618,6 @@ public function isPrivate(): bool
 $virtualMethodObject->isPrivate();
 ```
 
----
-
 ### - `isProtected` Function
 
 <sub><sup>Always returns false — virtual methods declared in PHPDoc are implicitly public. </sup></sub>
@@ -5215,8 +4630,6 @@ public function isProtected(): bool
 // --- Usage
 $virtualMethodObject->isProtected();
 ```
-
----
 
 ### - `isPublic` Function
 
@@ -5231,8 +4644,6 @@ public function isPublic(): bool
 $virtualMethodObject->isPublic();
 ```
 
----
-
 ### - `isStatic` Function
 
 <sub><sup>Returns true when the [at-sign]method tag included the &#039;static&#039; keyword. </sup></sub>
@@ -5245,8 +4656,6 @@ public function isStatic(): bool
 // --- Usage
 $virtualMethodObject->isStatic();
 ```
-
----
 
 ### - `isConstructor` Function
 
@@ -5261,8 +4670,6 @@ public function isConstructor(): bool
 $virtualMethodObject->isConstructor();
 ```
 
----
-
 ### - `isMagicMethod` Function
 
 <sub><sup>Returns true when the method name starts with &#039;__&#039;. </sup></sub>
@@ -5275,8 +4682,6 @@ public function isMagicMethod(): bool
 // --- Usage
 $virtualMethodObject->isMagicMethod();
 ```
-
----
 
 ### - `getMethodReturnTypes` Function
 
@@ -5291,8 +4696,6 @@ public function getMethodReturnTypes(): string
 $virtualMethodObject->getMethodReturnTypes();
 ```
 
----
-
 ### - `getRawDoc` Function
 
 ```php
@@ -5302,8 +4705,6 @@ public function getRawDoc(): string
 $virtualMethodObject->getRawDoc();
 ```
 
----
-
 ### - `getPhpDocObject` Function
 
 ```php
@@ -5312,8 +4713,6 @@ public function getPhpDocObject(): PhpDocObject
 // --- Usage
 $virtualMethodObject->getPhpDocObject();
 ```
-
----
 
 ### - `getModifiers` Function
 
@@ -5332,8 +4731,6 @@ public function getModifiers(): array
 $virtualMethodObject->getModifiers();
 ```
 
----
-
 ### - `isFrameworkFunction` Function
 
 <sub><sup>Always returns false — virtual methods exist only in PHPDoc, not in framework source. </sup></sub>
@@ -5346,8 +4743,6 @@ public function isFrameworkFunction(): bool
 // --- Usage
 $virtualMethodObject->isFrameworkFunction();
 ```
-
----
 
 ### - `getDefaultValues` Function
 
@@ -5362,8 +4757,6 @@ public function getDefaultValues(): string
 $virtualMethodObject->getDefaultValues();
 ```
 
----
-
 ### - `getDefaultValueTypes` Function
 
 <sub><sup>Returns a pipe-joined string of the non-null parameter types parsed from the parameter list, used in method contract examples. </sup></sub>
@@ -5377,8 +4770,6 @@ public function getDefaultValueTypes(): string
 $virtualMethodObject->getDefaultValueTypes();
 ```
 
----
-
 ### - `shouldNotDocument` Function
 
 <sub><sup>Returns true when the description contains &#039;@internal&#039;, excluding the method from generated documentation. </sup></sub>
@@ -5391,8 +4782,6 @@ public function shouldNotDocument(): bool
 // --- Usage
 $virtualMethodObject->shouldNotDocument();
 ```
-
----
 
 ### - `isStaticInstantiator` Function
 
@@ -5419,15 +4808,11 @@ $virtualMethodObject->isStaticInstantiator();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $namespaceObject = new NamespaceObject(string $namespace, array $classes);
 ```
-
----
 
 ### - `getClasses` Function
 
@@ -5445,8 +4830,6 @@ public function getClasses(): array
 // --- Usage
 $namespaceObject->getClasses();
 ```
-
----
 
 ### - `getName` Function
 
@@ -5481,15 +4864,11 @@ $namespaceObject->getName();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $containerCacheCommand = new ContainerCacheCommand(ContainerInterface $container);
 ```
-
----
 
 ### - `getName` Function
 
@@ -5504,8 +4883,6 @@ public static function getName(): string
 ContainerCacheCommand::getName();
 ```
 
----
-
 ### - `getDescription` Function
 
 <sub><sup>Returns a single-line description of this command for help listings. </sup></sub>
@@ -5518,8 +4895,6 @@ public static function getDescription(): string
 // --- Usage
 ContainerCacheCommand::getDescription();
 ```
-
----
 
 ### - `run` Function
 
@@ -5534,8 +4909,6 @@ public function run(Input $input, Output $output): int
 $containerCacheCommand->run($input, $output);
 ```
 
----
-
 ### - `help` Function
 
 <sub><sup>Prints the command description as a yellow console block and returns Output::SUCCESS. Override to provide more detailed usage instructions for the command. </sup></sub>
@@ -5549,8 +4922,6 @@ public function help(Input $input, Output $output): int
 $containerCacheCommand->help($input, $output);
 ```
 
----
-
 ### - `setRunningApplication` Function
 
 <sub><sup>Injects the running Application instance so the command can access the full command registry if needed. Called automatically by Application::addCommand(). </sup></sub>
@@ -5563,8 +4934,6 @@ public function setRunningApplication(Application $app): void
 // --- Usage
 $containerCacheCommand->setRunningApplication($app);
 ```
-
----
 
 ### - `getApplication` Function
 
@@ -5589,8 +4958,6 @@ $containerCacheCommand->getApplication();
 
 
 
----
-
 ### - `getName` Function
 
 <sub><sup>Returns the CLI argument name &#039;zen&#039; used to invoke this command. </sup></sub>
@@ -5603,8 +4970,6 @@ public static function getName(): string
 // --- Usage
 ZenCommand::getName();
 ```
-
----
 
 ### - `getDescription` Function
 
@@ -5619,8 +4984,6 @@ public static function getDescription(): string
 ZenCommand::getDescription();
 ```
 
----
-
 ### - `run` Function
 
 <sub><sup>Renders the decorative banner, framework name, version, and copyright year. </sup></sub>
@@ -5633,8 +4996,6 @@ public function run(Input $input, Output $output): int
 // --- Usage
 $zenCommand->run($input, $output);
 ```
-
----
 
 ### - `help` Function
 
@@ -5649,8 +5010,6 @@ public function help(Input $input, Output $output): int
 $zenCommand->help($input, $output);
 ```
 
----
-
 ### - `setRunningApplication` Function
 
 <sub><sup>Injects the running Application instance so the command can access the full command registry if needed. Called automatically by Application::addCommand(). </sup></sub>
@@ -5663,8 +5022,6 @@ public function setRunningApplication(Application $app): void
 // --- Usage
 $zenCommand->setRunningApplication($app);
 ```
-
----
 
 ### - `getApplication` Function
 
@@ -5693,8 +5050,6 @@ $zenCommand->getApplication();
 
 
 
----
-
 ### - `getName` Function
 
 <sub><sup>Returns the CLI argument name &#039;dev&#039; used to invoke this command. </sup></sub>
@@ -5707,8 +5062,6 @@ public static function getName(): string
 // --- Usage
 DevCommand::getName();
 ```
-
----
 
 ### - `getDescription` Function
 
@@ -5723,8 +5076,6 @@ public static function getDescription(): string
 DevCommand::getDescription();
 ```
 
----
-
 ### - `run` Function
 
 <sub><sup>Queries OPcache for JIT status and prints the result in green. Reports &#039;Unknown&#039; when OPcache is not loaded or its status is unavailable. </sup></sub>
@@ -5737,8 +5088,6 @@ public function run(Input $input, Output $output): int
 // --- Usage
 $devCommand->run($input, $output);
 ```
-
----
 
 ### - `help` Function
 
@@ -5753,8 +5102,6 @@ public function help(Input $input, Output $output): int
 $devCommand->help($input, $output);
 ```
 
----
-
 ### - `setRunningApplication` Function
 
 <sub><sup>Injects the running Application instance so the command can access the full command registry if needed. Called automatically by Application::addCommand(). </sup></sub>
@@ -5767,8 +5114,6 @@ public function setRunningApplication(Application $app): void
 // --- Usage
 $devCommand->setRunningApplication($app);
 ```
-
----
 
 ### - `getApplication` Function
 
@@ -5805,15 +5150,11 @@ $devCommand->getApplication();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $docGenCommand = new DocGenCommand(string $docPath, string $sidebarPath, string $footerPath);
 ```
-
----
 
 ### - `getName` Function
 
@@ -5828,8 +5169,6 @@ public static function getName(): string
 DocGenCommand::getName();
 ```
 
----
-
 ### - `getDescription` Function
 
 <sub><sup>Returns a single-line description of this command for help listings. </sup></sub>
@@ -5842,8 +5181,6 @@ public static function getDescription(): string
 // --- Usage
 DocGenCommand::getDescription();
 ```
-
----
 
 ### - `run` Function
 
@@ -5858,8 +5195,6 @@ public function run(Input $input, Output $output): int
 $docGenCommand->run($input, $output);
 ```
 
----
-
 ### - `help` Function
 
 <sub><sup>Prints the command description as a yellow console block and returns Output::SUCCESS. Override to provide more detailed usage instructions for the command. </sup></sub>
@@ -5873,8 +5208,6 @@ public function help(Input $input, Output $output): int
 $docGenCommand->help($input, $output);
 ```
 
----
-
 ### - `setRunningApplication` Function
 
 <sub><sup>Injects the running Application instance so the command can access the full command registry if needed. Called automatically by Application::addCommand(). </sup></sub>
@@ -5887,8 +5220,6 @@ public function setRunningApplication(Application $app): void
 // --- Usage
 $docGenCommand->setRunningApplication($app);
 ```
-
----
 
 ### - `getApplication` Function
 
@@ -5923,15 +5254,11 @@ $docGenCommand->getApplication();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $phpBundler = new PhpBundler(Input $input, Output $output);
 ```
-
----
 
 ### - `fileModified` Function
 
@@ -5946,8 +5273,6 @@ public function fileModified(Event $event): void
 $phpBundler->fileModified($event);
 ```
 
----
-
 ### - `fileMoved` Function
 
 <sub><sup>Called when a watched file is moved or renamed. No-op by default. </sup></sub>
@@ -5960,8 +5285,6 @@ public function fileMoved(Event $event): void
 // --- Usage
 $phpBundler->fileMoved($event);
 ```
-
----
 
 ### - `fileDeleted` Function
 
@@ -5990,15 +5313,11 @@ $phpBundler->fileDeleted($event);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $watchCommand = new WatchCommand(Watcher $watcher);
 ```
-
----
 
 ### - `getName` Function
 
@@ -6013,8 +5332,6 @@ public static function getName(): string
 WatchCommand::getName();
 ```
 
----
-
 ### - `getDescription` Function
 
 <sub><sup>Returns a single-line description of this command for help listings. </sup></sub>
@@ -6027,8 +5344,6 @@ public static function getDescription(): string
 // --- Usage
 WatchCommand::getDescription();
 ```
-
----
 
 ### - `run` Function
 
@@ -6043,8 +5358,6 @@ public function run(Input $input, Output $output): int
 $watchCommand->run($input, $output);
 ```
 
----
-
 ### - `help` Function
 
 <sub><sup>Prints the command description as a yellow console block and returns Output::SUCCESS. Override to provide more detailed usage instructions for the command. </sup></sub>
@@ -6058,8 +5371,6 @@ public function help(Input $input, Output $output): int
 $watchCommand->help($input, $output);
 ```
 
----
-
 ### - `setRunningApplication` Function
 
 <sub><sup>Injects the running Application instance so the command can access the full command registry if needed. Called automatically by Application::addCommand(). </sup></sub>
@@ -6072,8 +5383,6 @@ public function setRunningApplication(Application $app): void
 // --- Usage
 $watchCommand->setRunningApplication($app);
 ```
-
----
 
 ### - `getApplication` Function
 
@@ -6104,15 +5413,11 @@ $watchCommand->getApplication();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $profiler = new Profiler(ClockInterface $clock);
 ```
-
----
 
 ### - `start` Function
 
@@ -6126,8 +5431,6 @@ public function start(string $key): void
 // --- Usage
 $profiler->start($key);
 ```
-
----
 
 ### - `elapsedTime` Function
 
@@ -6190,15 +5493,11 @@ $profiler->elapsedTime($key);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $set = new Set(array $items);
 ```
-
----
 
 ### - `exists` Function
 
@@ -6213,8 +5512,6 @@ public function exists(string|int $name): bool
 $set->exists($name);
 ```
 
----
-
 ### - `count` Function
 
 <sub><sup>Returns the number of elements in the collection. </sup></sub>
@@ -6228,8 +5525,6 @@ public function count(): int
 $set->count();
 ```
 
----
-
 ### - `each` Function
 
 <sub><sup>Passes each element (value, key) to $callback. Return values are discarded. </sup></sub>
@@ -6242,8 +5537,6 @@ public function each(callable $callback): void
 // --- Usage
 $set->each($callback);
 ```
-
----
 
 ### - `map` Function
 
@@ -6272,8 +5565,6 @@ public function map(callable $callback): self
 $set->map($callback);
 ```
 
----
-
 ### - `pluck` Function
 
 <sub><sup>Extracts nested values using a dot-notation $key (e.g. &#039;address.city&#039;) from each element via successive array_column calls, and returns them as a new Set. </sup></sub>
@@ -6292,8 +5583,6 @@ public function pluck(string $key): self
 // --- Usage
 $set->pluck($key);
 ```
-
----
 
 ### - `add` Function
 
@@ -6318,8 +5607,6 @@ public function add(mixed $key, mixed $value): self
 $set->add($key, $value);
 ```
 
----
-
 ### - `remove` Function
 
 <sub><sup>Removes the element at $key from the collection and returns the same instance. Integer $key is treated as a positional index; string $key is an associative key. Does nothing when the key does not exist. </sup></sub>
@@ -6336,8 +5623,6 @@ public function remove(string|int $key): self
 // --- Usage
 $set->remove($key);
 ```
-
----
 
 ### - `get` Function
 
@@ -6362,8 +5647,6 @@ public function get(string|int $key, mixed $default): mixed
 $set->get($key, $default);
 ```
 
----
-
 ### - `toArray` Function
 
 <sub><sup>Returns all elements as a plain PHP array, preserving keys. </sup></sub>
@@ -6381,8 +5664,6 @@ public function toArray(): array
 $set->toArray();
 ```
 
----
-
 ### - `getIterator` Function
 
 <sub><sup>Returns an ArrayIterator over the internal items array, enabling foreach iteration and satisfying the IteratorAggregate contract. </sup></sub>
@@ -6399,8 +5680,6 @@ public function getIterator(): ArrayIterator
 // --- Usage
 $set->getIterator();
 ```
-
----
 
 ### - `sort` Function
 
@@ -6423,8 +5702,6 @@ public function sort(Sorter $sorter): self
 $set->sort($sorter);
 ```
 
----
-
 ### - `search` Function
 
 <sub><sup>Delegates searching to $searcher and returns a new Set containing only the elements that match $needle according to the strategy. </sup></sub>
@@ -6446,8 +5723,6 @@ public function search(mixed $needle, Searcher $searcher): self
 $set->search($needle, $searcher);
 ```
 
----
-
 ### - `filter` Function
 
 <sub><sup>Returns a new Set containing only the elements for which $callback returns true. The inferred generic type is preserved in the new Set. </sup></sub>
@@ -6467,8 +5742,6 @@ public function filter(callable $callback): self
 $set->filter($callback);
 ```
 
----
-
 ### - `first` Function
 
 <sub><sup>Returns the element at index 0, or null when the Set has fewer than one element.</sup></sub>
@@ -6479,8 +5752,6 @@ public function first(): mixed
 // --- Usage
 $set->first();
 ```
-
----
 
 ### - `second` Function
 
@@ -6493,8 +5764,6 @@ public function second(): mixed
 $set->second();
 ```
 
----
-
 ### - `third` Function
 
 <sub><sup>Returns the element at index 2, or null when the Set has fewer than three elements.</sup></sub>
@@ -6505,8 +5774,6 @@ public function third(): mixed
 // --- Usage
 $set->third();
 ```
-
----
 
 ### - `fourth` Function
 
@@ -6519,8 +5786,6 @@ public function fourth(): mixed
 $set->fourth();
 ```
 
----
-
 ### - `fifth` Function
 
 <sub><sup>Returns the element at index 4, or null when the Set has fewer than five elements.</sup></sub>
@@ -6531,8 +5796,6 @@ public function fifth(): mixed
 // --- Usage
 $set->fifth();
 ```
-
----
 
 ### - `sixth` Function
 
@@ -6545,8 +5808,6 @@ public function sixth(): mixed
 $set->sixth();
 ```
 
----
-
 ### - `seventh` Function
 
 <sub><sup>Returns the element at index 6, or null when the Set has fewer than seven elements.</sup></sub>
@@ -6557,8 +5818,6 @@ public function seventh(): mixed
 // --- Usage
 $set->seventh();
 ```
-
----
 
 ### - `eighth` Function
 
@@ -6571,8 +5830,6 @@ public function eighth(): mixed
 $set->eighth();
 ```
 
----
-
 ### - `ninth` Function
 
 <sub><sup>Returns the element at index 8, or null when the Set has fewer than nine elements.</sup></sub>
@@ -6583,8 +5840,6 @@ public function ninth(): mixed
 // --- Usage
 $set->ninth();
 ```
-
----
 
 ### - `tenth` Function
 
@@ -6629,15 +5884,11 @@ $set->tenth();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $str = new Str(string $value);
 ```
-
----
 
 ### - `length` Function
 
@@ -6652,8 +5903,6 @@ public function length(): int
 $str->length();
 ```
 
----
-
 ### - `uppercaseWords` Function
 
 <sub><sup>Capitalises the first letter of every word in the string (ucwords). </sup></sub>
@@ -6666,8 +5915,6 @@ public function uppercaseWords(): static
 // --- Usage
 $str->uppercaseWords();
 ```
-
----
 
 ### - `uppercase` Function
 
@@ -6682,8 +5929,6 @@ public function uppercase(): static
 $str->uppercase();
 ```
 
----
-
 ### - `lowercase` Function
 
 <sub><sup>Converts the entire string to lowercase using mb_strtolower. </sup></sub>
@@ -6696,8 +5941,6 @@ public function lowercase(): static
 // --- Usage
 $str->lowercase();
 ```
-
----
 
 ### - `upperFirst` Function
 
@@ -6712,8 +5955,6 @@ public function upperFirst(): static
 $str->upperFirst();
 ```
 
----
-
 ### - `lowerFirst` Function
 
 <sub><sup>Lowercases only the first character of the string (lcfirst). </sup></sub>
@@ -6726,8 +5967,6 @@ public function lowerFirst(): static
 // --- Usage
 $str->lowerFirst();
 ```
-
----
 
 ### - `reverse` Function
 
@@ -6742,8 +5981,6 @@ public function reverse(): static
 $str->reverse();
 ```
 
----
-
 ### - `contains` Function
 
 <sub><sup>Returns true when the string contains the given substring, false otherwise. </sup></sub>
@@ -6756,8 +5993,6 @@ public function contains(string $substring): bool
 // --- Usage
 $str->contains($substring);
 ```
-
----
 
 ### - `replace` Function
 
@@ -6772,8 +6007,6 @@ public function replace(string $search, string $replace): static
 $str->replace($search, $replace);
 ```
 
----
-
 ### - `trim` Function
 
 <sub><sup>Strips leading and trailing ASCII whitespace (trim). </sup></sub>
@@ -6786,8 +6019,6 @@ public function trim(): static
 // --- Usage
 $str->trim();
 ```
-
----
 
 ### - `slug` Function
 
@@ -6806,8 +6037,6 @@ public function slug(): static
 $str->slug();
 ```
 
----
-
 ### - `camelCase` Function
 
 <sub><sup>Converts the string to camelCase. </sup></sub>
@@ -6824,8 +6053,6 @@ public function camelCase(): static
 // --- Usage
 $str->camelCase();
 ```
-
----
 
 ### - `snakeCase` Function
 
@@ -6844,8 +6071,6 @@ public function snakeCase(): static
 $str->snakeCase();
 ```
 
----
-
 ### - `kebabCase` Function
 
 <sub><sup>Converts the string to kebab-case by delegating to slug(). </sup></sub>
@@ -6859,8 +6084,6 @@ public function kebabCase(): static
 $str->kebabCase();
 ```
 
----
-
 ### - `get` Function
 
 <sub><sup>Returns the raw underlying string value. </sup></sub>
@@ -6873,8 +6096,6 @@ public function get(): string
 // --- Usage
 $str->get();
 ```
-
----
 
 ### - `fromType` Function
 
@@ -6909,8 +6130,6 @@ Str::fromType($value);
 
 
 
----
-
 ### - `cases` Function
 
 ```php
@@ -6920,15 +6139,11 @@ public static function cases(): array
 Mode::cases();
 ```
 
----
-
 #### How to use the Class:
 
 ```php
 $mode = Mode::from(string|int $value);
 ```
-
----
 
 #### How to use the Class:
 
@@ -6950,8 +6165,6 @@ $mode = Mode::tryFrom(string|int $value);
 
 
 
----
-
 ### - `cases` Function
 
 ```php
@@ -6961,15 +6174,11 @@ public static function cases(): array
 Environment::cases();
 ```
 
----
-
 #### How to use the Class:
 
 ```php
 $environment = Environment::from(string|int $value);
 ```
-
----
 
 #### How to use the Class:
 
@@ -7003,23 +6212,17 @@ $environment = Environment::tryFrom(string|int $value);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $kernel = Kernel::prepare(Mode $mode, Environment $environment);
 ```
 
----
-
 #### How to use the Class:
 
 ```php
 $kernel = Kernel::getInstance();
 ```
-
----
 
 ### - `run` Function
 
@@ -7034,8 +6237,6 @@ public function run(): void
 $kernel->run();
 ```
 
----
-
 ### - `getMode` Function
 
 <sub><sup>Returns the current runtime Mode (Test, Console, or HTTP). </sup></sub>
@@ -7048,8 +6249,6 @@ public function getMode(): Mode
 // --- Usage
 $kernel->getMode();
 ```
-
----
 
 ### - `getEnvironment` Function
 
@@ -7064,8 +6263,6 @@ public function getEnvironment(): Environment
 $kernel->getEnvironment();
 ```
 
----
-
 ### - `getProfiler` Function
 
 <sub><sup>Returns the resolved ProfilerInterface instance. Only available after run(). </sup></sub>
@@ -7078,8 +6275,6 @@ public function getProfiler(): ProfilerInterface
 // --- Usage
 $kernel->getProfiler();
 ```
-
----
 
 ### - `getContainer` Function
 
@@ -7094,8 +6289,6 @@ public function getContainer(): ContainerInterface
 $kernel->getContainer();
 ```
 
----
-
 ### - `getReplicaId` Function
 
 <sub><sup>Returns the replica identifier assigned to this process instance, or an empty string when no replica ID has been configured. </sup></sub>
@@ -7108,8 +6301,6 @@ public function getReplicaId(): string
 // --- Usage
 $kernel->getReplicaId();
 ```
-
----
 
 ### - `setExceptionHandler` Function
 
@@ -7124,8 +6315,6 @@ public function setExceptionHandler(callable $handler): static
 $kernel->setExceptionHandler($handler);
 ```
 
----
-
 ### - `setErrorHandler` Function
 
 <sub><sup>Registers a callable to be used as the PHP error handler via set_error_handler() during run(). Returns the same Kernel instance for fluent configuration chaining before run() is called. </sup></sub>
@@ -7139,8 +6328,6 @@ public function setErrorHandler(callable $handler): static
 $kernel->setErrorHandler($handler);
 ```
 
----
-
 ### - `setServerTimezone` Function
 
 <sub><sup>Sets the server timezone applied via date_default_timezone_set() during run(). Has no effect when called after run(). </sup></sub>
@@ -7153,8 +6340,6 @@ public function setServerTimezone(string $timezone): static
 // --- Usage
 $kernel->setServerTimezone($timezone);
 ```
-
----
 
 ### - `setServiceLoaders` Function
 
@@ -7173,8 +6358,6 @@ public function setServiceLoaders(array $serviceLoaders): static
 $kernel->setServiceLoaders($serviceLoaders);
 ```
 
----
-
 ### - `setReplicaId` Function
 
 <sub><sup>Assigns a unique identifier to this process replica. Used for log correlation and distributed tracing in horizontally scaled deployments. </sup></sub>
@@ -7187,8 +6370,6 @@ public function setReplicaId(string $replicaId): static
 // --- Usage
 $kernel->setReplicaId($replicaId);
 ```
-
----
 
 ### - `isInTestMode` Function
 
@@ -7203,8 +6384,6 @@ public function isInTestMode(): bool
 $kernel->isInTestMode();
 ```
 
----
-
 ### - `isInHttpMode` Function
 
 <sub><sup>Returns true when the kernel is running in HTTP mode. </sup></sub>
@@ -7217,8 +6396,6 @@ public function isInHttpMode(): bool
 // --- Usage
 $kernel->isInHttpMode();
 ```
-
----
 
 ### - `isInConsoleMode` Function
 
@@ -7233,8 +6410,6 @@ public function isInConsoleMode(): bool
 $kernel->isInConsoleMode();
 ```
 
----
-
 ### - `isInDebugEnv` Function
 
 <sub><sup>Returns true when the kernel is configured for the Debug environment. </sup></sub>
@@ -7247,8 +6422,6 @@ public function isInDebugEnv(): bool
 // --- Usage
 $kernel->isInDebugEnv();
 ```
-
----
 
 ### - `isInProductionEnv` Function
 
@@ -7347,8 +6520,6 @@ $kernel->isInProductionEnv();
 
 
 
----
-
 ### - `setTestNow` Function
 
 <sub><sup>Pins the clock to a specific date-time string for the duration of a test. Calling setTestNow(&#039;now&#039;) resets it back to real-time behaviour. </sup></sub>
@@ -7367,8 +6538,6 @@ public static function setTestNow(string $datetime): void
 // --- Usage
 Clock::setTestNow($datetime);
 ```
-
----
 
 ### - `now` Function
 
@@ -7409,8 +6578,6 @@ $clock->now();
 
 
 
----
-
 ### - `load` Function
 
 <sub><sup>Registers the Dumper and Formatter singletons appropriate for the current kernel mode into $container. </sup></sub>
@@ -7442,8 +6609,6 @@ $varDumpLoader->load($container);
 
 
 
----
-
 ### - `load` Function
 
 <sub><sup>Registers the core framework interface-to-implementation bindings into $container. </sup></sub>
@@ -7474,8 +6639,6 @@ $mainLoader->load($container);
 <sub><sup>All three are registered as transient bindings because each WatchCommand invocation creates its own watcher lifecycle and shares no state across runs. </sup></sub>
 
 
-
----
 
 ### - `load` Function
 
@@ -7514,15 +6677,11 @@ $watcherLoader->load($container);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $application = new Application(Input $input, Output $output);
 ```
-
----
 
 ### - `run` Function
 
@@ -7536,8 +6695,6 @@ public function run(): int
 // --- Usage
 $application->run();
 ```
-
----
 
 ### - `addCommands` Function
 
@@ -7556,8 +6713,6 @@ public function addCommands(array $commands): void
 $application->addCommands($commands);
 ```
 
----
-
 ### - `addCommand` Function
 
 <sub><sup>Registers a single command in the dispatch registry, keyed by its static getName() value, and injects the running application reference into it. </sup></sub>
@@ -7570,8 +6725,6 @@ public function addCommand(Command $command): void
 // --- Usage
 $application->addCommand($command);
 ```
-
----
 
 ### - `setDefaultCommand` Function
 
@@ -7591,8 +6744,6 @@ public function setDefaultCommand(string $command): void
 // --- Usage
 $application->setDefaultCommand($command);
 ```
-
----
 
 ### - `getCommands` Function
 
@@ -7629,15 +6780,11 @@ $application->getCommands();
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $output = new Output(bool $forceColors);
 ```
-
----
 
 ### - `newLine` Function
 
@@ -7652,8 +6799,6 @@ public function newLine(): void
 $output->newLine();
 ```
 
----
-
 ### - `write` Function
 
 <sub><sup>Writes $message to stdout (unless silent mode is active) and appends it to the internal buffer. </sup></sub>
@@ -7666,8 +6811,6 @@ public function write(string $message): void
 // --- Usage
 $output->write($message);
 ```
-
----
 
 ### - `text` Function
 
@@ -7686,8 +6829,6 @@ public function text(array|string $message, int $foreground, int $background, in
 $output->text($message, $foreground, $background, $style);
 ```
 
----
-
 ### - `block` Function
 
 <sub><sup>Formats $message with optional ANSI codes and writes it followed by a trailing newline. This is the standard method for printing a complete line of output. </sup></sub>
@@ -7704,8 +6845,6 @@ public function block(array|string $message, int $foreground, int $background, i
 // --- Usage
 $output->block($message, $foreground, $background, $style);
 ```
-
----
 
 ### - `success` Function
 
@@ -7724,8 +6863,6 @@ public function success(array|string $message): void
 $output->success($message);
 ```
 
----
-
 ### - `info` Function
 
 <sub><sup>Writes $message in bold blue, indicating an informational notice. </sup></sub>
@@ -7742,8 +6879,6 @@ public function info(array|string $message): void
 // --- Usage
 $output->info($message);
 ```
-
----
 
 ### - `warning` Function
 
@@ -7762,8 +6897,6 @@ public function warning(array|string $message): void
 $output->warning($message);
 ```
 
----
-
 ### - `error` Function
 
 <sub><sup>Writes $message in bold red, indicating a fatal error or failure. </sup></sub>
@@ -7781,8 +6914,6 @@ public function error(array|string $message): void
 $output->error($message);
 ```
 
----
-
 ### - `setSilentMode` Function
 
 <sub><sup>Enables or disables silent mode. When active, write() populates the buffer but suppresses all echo output. Useful for capturing output in tests. </sup></sub>
@@ -7796,8 +6927,6 @@ public function setSilentMode(bool $isSilentMode): void
 $output->setSilentMode($isSilentMode);
 ```
 
----
-
 ### - `supportsColors` Function
 
 <sub><sup>Returns true when the current environment supports ANSI colour codes. </sup></sub>
@@ -7810,8 +6939,6 @@ public function supportsColors(): bool
 // --- Usage
 $output->supportsColors();
 ```
-
----
 
 ### - `getBuffer` Function
 
@@ -7830,8 +6957,6 @@ public function getBuffer(): array
 $output->getBuffer();
 ```
 
----
-
 ### - `getDisplay` Function
 
 <sub><sup>Returns the entire buffered output as a single concatenated string, equivalent to imploding getBuffer() with an empty separator. </sup></sub>
@@ -7844,8 +6969,6 @@ public function getDisplay(): string
 // --- Usage
 $output->getDisplay();
 ```
-
----
 
 ### - `formatText` Function
 
@@ -7882,15 +7005,11 @@ $output->formatText($message, $foreground, $background, $style);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $input = new Input(array $args);
 ```
-
----
 
 ### - `getArguments` Function
 
@@ -7909,8 +7028,6 @@ public function getArguments(): array
 $input->getArguments();
 ```
 
----
-
 ### - `getArgument` Function
 
 <sub><sup>Returns the positional argument at $position, or null when the position does not exist. </sup></sub>
@@ -7923,8 +7040,6 @@ public function getArgument(int $position): string
 // --- Usage
 $input->getArgument($position);
 ```
-
----
 
 ### - `getOptions` Function
 
@@ -7943,8 +7058,6 @@ public function getOptions(): array
 $input->getOptions();
 ```
 
----
-
 ### - `hasOption` Function
 
 <sub><sup>Returns true when an option with the given $name was present on the command line, false otherwise. </sup></sub>
@@ -7957,8 +7070,6 @@ public function hasOption(string $name): bool
 // --- Usage
 $input->hasOption($name);
 ```
-
----
 
 ### - `getOption` Function
 
@@ -7973,8 +7084,6 @@ public function getOption(string $name): string
 $input->getOption($name);
 ```
 
----
-
 ### - `getUserInput` Function
 
 <sub><sup>Reads a line of text from the terminal (via readline) and returns it. Returns an empty string when readline produces no input. </sup></sub>
@@ -7987,8 +7096,6 @@ public function getUserInput(): string
 // --- Usage
 $input->getUserInput();
 ```
-
----
 
 ### - `radio` Function
 
@@ -8043,15 +7150,11 @@ $input->radio($options, $title);
 
 
 
----
-
 #### How to use the Class:
 
 ```php
 $radioButton = new RadioButton(string $prompt, array $options);
 ```
-
----
 
 ### - `show` Function
 
@@ -8078,8 +7181,6 @@ $radioButton->show();
 
 
 
----
-
 ### - `getName` Function
 
 <sub><sup>Returns the CLI argument name &#039;help&#039; used to invoke this command. </sup></sub>
@@ -8092,8 +7193,6 @@ public static function getName(): string
 // --- Usage
 HelpCommand::getName();
 ```
-
----
 
 ### - `getDescription` Function
 
@@ -8108,8 +7207,6 @@ public static function getDescription(): string
 HelpCommand::getDescription();
 ```
 
----
-
 ### - `run` Function
 
 <sub><sup>Prints all registered commands with their names and descriptions, then returns Output::SUCCESS. </sup></sub>
@@ -8122,8 +7219,6 @@ public function run(Input $input, Output $output): int
 // --- Usage
 $helpCommand->run($input, $output);
 ```
-
----
 
 ### - `help` Function
 
@@ -8138,8 +7233,6 @@ public function help(Input $input, Output $output): int
 $helpCommand->help($input, $output);
 ```
 
----
-
 ### - `setRunningApplication` Function
 
 <sub><sup>Injects the running Application instance so the command can access the full command registry if needed. Called automatically by Application::addCommand(). </sup></sub>
@@ -8152,8 +7245,6 @@ public function setRunningApplication(Application $app): void
 // --- Usage
 $helpCommand->setRunningApplication($app);
 ```
-
----
 
 ### - `getApplication` Function
 
@@ -8178,8 +7269,6 @@ $helpCommand->getApplication();
 
 
 
----
-
 ### - `getName` Function
 
 <sub><sup>Returns the CLI argument name &#039;version&#039; used to invoke this command. </sup></sub>
@@ -8192,8 +7281,6 @@ public static function getName(): string
 // --- Usage
 VersionCommand::getName();
 ```
-
----
 
 ### - `getDescription` Function
 
@@ -8208,8 +7295,6 @@ public static function getDescription(): string
 VersionCommand::getDescription();
 ```
 
----
-
 ### - `run` Function
 
 <sub><sup>Prints the framework name and version in green, then returns Output::SUCCESS. </sup></sub>
@@ -8222,8 +7307,6 @@ public function run(Input $input, Output $output): int
 // --- Usage
 $versionCommand->run($input, $output);
 ```
-
----
 
 ### - `help` Function
 
@@ -8238,8 +7321,6 @@ public function help(Input $input, Output $output): int
 $versionCommand->help($input, $output);
 ```
 
----
-
 ### - `setRunningApplication` Function
 
 <sub><sup>Injects the running Application instance so the command can access the full command registry if needed. Called automatically by Application::addCommand(). </sup></sub>
@@ -8252,8 +7333,6 @@ public function setRunningApplication(Application $app): void
 // --- Usage
 $versionCommand->setRunningApplication($app);
 ```
-
----
 
 ### - `getApplication` Function
 
@@ -8278,8 +7357,6 @@ $versionCommand->getApplication();
 
 
 
----
-
 ### - `getName` Function
 
 <sub><sup>Returns the internal name &#039;not-found&#039;. This command is never invoked by the user directly — it is selected automatically by Application as the fallback. </sup></sub>
@@ -8292,8 +7369,6 @@ public static function getName(): string
 // --- Usage
 NotFoundCommand::getName();
 ```
-
----
 
 ### - `getDescription` Function
 
@@ -8308,8 +7383,6 @@ public static function getDescription(): string
 NotFoundCommand::getDescription();
 ```
 
----
-
 ### - `run` Function
 
 <sub><sup>Prints a &quot;command not found&quot; error and a usage hint, then returns Output::ERROR. </sup></sub>
@@ -8322,8 +7395,6 @@ public function run(Input $input, Output $output): int
 // --- Usage
 $notFoundCommand->run($input, $output);
 ```
-
----
 
 ### - `help` Function
 
@@ -8338,8 +7409,6 @@ public function help(Input $input, Output $output): int
 $notFoundCommand->help($input, $output);
 ```
 
----
-
 ### - `setRunningApplication` Function
 
 <sub><sup>Injects the running Application instance so the command can access the full command registry if needed. Called automatically by Application::addCommand(). </sup></sub>
@@ -8352,8 +7421,6 @@ public function setRunningApplication(Application $app): void
 // --- Usage
 $notFoundCommand->setRunningApplication($app);
 ```
-
----
 
 ### - `getApplication` Function
 

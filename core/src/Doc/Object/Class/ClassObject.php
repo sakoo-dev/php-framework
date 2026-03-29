@@ -149,4 +149,9 @@ readonly class ClassObject implements ClassInterface
 	{
 		return $this->class->getInterfaces();
 	}
+
+	public function shouldNotDocument(): bool
+	{
+		return !empty($this->class->getAttributes(DontDocument::class));
+	}
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sakoo\Framework\Core\Doc\Object\Class;
 
 use Sakoo\Framework\Core\Doc\Object\Method\MethodObject;
+use Sakoo\Framework\Core\Doc\Object\Method\VirtualMethodObject;
 use Sakoo\Framework\Core\Doc\Object\PhpDoc\PhpDocObject;
 
 /**
@@ -66,6 +67,14 @@ interface ClassInterface
 	public function getRawDoc(): string;
 
 	public function getPhpDocObject(): PhpDocObject;
+
+	/**
+	 * Parses [at-sign]method tag lines from the class-level PHPDoc and returns them as
+	 * VirtualMethodObject instances. Lines that fail to parse are silently skipped.
+	 *
+	 * @return VirtualMethodObject[]
+	 */
+	public function getVirtualMethods(): array;
 
 	/**
 	 * Returns all interfaces implemented by this class as a map of
