@@ -33,7 +33,6 @@ class OutputTest extends TestCase
 	public function block_output_adds_newline(): void
 	{
 		$output = new Output(false);
-
 		$capturedOutput = $this->captureOutput(fn () => $output->block('Hello World'));
 
 		$this->assertEquals('Hello World' . PHP_EOL, $capturedOutput);
@@ -43,7 +42,6 @@ class OutputTest extends TestCase
 	public function format_text_with_colors(): void
 	{
 		$output = new Output(true);
-
 		$capturedOutput = $this->captureOutput(fn () => $output->text('Colored Text', Output::COLOR_RED));
 
 		$this->assertEquals("\033[31mColored Text\033[0m", $capturedOutput);
@@ -53,7 +51,6 @@ class OutputTest extends TestCase
 	public function format_text_with_multiple_styles(): void
 	{
 		$output = new Output(true);
-
 		$capturedOutput = $this->captureOutput(fn () => $output->text('Styled Text', Output::COLOR_GREEN, Output::BG_BLACK, Output::STYLE_BOLD));
 
 		$this->assertEquals("\033[1;32;40mStyled Text\033[0m", $capturedOutput);
@@ -74,7 +71,6 @@ class OutputTest extends TestCase
 	public function array_messages(): void
 	{
 		$output = new Output(false);
-
 		$capturedOutput = $this->captureOutput(fn () => $output->block(['Line 1', 'Line 2']));
 
 		$this->assertEquals('Line 1' . PHP_EOL . 'Line 2' . PHP_EOL, $capturedOutput);
@@ -103,7 +99,6 @@ class OutputTest extends TestCase
 	{
 		$output = new Output(false);
 		$output->setSilentMode();
-
 		$output->text('Line 1');
 		$output->text('Line 2');
 
@@ -114,9 +109,49 @@ class OutputTest extends TestCase
 	public function new_line(): void
 	{
 		$output = new Output(false);
-
 		$capturedOutput = $this->captureOutput(fn () => $output->newLine());
 
 		$this->assertEquals(PHP_EOL . PHP_EOL, $capturedOutput);
+	}
+
+	#[Test]
+	public function supports_colors_returns_bool(): void
+	{
+		$this->assertIsBool((new Output(false))->supportsColors());
+		$this->assertIsBool((new Output(true))->supportsColors());
+	}
+
+	#[Test]
+	public function supports_colors_returns_true_when_forced_on(): void
+	{
+		$this->assertTrue((new Output(true))->supportsColors());
+	}
+
+	#[Test]
+	public function format_text_with_color_support_enabled_but_no_format_params_returns_plain(): void
+	{
+		$this->assertSame('plain text', (new Output(true))->formatText('plain text'));
+	}
+
+	#[Test]
+	public function format_text_applies_ansi_codes_when_colors_enabled(): void
+	{
+		$result = (new Output(true))->formatText('colored', Output::COLOR_GREEN);
+
+		$this->assertStringContainsString("\033[", $result);
+		$this->assertStringContainsString('colored', $result);
+	}
+
+	#[Test]
+	public function silent_mode_can_be_disabled(): void
+	{
+		$output = new Output(false);
+		$output->setSilentMode(true);
+
+		$this->assertSame('', $this->captureOutput(fn () => $output->text('hidden')));
+
+		$output->setSilentMode(false);
+
+		$this->assertSame('visible', $this->captureOutput(fn () => $output->text('visible')));
 	}
 }

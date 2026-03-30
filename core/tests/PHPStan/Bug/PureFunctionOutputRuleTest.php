@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sakoo\Framework\Core\Tests\PHPStan\Bug;
 
+use PhpParser\Node\Stmt\Expression;
 use PHPStan\Rules\Rule;
 use PHPUnit\Framework\Attributes\Test;
 use Sakoo\Framework\Core\PHPStan\Bug\PureFunctionOutputRule;
@@ -28,7 +29,20 @@ final class PureFunctionOutputRuleTest extends PHPStanTestCase
 			[sprintf($errorMessage, 'strlen'), 7],
 			[sprintf($errorMessage, 'count'), 8],
 			[sprintf($errorMessage, 'trim'), 9],
-			[sprintf($errorMessage, 'strlen'), 25],
+			[sprintf($errorMessage, 'strlen'), 26],
 		]);
+	}
+
+	#[Test]
+	public function rule_signature_constant_is_correct(): void
+	{
+		$this->assertSame('sakoo.bug.pureFunctionOutput', PureFunctionOutputRule::RULE_SIGNATURE);
+	}
+
+	#[Test]
+	public function get_node_type_returns_expression(): void
+	{
+		$rule = new PureFunctionOutputRule();
+		$this->assertSame(Expression::class, $rule->getNodeType());
 	}
 }

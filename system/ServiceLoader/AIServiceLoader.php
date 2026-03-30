@@ -22,6 +22,7 @@ class AIServiceLoader extends ServiceLoader
 				url: 'host.docker.internal:11434/api',
 				model: 'qwen3-vl:4b',
 			),
+			// for more information: https://gapgpt.app/platform-v2
 			'gapgpt' => new OpenAILike(
 				baseUri: 'https://api.gapgpt.app/v1',
 				key: 'GAP_GPT_KEY',
@@ -34,6 +35,7 @@ class AIServiceLoader extends ServiceLoader
 				url: 'host.docker.internal:11434/api',
 				model: 'qwen3-embedding:8b',
 			),
+			// for more information: https://gapgpt.app/platform-v2
 			'gapgpt' => new OpenAILikeEmbeddings(
 				baseUri: 'https://api.gapgpt.app/v1',
 				key: 'GAP_GPT_KEY',

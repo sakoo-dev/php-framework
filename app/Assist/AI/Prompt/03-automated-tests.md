@@ -1,35 +1,50 @@
-# Automated Tests for Sakoo Framework Core Components
+# Task: Generate Unit Tests for Sakoo PHP Framework
 
-## Context
+## Paths
+- Source: `/var/www/html/core/src`
+- Tests: `/var/www/html/core/tests`
+- Coverage: `/var/www/html/storage/tests/coverage`
 
-We want to Generate Unit Tests for Core components of Sakoo PHP Framework.
-These files are located in `/var/www/html/core/tests` for components of `/var/www/html/core/src`
+## Objective
+Raise test coverage to ≥90% using coverage data as the single source of truth.
 
-## Test Structure
+## Execution Plan
+1. Run all tests → ensure they pass.
+2. Generate coverage report:
+    - HTML: `make test-coverage` OR `./vendor/bin/phpunit test --coverage-html=storage/tests/coverage/`
+    - Text: `composer test` OR `./vendor/bin/phpunit --coverage-text`
+3. Read coverage output → locate uncovered classes/methods.
+4. Select ONLY meaningful uncovered logic (see Skip Rules).
+5. Write or extend tests.
+6. Repeat until coverage ≥90%.
+
+## Tooling
+- If file access fails → use MCP tools.
+- Do NOT scan the entire codebase manually.
+
+## Skip Rules
+Ignore:
+- Anemic classes (only getters/setters, no behavior)
+- Formatter / DTO / data-only classes
+
+## Test Rules
+- Never duplicate existing tests.
+- If test file exists → extend it.
+- If a method is already covered → skip it.
+- Write tests immediately after selecting a target (no batching).
+- Don't Write any Comment, test should be Readable itself.
+- Separate All Stub Classes into Separate Files.
+
+## Test Style
 ```php
 final class SomeTest extends TestCase
 {
-	#[Test]
-	public function readable_snake_case_function_name(): void
-	{
-            // Given / Arrange
-            // When / Act
-            // Then / Assert
-	}
+    #[Test]
+    public function readable_snake_case_function_name(): void
+    {
+        // Given
+        // When
+        // Then
+    }
 }
 ```
-
-## Plan
-
-- Firstly, you should run tests and make sure all of them work properly.
-- Secondly, you should generate code coverage using `make coverage` for visual mode and `composer test` for text mode in the project directory
-- Now, you can write tests for anemic classes
-- Some of configurations are placed in `/var/www/html/phpunit.xml`
-- Test Coverage should be upper or equal to 90%
-
-## Constraints
-
-- Don't Remove Exist Tests
-- If Tests Already exists for a function, leave it and go to another one
-- After Reading every signle file, Write it's Tests Immidiately and check for coverage
-- Don't Write any documentation. A test should be Readable without any explaination

@@ -19,7 +19,7 @@ final class ZenCommandTest extends AbstractCommandBase
 	protected function setUp(): void
 	{
 		parent::setUp();
-		$this->command = new ZenCommand();
+		$this->command = resolve(ZenCommand::class);
 	}
 
 	protected function getCommand(): Command
@@ -37,11 +37,21 @@ final class ZenCommandTest extends AbstractCommandBase
 		$console = new Application($input, $output);
 		$console->addCommand($this->command);
 
-		$status = $console->run();
-		$result = $output->getDisplay();
+		$this->assertEquals(Output::SUCCESS, $console->run());
+		$this->assertStringContainsString(Constants::FRAMEWORK_NAME . ' (Version: ' . Constants::FRAMEWORK_VERSION . ')', $output->getDisplay());
+		$this->assertStringContainsString('Copyright ' . date('Y') . ' by ' . Constants::MAINTAINER, $output->getDisplay());
+	}
 
-		$this->assertEquals(Output::SUCCESS, $status);
-		$this->assertStringContainsString(Constants::FRAMEWORK_NAME . ' (Version: ' . Constants::FRAMEWORK_VERSION . ')', $result);
-		$this->assertStringContainsString('Copyright ' . date('Y') . ' by ' . Constants::MAINTAINER, $result);
+	#[Test]
+	public function get_name_returns_zen(): void
+	{
+		$this->assertSame('zen', ZenCommand::getName());
+	}
+
+	#[Test]
+	public function get_description_contains_framework_name(): void
+	{
+		$this->assertStringContainsString(Constants::FRAMEWORK_NAME, ZenCommand::getDescription());
+		$this->assertStringContainsString('Display Zen of the', ZenCommand::getDescription());
 	}
 }

@@ -107,6 +107,8 @@ project/
 
 ## Code Quality
 
+> Don't Write any Comment, Code should be Readable itself.
+
 ### Type Safety
 - Every parameter, property, and return type explicitly declared. No untyped properties.
 - No `mixed` unless unavoidable — document why. Use generic docblocks: `@param array<int, OrderLine>`, `@return list<Product>`.

@@ -36,10 +36,29 @@ final class DevCommandTest extends AbstractCommandBase
 		$console = new Application($input, $output);
 		$console->addCommand($this->command);
 
-		$status = $console->run();
-		$result = $output->getDisplay();
+		$this->assertEquals(Output::SUCCESS, $console->run());
+		$this->assertStringContainsString('JIT Enabled:', $output->getDisplay());
+	}
 
-		$this->assertEquals(Output::SUCCESS, $status);
-		$this->assertStringContainsString('JIT Enabled:', $result);
+	#[Test]
+	public function get_name_returns_dev(): void
+	{
+		$this->assertSame('dev', DevCommand::getName());
+	}
+
+	#[Test]
+	public function get_description_returns_string(): void
+	{
+		$this->assertSame('Useful Information for Developer', DevCommand::getDescription());
+	}
+
+	#[Test]
+	public function run_always_returns_success(): void
+	{
+		$output = new Output(false);
+		$output->setSilentMode();
+
+		$this->assertSame(Output::SUCCESS, $this->command->run(new Input([]), $output));
+		$this->assertStringContainsString('JIT Enabled:', $output->getDisplay());
 	}
 }

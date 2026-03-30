@@ -12,3 +12,6 @@ sakoo
 
 .php-cs-fixer.cache
 .phpunit.result.cache
+
+.claude
+!.claude/CLAUDE.md

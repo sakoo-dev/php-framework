@@ -19,11 +19,7 @@
     </include>
     <exclude>
       <directory suffix=".php">core/src/Exception</directory>
-      <!-- <directory suffix=".php">core/src/Command</directory>-->
-      <!-- <directory suffix=".php">core/src/Doc</directory>-->
-      <!-- <directory suffix=".php">core/src/Kernel</directory>-->
-      <!-- <directory suffix=".php">core/src/ServiceLoader</directory>-->
-      <!-- <directory suffix=".php">core/src/Testing</directory>-->
+       <directory suffix=".php">core/src/Testing</directory>
       <file>core/src/Constants.php</file>
       <file>core/src/helpers.php</file>
     </exclude>

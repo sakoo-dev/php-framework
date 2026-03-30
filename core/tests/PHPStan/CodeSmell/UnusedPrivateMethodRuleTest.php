@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sakoo\Framework\Core\Tests\PHPStan\CodeSmell;
 
+use PHPStan\Node\InClassNode;
 use PHPStan\Rules\Rule;
 use PHPUnit\Framework\Attributes\Test;
 use Sakoo\Framework\Core\PHPStan\CodeSmell\UnusedPrivateMethodRule;
@@ -29,5 +30,18 @@ final class UnusedPrivateMethodRuleTest extends PHPStanTestCase
 			[sprintf($errorMessage, 'anotherUnusedMethod', 'TestClass'), 12],
 			[sprintf($errorMessage, 'orphanMethod', 'AnotherClass'), 56],
 		]);
+	}
+
+	#[Test]
+	public function rule_signature_constant_is_correct(): void
+	{
+		$this->assertSame('sakoo.codeSmell.unusedPrivateMethod', UnusedPrivateMethodRule::RULE_SIGNATURE);
+	}
+
+	#[Test]
+	public function get_node_type_returns_in_class_node(): void
+	{
+		$rule = new UnusedPrivateMethodRule();
+		$this->assertSame(InClassNode::class, $rule->getNodeType());
 	}
 }

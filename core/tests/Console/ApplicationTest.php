@@ -19,21 +19,19 @@ final class ApplicationTest extends TestCase
 {
 	#[DataProvider('versionArgsProvider')]
 	#[Test]
-	public function it_loads_console_properly($arg)
+	public function it_loads_console_properly($arg): void
 	{
 		$input = new Input([$arg]);
 		$output = new Output();
 		$output->setSilentMode();
 
 		$console = new Application($input, $output);
-		$status = $console->run();
-		$result = $output->getDisplay();
 
-		$this->assertEquals(Output::SUCCESS, $status);
-		$this->assertStringContainsString(Constants::FRAMEWORK_NAME . ' - Version: ' . Constants::FRAMEWORK_VERSION, $result);
+		$this->assertEquals(Output::SUCCESS, $console->run());
+		$this->assertStringContainsString(Constants::FRAMEWORK_NAME . ' - Version: ' . Constants::FRAMEWORK_VERSION, $output->getDisplay());
 	}
 
-	public function versionArgsProvider(): \Generator
+	public static function versionArgsProvider(): \Generator
 	{
 		yield ['version'];
 		yield ['-version'];
@@ -43,7 +41,7 @@ final class ApplicationTest extends TestCase
 	}
 
 	#[Test]
-	public function it_loads_help_command_properly()
+	public function it_loads_help_command_properly(): void
 	{
 		$input = new Input(['help']);
 		$output = new Output();
@@ -51,31 +49,27 @@ final class ApplicationTest extends TestCase
 
 		$console = new Application($input, $output);
 		$console->addCommand(new VersionCommand());
-		$status = $console->run();
-		$result = $output->getDisplay();
 
-		$this->assertEquals(Output::SUCCESS, $status);
-		$this->assertStringContainsString('Available commands:', $result);
-		$this->assertStringContainsString(VersionCommand::getName(), $result);
+		$this->assertEquals(Output::SUCCESS, $console->run());
+		$this->assertStringContainsString('Available commands:', $output->getDisplay());
+		$this->assertStringContainsString(VersionCommand::getName(), $output->getDisplay());
 	}
 
 	#[DataProvider('helpArgsProvider')]
 	#[Test]
-	public function it_loads_help_switch_properly($arg)
+	public function it_loads_help_switch_properly($arg): void
 	{
 		$input = new Input([$arg]);
 		$output = new Output();
 		$output->setSilentMode();
 
 		$console = new Application($input, $output);
-		$status = $console->run();
-		$result = $output->getDisplay();
 
-		$this->assertEquals(Output::SUCCESS, $status);
-		$this->assertStringContainsString('this command helps the user to interact with the current application', $result);
+		$this->assertEquals(Output::SUCCESS, $console->run());
+		$this->assertStringContainsString('this command helps the user to interact with the current application', $output->getDisplay());
 	}
 
-	public function helpArgsProvider(): \Generator
+	public static function helpArgsProvider(): \Generator
 	{
 		yield ['-help'];
 		yield ['--help'];
@@ -84,7 +78,7 @@ final class ApplicationTest extends TestCase
 	}
 
 	#[Test]
-	public function it_loads_default_command_properly()
+	public function it_loads_default_command_properly(): void
 	{
 		$input = new Input([]);
 		$output = new Output();
@@ -93,40 +87,43 @@ final class ApplicationTest extends TestCase
 		$console = new Application($input, $output);
 		$console->addCommand(resolve(ZenCommand::class));
 		$console->setDefaultCommand(ZenCommand::class);
-		$status = $console->run();
-		$result = $output->getDisplay();
 
-		$this->assertEquals(Output::SUCCESS, $status);
-		$this->assertStringContainsString(Constants::FRAMEWORK_NAME . ' (Version: ' . Constants::FRAMEWORK_VERSION . ')', $result);
-		$this->assertStringContainsString('Copyright ' . date('Y') . ' by ' . Constants::MAINTAINER, $result);
+		$this->assertEquals(Output::SUCCESS, $console->run());
+		$this->assertStringContainsString(Constants::FRAMEWORK_NAME . ' (Version: ' . Constants::FRAMEWORK_VERSION . ')', $output->getDisplay());
+		$this->assertStringContainsString('Copyright ' . date('Y') . ' by ' . Constants::MAINTAINER, $output->getDisplay());
 	}
 
 	#[Test]
-	public function it_loads_not_found_command_properly()
+	public function it_loads_not_found_command_properly(): void
 	{
 		$input = new Input(['Something']);
 		$output = new Output();
 		$output->setSilentMode();
 
 		$console = new Application($input, $output);
-		$status = $console->run();
-		$result = $output->getDisplay();
 
-		$this->assertEquals(Output::ERROR, $status);
-		$this->assertStringContainsString('Requested command has not found.', $result);
-		$this->assertStringContainsString('try "./sakoo assist help" to get more information', $result);
+		$this->assertEquals(Output::ERROR, $console->run());
+		$this->assertStringContainsString('Requested command has not found.', $output->getDisplay());
+		$this->assertStringContainsString('try "./sakoo assist help" to get more information', $output->getDisplay());
 	}
 
 	#[Test]
-	public function it_throws_exception_if_default_command_not_found()
+	public function it_throws_exception_if_default_command_not_found(): void
 	{
 		$this->expectException(CommandNotFoundException::class);
 
-		$input = new Input([]);
-		$output = new Output();
-		$output->setSilentMode();
-
-		$console = new Application($input, $output);
+		$console = new Application(new Input([]), new Output());
 		$console->setDefaultCommand(ZenCommand::class);
+	}
+
+	#[Test]
+	public function add_commands_registers_multiple_commands_at_once(): void
+	{
+		$console = new Application(new Input(), new Output());
+		$console->addCommands([new VersionCommand(), new ZenCommand()]);
+
+		$this->assertCount(2, $console->getCommands());
+		$this->assertArrayHasKey('version', $console->getCommands());
+		$this->assertArrayHasKey('zen', $console->getCommands());
 	}
 }

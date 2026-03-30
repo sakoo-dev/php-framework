@@ -59,13 +59,22 @@ final class DocGenCommandTest extends AbstractCommandBase
 		$console = new Application($input, $output);
 		$console->addCommand($this->command);
 
-		$status = $console->run();
-		$result = $output->getDisplay();
-
-		$this->assertEquals(Output::SUCCESS, $status);
-		$this->assertStringContainsString('Document has been Generated Successfully!', $result);
+		$this->assertEquals(Output::SUCCESS, $console->run());
+		$this->assertStringContainsString('Document has been Generated Successfully!', $output->getDisplay());
 		$this->assertTrue($this->docFile->exists());
 		$this->assertTrue($this->sidebarFile->exists());
 		$this->assertTrue($this->footerFile->exists());
+	}
+
+	#[Test]
+	public function get_name_returns_doc_gen(): void
+	{
+		$this->assertSame('doc:gen', DocGenCommand::getName());
+	}
+
+	#[Test]
+	public function get_description_returns_string(): void
+	{
+		$this->assertSame('Generates Document of Framework', DocGenCommand::getDescription());
 	}
 }

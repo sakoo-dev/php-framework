@@ -26,11 +26,41 @@ final class KernelTest extends TestCase
 	public function kernel_exists_in_test(): void
 	{
 		$this->assertInstanceOf(Kernel::class, kernel());
-
 		$this->assertEquals(Environment::Debug, kernel()->getEnvironment());
 		$this->assertEquals(Mode::Test, kernel()->getMode());
-
 		$this->assertInstanceOf(ContainerInterface::class, kernel()->getContainer());
 		$this->assertInstanceOf(ProfilerInterface::class, kernel()->getProfiler());
+	}
+
+	#[Test]
+	public function get_instance_returns_singleton(): void
+	{
+		$this->assertSame(kernel(), Kernel::getInstance());
+	}
+
+	#[Test]
+	public function is_in_test_mode(): void
+	{
+		$this->assertTrue(kernel()->isInTestMode());
+		$this->assertFalse(kernel()->isInHttpMode());
+		$this->assertFalse(kernel()->isInConsoleMode());
+	}
+
+	#[Test]
+	public function is_in_debug_environment(): void
+	{
+		$this->assertTrue(kernel()->isInDebugEnv());
+		$this->assertFalse(kernel()->isInProductionEnv());
+	}
+
+	#[Test]
+	public function set_replica_id_stores_the_value(): void
+	{
+		$kernel = kernel();
+
+		$kernel->setReplicaId('replica-42');
+		$this->assertSame('replica-42', $kernel->getReplicaId());
+
+		$kernel->setReplicaId('');
 	}
 }

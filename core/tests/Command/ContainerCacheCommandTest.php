@@ -42,11 +42,8 @@ final class ContainerCacheCommandTest extends AbstractCommandBase
 
 		$this->container->expects($this->once())->method('dumpCache');
 
-		$status = $console->run();
-		$result = $output->getDisplay();
-
-		$this->assertEquals(Output::SUCCESS, $status);
-		$this->assertStringContainsString('Container cache created successfully.', $result);
+		$this->assertEquals(Output::SUCCESS, $console->run());
+		$this->assertStringContainsString('Container cache created successfully.', $output->getDisplay());
 	}
 
 	#[Test]
@@ -61,10 +58,19 @@ final class ContainerCacheCommandTest extends AbstractCommandBase
 
 		$this->container->expects($this->once())->method('flushCache');
 
-		$status = $console->run();
-		$result = $output->getDisplay();
+		$this->assertEquals(Output::SUCCESS, $console->run());
+		$this->assertStringContainsString('Container cache cleared successfully.', $output->getDisplay());
+	}
 
-		$this->assertEquals(Output::SUCCESS, $status);
-		$this->assertStringContainsString('Container cache cleared successfully.', $result);
+	#[Test]
+	public function get_name_returns_container_cache(): void
+	{
+		$this->assertSame('container:cache', ContainerCacheCommand::getName());
+	}
+
+	#[Test]
+	public function get_description_returns_string(): void
+	{
+		$this->assertSame('Creates container cache for better performance', ContainerCacheCommand::getDescription());
 	}
 }
