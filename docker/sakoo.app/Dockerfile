@@ -1,7 +1,7 @@
 FROM php:8.4.17-cli-alpine
 LABEL MAINTAINER="Pouya Asgharnejad Tehran | https://sakoo.dev"
 
-RUN apk add --no-cache git curl zip unzip nodejs npm linux-headers $PHPIZE_DEPS brotli-dev
+RUN apk add --no-cache git curl zip unzip nodejs npm linux-headers $PHPIZE_DEPS brotli-dev openssl-dev
 
 RUN pecl install inotify-3.0.0 && docker-php-ext-enable inotify \
 && pecl install xdebug && docker-php-ext-enable xdebug \

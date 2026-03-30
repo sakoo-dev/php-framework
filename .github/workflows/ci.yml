@@ -63,8 +63,9 @@ jobs:
 
       - name: Build docker image
         if: steps.docker-cache.outputs.cache-hit != 'true'
+        # remove -q and add --no-cache to enable debugging
         run: |
-          docker build . -f ./docker/sakoo.app/Dockerfile -q -t $DOCKER_IMAGE
+          docker build . -f ./docker/sakoo.app/Dockerfile -q -t $DOCKER_IMAGE 
           docker save $DOCKER_IMAGE | gzip > /tmp/sakoo-app.tar.gz
 
       - name: Upload docker artifact

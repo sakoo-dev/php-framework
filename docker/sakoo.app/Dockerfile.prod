@@ -1,7 +1,7 @@
 FROM php:8.4.17-cli-alpine
 LABEL MAINTAINER="Pouya Asgharnejad Tehran | https://sakoo.dev"
 
-RUN apk add --no-cache git curl zip unzip linux-headers $PHPIZE_DEPS brotli-dev
+RUN apk add --no-cache git curl zip unzip linux-headers $PHPIZE_DEPS brotli-dev openssl-dev
 
 RUN pecl install swoole && docker-php-ext-enable swoole \
 && docker-php-ext-install pdo_mysql mysqli pcntl
