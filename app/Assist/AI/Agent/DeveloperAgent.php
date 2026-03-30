@@ -16,4 +16,9 @@ class DeveloperAgent extends BaseAgent
 			],
 		);
 	}
+
+	protected function tools(): array
+	{
+		return $this->mcpTools();
+	}
 }

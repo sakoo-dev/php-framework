@@ -9,7 +9,8 @@ use NeuronAI\Chat\History\ChatHistoryInterface;
 use NeuronAI\Chat\History\FileChatHistory;
 use NeuronAI\MCP\McpConnector;
 use NeuronAI\Providers\AIProviderInterface;
-use Sakoo\Framework\Core\Path\Path;
+use NeuronAI\Tools\ToolInterface;
+use System\Path\Path;
 
 abstract class BaseAgent extends Agent
 {
@@ -20,22 +21,25 @@ abstract class BaseAgent extends Agent
 
 	protected function chatHistory(): ChatHistoryInterface
 	{
-		$path = Path::getStorageDir() . '/ai/chat-history';
-
 		return new FileChatHistory(
-			directory: $path,
+			directory: Path::getStorageDir() . '/ai/chat-history',
 			key: date('YmdHis'),
-			contextWindow: 50000
+			contextWindow: 8000,
 		);
 	}
 
+	/** @return ToolInterface[] */
+	protected function mcpTools(): array
+	{
+		return McpConnector::make([
+			'command' => 'php',
+			'args' => ['assist', 'mcp:run'],
+		])->tools();
+	}
+
+	/** @return ToolInterface[] */
 	protected function tools(): array
 	{
-		return [
-			...McpConnector::make([
-				'command' => 'php',
-				'args' => ['assist', 'mcp:run'],
-			])->tools(),
-		];
+		return [];
 	}
 }
