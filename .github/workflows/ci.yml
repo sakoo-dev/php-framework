@@ -22,7 +22,7 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Mark repo as safe for git
         run: git config --global --add safe.directory /var/www/html
@@ -85,7 +85,7 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Mark repo as safe for git
         run: git config --global --add safe.directory /var/www/html
@@ -118,7 +118,7 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Mark repo as safe for git
         run: git config --global --add safe.directory /var/www/html
@@ -162,7 +162,7 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Dependency review
         uses: actions/dependency-review-action@v4
