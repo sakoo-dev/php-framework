@@ -12,7 +12,7 @@ class ProductManagerAgent extends BaseAgent
 	{
 		return (string) new SystemPrompt(
 			background: [
-				file_get_contents(__DIR__ . '/../Prompt/pm-agent-prompt.md'),
+				file_get_contents(__DIR__ . '/../Prompt/Skill/product-manager.md'),
 			],
 		);
 	}

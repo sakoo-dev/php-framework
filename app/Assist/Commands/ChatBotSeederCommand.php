@@ -28,7 +28,7 @@ class ChatBotSeederCommand extends Command
 		$bot = ChatBotAgent::make();
 
 		$bot->addDocuments(
-			FileDataLoader::for(Path::getAppDir() . '/Assist/AI/Prompt/chatbot-rag-train.md')->getDocuments(),
+			FileDataLoader::for(Path::getAppDir() . '/Assist/AI/Prompt/Seeder/chatbot-train.md')->getDocuments(),
 		);
 
 		$output->block('Seeding succeed!', Output::COLOR_CYAN);

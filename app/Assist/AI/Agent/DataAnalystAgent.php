@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Assist\AI\Agent;
 
 use NeuronAI\Agent\SystemPrompt;
+use NeuronAI\Tools\ToolInterface;
 
 class DataAnalystAgent extends BaseAgent
 {
@@ -20,7 +21,7 @@ class DataAnalystAgent extends BaseAgent
 	{
 		return (string) new SystemPrompt(
 			background: [
-				file_get_contents(__DIR__ . '/../Prompt/analyst-agent-prompt.md'),
+				file_get_contents(__DIR__ . '/../Prompt/Skill/data-analyst.md'),
 			],
 		);
 	}
@@ -30,7 +31,7 @@ class DataAnalystAgent extends BaseAgent
 		return array_values(
 			array_filter(
 				$this->mcpTools(),
-				fn (object $tool): bool => in_array($tool->name ?? '', self::TOOL_ALLOWLIST, true),
+				fn (ToolInterface $tool): bool => in_array($tool->getName() ?? '', self::TOOL_ALLOWLIST, true)
 			)
 		);
 	}

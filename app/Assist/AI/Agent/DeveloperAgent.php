@@ -12,7 +12,7 @@ class DeveloperAgent extends BaseAgent
 	{
 		return (string) new SystemPrompt(
 			background: [
-				file_get_contents(__DIR__ . '/../Prompt/00-system-prompt.md'),
+				file_get_contents(__DIR__ . '/../Prompt/Skill/software-engineer.md'),
 			],
 		);
 	}

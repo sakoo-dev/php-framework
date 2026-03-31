@@ -39,7 +39,7 @@ class ChatBotAgent extends RAG
 	{
 		return (string) new SystemPrompt(
 			background: [
-				file_get_contents(__DIR__ . '/../Prompt/chatbot-agent-prompt.md'),
+				file_get_contents(__DIR__ . '/../Prompt/Skill/chatbot.md'),
 			],
 		);
 	}

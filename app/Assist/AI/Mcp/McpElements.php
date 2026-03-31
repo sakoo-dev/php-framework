@@ -309,7 +309,7 @@ class McpElements
 	public function systemPromptResource(): string
 	{
 		/** @var string[] $lines */
-		$lines = File::open(Disk::Local, Path::getAppDir() . '/Assist/AI/Prompt/00-system-prompt.md')->readLines();
+		$lines = File::open(Disk::Local, Path::getAppDir() . '/Assist/AI/Prompt/Skill/software-engineer.md')->readLines();
 
 		return implode(PHP_EOL, $lines);
 	}
@@ -335,7 +335,7 @@ class McpElements
 	public function devTaskPrompt(string $fileName): array
 	{
 		/** @var string[] $systemPrompt */
-		$systemPrompt = File::open(Disk::Local, Path::getAppDir() . '/Assist/AI/Prompt/00-system-prompt.md')->readLines();
+		$systemPrompt = File::open(Disk::Local, Path::getAppDir() . '/Assist/AI/Prompt/Skill/software-engineer.md')->readLines();
 
 		/** @var string[] $userPrompt */
 		$userPrompt = File::open(Disk::Local, Path::getAppDir() . "/Assist/AI/Prompt/{$fileName}")->readLines();
