@@ -12,6 +12,7 @@ use NeuronAI\RAG\Embeddings\EmbeddingsProviderInterface;
 use NeuronAI\RAG\Embeddings\OllamaEmbeddingsProvider;
 use NeuronAI\RAG\Embeddings\OpenAILikeEmbeddings;
 use Sakoo\Framework\Core\Container\Container;
+use Sakoo\Framework\Core\Env\Env;
 use Sakoo\Framework\Core\ServiceLoader\ServiceLoader;
 
 class AIServiceLoader extends ServiceLoader
@@ -21,17 +22,17 @@ class AIServiceLoader extends ServiceLoader
 		$llmProviders = [
 			'ollama' => new Ollama(
 				url: 'host.docker.internal:11434/api',
-				model: env('OLLAMA_MODEL'),
+				model: Env::get('OLLAMA_MODEL', ''),
 			),
 			// for more information: https://gapgpt.app/platform-v2
 			'gapgpt' => new OpenAILike(
 				baseUri: 'https://api.gapgpt.app/v1',
-				key: env('GAPGPT_API_KEY'),
-				model: env('GAPGPT_MODEL'),
+				key: Env::get('GAPGPT_API_KEY', ''),
+				model: Env::get('GAPGPT_MODEL', ''),
 			),
 			'claude' => new Anthropic(
-				key: env('CLAUDE_API_KEY'),
-				model: env('CLAUDE_MODEL'),
+				key: Env::get('CLAUDE_API_KEY', ''),
+				model: Env::get('CLAUDE_MODEL', ''),
 				max_tokens: 1024,
 			),
 		];
@@ -39,17 +40,17 @@ class AIServiceLoader extends ServiceLoader
 		$embeddingProviders = [
 			'ollama' => new OllamaEmbeddingsProvider(
 				url: 'host.docker.internal:11434/api',
-				model: env('OLLAMA_EMBEDDING_MODEL'),
+				model: Env::get('OLLAMA_EMBEDDING_MODEL', ''),
 			),
 			// for more information: https://gapgpt.app/platform-v2
 			'gapgpt' => new OpenAILikeEmbeddings(
 				baseUri: 'https://api.gapgpt.app/v1',
-				key: env('GAPGPT_EMBEDDING_KEY'),
-				model: env('GAPGPT_EMBEDDING_MODEL'),
+				key: Env::get('GAPGPT_EMBEDDING_KEY', ''),
+				model: Env::get('GAPGPT_EMBEDDING_MODEL', ''),
 			),
 		];
 
-		$container->bind(AIProviderInterface::class, $llmProviders[env('MODEL_PROVIDER')]);
-		$container->bind(EmbeddingsProviderInterface::class, $embeddingProviders[env('EMBEDDING_MODEL_PROVIDER')]);
+		$container->bind(AIProviderInterface::class, $llmProviders[Env::get('MODEL_PROVIDER', '')]);
+		$container->bind(EmbeddingsProviderInterface::class, $embeddingProviders[Env::get('EMBEDDING_MODEL_PROVIDER', '')]);
 	}
 }

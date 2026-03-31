@@ -17,12 +17,11 @@ use Sakoo\Framework\Core\Env\Env;
 use Sakoo\Framework\Core\FileSystem\Disk;
 use Sakoo\Framework\Core\FileSystem\File;
 use Sakoo\Framework\Core\Finder\FileFinder;
+use Sakoo\Framework\Core\Finder\Makefile;
 use Sakoo\Framework\Core\Kernel\Kernel;
 use System\Path\Path;
 
 /**
- * MCP elements for Sakoo Assist.
- *
  * Design contract:
  *   - Tools    → LLM selects and invokes (prefer for dynamic/stateful data).
  *   - Resources → User attaches explicitly (prefer for static/reusable context).
@@ -33,6 +32,7 @@ use System\Path\Path;
  *   - No redundant prose in return values.
  *   - Resources used for stable data so Claude Desktop can cache them.
  *   - Prompts compose system + user from pre-authored Markdown files.
+ *   - Static/semi-static data exposed as Resources, not Tools — reduces tool-selection overhead.
  */
 class McpElements
 {
@@ -66,13 +66,6 @@ class McpElements
 	}
 
 	/** @return array<string,string[]> */
-	#[McpTool('list_files', 'Extracts all of project files.')]
-	public function getFilesListTool(): array
-	{
-		return $this->getFilesListResource();
-	}
-
-	/** @return array<string,string[]> */
 	#[McpTool('dir_files', 'Extracts files from input directory.')]
 	public function getDirFileListTool(string $path): array
 	{
@@ -90,7 +83,7 @@ class McpElements
 	 * Returns only app/ and system/ and core/ trees, grouped by module, with vendor excluded.
 	 * Use this before read_file to locate relevant files without loading all paths.
 	 *
-	 * @return array{app: string[], system: string[]}
+	 * @return array{app: string[], core: string[], system: string[]}
 	 */
 	#[McpTool('project_structure', 'Returns compact app/ and system/ and core/ file trees (no vendor). Use before read_file to locate files.')]
 	public function projectStructureTool(): array
@@ -146,27 +139,6 @@ class McpElements
 		}
 
 		return $result;
-	}
-
-	/** @phpstan-ignore missingType.iterableValue */
-	#[McpTool('application_info', 'Returns general Sakoo application info: mode, environment, replica ID, and key paths.')]
-	public function applicationInfoTool(): array
-	{
-		$kernel = Kernel::getInstance();
-
-		return [
-			'mode' => $kernel->getMode()->value,
-			'env' => $kernel->getEnvironment()->value,
-			'replica' => $kernel->getReplicaId(),
-			'paths' => [
-				'root' => Path::getRootDir(),
-				'storage' => Path::getStorageDir(),
-				'logs' => Path::getLogsDir(),
-				'vendor' => Path::getVendorDir(),
-				'app' => Path::getAppDir(),
-				'system' => Path::getSystemDir(),
-			],
-		];
 	}
 
 	/** @phpstan-ignore missingType.iterableValue */
@@ -263,29 +235,117 @@ class McpElements
 		return rtrim($appUrl, '/') . '/' . ltrim($path, '/');
 	}
 
-	/** @phpstan-ignore missingType.iterableValue */
-	#[McpTool('assist_commands', 'Lists all registered console commands in the Sakoo Assist application.')]
-	public function assistCommandsTool(): array
+	/**
+	 * Structured git log with separated hash and message.
+	 *
+	 * @phpstan-ignore missingType.iterableValue
+	 */
+	#[McpTool('git_log', 'Returns recent git commits as {hash, msg} objects. Optionally limit count and filter by path.')]
+	public function gitLogTool(int $limit = 20, string $path = ''): array
 	{
-		/** @var Application $application */
-		$application = require Path::getAppDir() . '/Assist/Bootstrap.php';
+		$root = Path::getRootDir();
+		$pathArg = '' !== $path ? ' -- ' . escapeshellarg($path) : '';
 
-		/** @var array<array{name: string, desc: string}> $list */
-		$list = array_map(
-			fn (Command $cmd): array => ['name' => $cmd::getName(), 'desc' => $cmd::getDescription()],
-			$application->getCommands(),
+		/** @phpstan-ignore sakoo.vulnerability.dangerousFunctions */
+		$output = (string) shell_exec(
+			"git -C {$root} log --format='%h|%s' --no-decorate -n {$limit}{$pathArg} 2>&1"
 		);
 
-		return ['commands' => array_values($list)];
+		$lines = array_filter(explode("\n", trim($output)));
+
+		$commits = array_map(static function (string $line): array {
+			$parts = explode('|', $line, 2);
+
+			return ['hash' => $parts[0], 'msg' => $parts[1] ?? ''];
+		}, $lines);
+
+		return ['n' => count($commits), 'commits' => $commits];
 	}
 
-	/** @phpstan-ignore missingType.iterableValue */
-	#[McpTool('count_prompt_tokens', 'Estimates total token usage for a full prompt conversation')]
-	public function countPromptTokensTool(string $message): array
+	/**
+	 * Bounded git diff with truncation to prevent context blowout.
+	 *
+	 * @phpstan-ignore missingType.iterableValue
+	 */
+	#[McpTool('git_diff', 'Returns git diff output. Defaults to unstaged changes. Pass ref to diff against a commit/branch. Truncates at maxLines.')]
+	public function gitDiffTool(string $ref = '', string $path = '', int $maxLines = 200): array
 	{
-		$tokens = (new McpTokenCalculator())->countText($message);
+		$root = Path::getRootDir();
+		$refArg = '' !== $ref ? ' ' . escapeshellarg($ref) : '';
+		$pathArg = '' !== $path ? ' -- ' . escapeshellarg($path) : '';
 
-		return ['chars' => mb_strlen($message), 'tokens' => $tokens, 'strategy' => 'cl100k_base'];
+		// @phpstan-ignore sakoo.vulnerability.dangerousFunctions
+		$raw = trim((string) shell_exec(
+			"git -C {$root} diff{$refArg}{$pathArg} 2>&1"
+		));
+
+		$lines = explode("\n", $raw);
+		$total = count($lines);
+		$truncated = $total > $maxLines;
+
+		if ($truncated) {
+			$lines = array_slice($lines, 0, $maxLines);
+		}
+
+		return [
+			'diff' => implode("\n", $lines),
+			'lines' => $total,
+			'truncated' => $truncated,
+		];
+	}
+
+	/**
+	 * Structured test runner with parsed pass/fail output.
+	 *
+	 * @phpstan-ignore missingType.iterableValue
+	 */
+	#[McpTool('test_run', 'Runs PHPUnit tests. Optional filter for specific test. Returns structured pass/fail results.')]
+	public function testRunTool(string $filter = ''): array
+	{
+		$root = Path::getRootDir();
+		$filterArg = '' !== $filter ? ' --filter=' . escapeshellarg($filter) : '';
+
+		// @phpstan-ignore sakoo.vulnerability.dangerousFunctions
+		$output = trim((string) shell_exec(
+			"cd {$root} && php vendor/bin/phpunit{$filterArg} --no-progress --colors=never 2>&1"
+		));
+
+		$lines = explode("\n", $output);
+		$summary = '';
+		$ok = false;
+
+		foreach (array_reverse($lines) as $line) {
+			if (preg_match('/^(OK|FAILURES|ERRORS|Tests:)/', trim($line))) {
+				$summary = trim($line);
+				$ok = str_starts_with($summary, 'OK');
+
+				break;
+			}
+		}
+
+		return [
+			'ok' => $ok,
+			'summary' => $summary,
+			'output' => $output,
+		];
+	}
+
+	#[McpTool('sakoo_exec', 'Runs a ./sakoo command (docker proxy). E.g. "composer info", "assist doc:gen".')]
+	public function sakooExecTool(string $command): string
+	{
+		$root = Path::getRootDir();
+		$allowed = ['assist', 'composer', 'npm'];
+		$parts = explode(' ', trim($command), 2);
+		$sub = $parts[0];
+
+		if (!in_array($sub, $allowed, true)) {
+			return 'err:denied. Allowed sub-commands: ' . implode(', ', $allowed);
+		}
+
+		// @phpstan-ignore sakoo.vulnerability.dangerousFunctions
+		return trim((string) shell_exec(
+			"cd {$root} && " . escapeshellcmd($command) . ' 2>&1'
+		));
 	}
 
 	/**
@@ -314,12 +374,74 @@ class McpElements
 	/**
 	 * Exposes the compact project structure (app/ + system/ + core/ only) as a cacheable resource.
 	 *
-	 * @return array{app: string[], system: string[]}
+	 * @return array{app: string[], core: string[], system: string[]}
 	 */
 	#[McpResource('project://structure')]
 	public function projectStructureResource(): array
 	{
 		return $this->projectStructureTool();
+	}
+
+	/**
+	 * App info (mode, env, paths) as a cacheable resource — doesn't change during a session.
+	 *
+	 * @phpstan-ignore missingType.iterableValue
+	 */
+	#[McpResource('project://info')]
+	public function applicationInfoResource(): array
+	{
+		$kernel = Kernel::getInstance();
+
+		return [
+			'mode' => $kernel->getMode()->value,
+			'env' => $kernel->getEnvironment()->value,
+			'replica' => $kernel->getReplicaId(),
+			'paths' => [
+				'root' => Path::getRootDir(),
+				'storage' => Path::getStorageDir(),
+				'logs' => Path::getLogsDir(),
+				'vendor' => Path::getVendorDir(),
+				'app' => Path::getAppDir(),
+				'system' => Path::getSystemDir(),
+			],
+		];
+	}
+
+	/**
+	 * Makefile targets as a cacheable resource — rarely changes during a session.
+	 *
+	 * @phpstan-ignore missingType.iterableValue
+	 */
+	#[McpResource('project://makefile')]
+	public function makefileTargetsResource(): array
+	{
+		$path = Path::getRootDir() . '/Makefile';
+
+		if (!is_file($path)) {
+			return ['targets' => [], 'note' => 'no_makefile'];
+		}
+
+		return ['targets' => (new Makefile($path))->getTargets()];
+	}
+
+	/**
+	 * Console commands as a cacheable resource — doesn't change during a session.
+	 *
+	 * @phpstan-ignore missingType.iterableValue
+	 */
+	#[McpResource('project://commands')]
+	public function assistCommandsResource(): array
+	{
+		/** @var Application $application */
+		$application = require Path::getAppDir() . '/Assist/Bootstrap.php';
+
+		/** @var array<array{name: string, desc: string}> $list */
+		$list = array_map(
+			fn (Command $cmd): array => ['name' => $cmd::getName(), 'desc' => $cmd::getDescription()],
+			$application->getCommands(),
+		);
+
+		return ['commands' => array_values($list)];
 	}
 
 	/** Architecture patterns: SOLID, DDD, Hexagonal, CQRS, Security, Performance, Testing. */
@@ -379,7 +501,7 @@ class McpElements
 		$userPrompt = File::open(Disk::Local, Path::getAppDir() . "/Assist/AI/Prompt/{$fileName}")->readLines();
 
 		return [
-			new PromptMessage(Role::Assistant, new TextContent($systemPrompt)),
+			new PromptMessage(Role::User, new TextContent(["[System context]\n" . implode(PHP_EOL, $systemPrompt)])),
 			new PromptMessage(Role::User, new TextContent($userPrompt)),
 		];
 	}

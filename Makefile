@@ -81,3 +81,6 @@ cache:
 cache-clear:
 	@./sakoo assist container:cache --clear
 	@./sakoo composer dump-autoload
+
+.PHONY mcp-test:
+	@npx @modelcontextprotocol/inspector ./bin/mcp
