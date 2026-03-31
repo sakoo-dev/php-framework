@@ -29,10 +29,7 @@ class DataAnalystAgent extends BaseAgent
 	protected function tools(): array
 	{
 		return array_values(
-			array_filter(
-				$this->mcpTools(),
-				fn (ToolInterface $tool): bool => in_array($tool->getName() ?? '', self::TOOL_ALLOWLIST, true)
-			)
+			array_filter($this->mcpTools(), fn (ToolInterface $tool) => in_array($tool->getName(), self::TOOL_ALLOWLIST))
 		);
 	}
 }

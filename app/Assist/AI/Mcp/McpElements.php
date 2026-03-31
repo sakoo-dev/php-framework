@@ -308,15 +308,11 @@ class McpElements
 	#[McpResource('prompt://system')]
 	public function systemPromptResource(): string
 	{
-		/** @var string[] $lines */
-		$lines = File::open(Disk::Local, Path::getAppDir() . '/Assist/AI/Prompt/Skill/software-engineer.md')->readLines();
-
-		return implode(PHP_EOL, $lines);
+		return $this->readReferenceFile('Skill/software-engineer.md');
 	}
 
 	/**
 	 * Exposes the compact project structure (app/ + system/ + core/ only) as a cacheable resource.
-	 * Prefer over file://list when Claude only needs to locate app-level files.
 	 *
 	 * @return array{app: string[], system: string[]}
 	 */
@@ -324,6 +320,48 @@ class McpElements
 	public function projectStructureResource(): array
 	{
 		return $this->projectStructureTool();
+	}
+
+	/** Architecture patterns: SOLID, DDD, Hexagonal, CQRS, Security, Performance, Testing. */
+	#[McpResource('reference://architecture')]
+	public function architectureReferenceResource(): string
+	{
+		return $this->readReferenceFile('Reference/architecture-reference.md');
+	}
+
+	/** Sakoo PHP coding conventions: file structure, types, naming, collections, DI, docs. */
+	#[McpResource('reference://conventions')]
+	public function conventionsResource(): string
+	{
+		return $this->readReferenceFile('Reference/coding-conventions.md');
+	}
+
+	/** Sakoo framework identity: value propositions, core components, system layer. */
+	#[McpResource('reference://sakoo-identity')]
+	public function sakooIdentityResource(): string
+	{
+		return $this->readReferenceFile('Reference/sakoo-identity.md');
+	}
+
+	/** Prompt engineering: skill architecture, token efficiency, MCP element design, anti-patterns. */
+	#[McpResource('reference://prompt-engineering')]
+	public function promptEngineeringResource(): string
+	{
+		return $this->readReferenceFile('Reference/prompt-engineering.md');
+	}
+
+	/** QA & verification: code review checklist, test writing, visual QA, document QA. */
+	#[McpResource('reference://quality-assurance')]
+	public function qualityAssuranceResource(): string
+	{
+		return $this->readReferenceFile('Reference/quality-assurance.md');
+	}
+
+	/** File handling: reading strategies by type, PDF/XLSX/DOCX/PPTX processing, common pitfalls. */
+	#[McpResource('reference://file-handling')]
+	public function fileHandlingResource(): string
+	{
+		return $this->readReferenceFile('Reference/file-handling.md');
 	}
 
 	/**
@@ -348,7 +386,6 @@ class McpElements
 
 	/**
 	 * Returns a minimal prompt for a single-file code review.
-	 * Loads only the relevant file content — avoids injecting the full system prompt.
 	 *
 	 * @return PromptMessage[]
 	 */
@@ -368,5 +405,13 @@ class McpElements
 				new TextContent(["Review this file ({$tokens} tokens):\n\n```php\n{$content}\n```"])
 			),
 		];
+	}
+
+	private function readReferenceFile(string $relativePath): string
+	{
+		/** @var string[] $lines */
+		$lines = File::open(Disk::Local, Path::getAppDir() . '/Assist/AI/Prompt/' . $relativePath)->readLines();
+
+		return implode(PHP_EOL, $lines);
 	}
 }

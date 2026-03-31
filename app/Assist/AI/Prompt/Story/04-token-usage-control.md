@@ -1,27 +1,19 @@
-## TASK
-Your task is to make highly efficient MCP Elements and AI Agents according to below Docs:
-- PHP MCP Server (https://github.com/php-mcp/server)
-- Neuron AI Agents (https://docs.neuron-ai.dev)
+# Token & Context Optimization
 
-to minimize Context and Token Usage of Cluade/OpenAI LLMs **without reduce Quality of Results**.
+## Task
+Optimize MCP Elements and AI Agents in `/var/www/html/app/Assist/AI` to minimize context/token usage without reducing result quality.
 
-> I use **Claude Desktop** with it's MCP elements. focus on the elements of using this Approach instead of Agents Only.
+Read docs first: [PHP MCP Server](https://github.com/php-mcp/server) · [Neuron AI Agents](https://docs.neuron-ai.dev)
 
-## GOALS
-1. Reduce token usage
-2. Maximize context relevance
-3. Avoid redundant or verbose outputs
-4. Ensure deterministic, structured responses
-5. Be production-ready (stateless, composable, debuggable)
-6. Using cache if possible instead of reading MCP Tools or Resources every time (if it has any impact)
-7. Adding new MCP Elements (if it has any impact)
+## Goals
+1. Reduce token usage per interaction.
+2. Maximize context relevance — no redundant data in prompts.
+3. Deterministic, structured responses (short JSON keys, no prose in tool returns).
+4. Cache stable data via MCP Resources instead of re-reading via Tools.
+5. Add/modify MCP Elements where it reduces round-trips.
 
-## CONSTRAINTS
-- AI elements in this Project are placed in `/var/www/html/app/Assist/AI`. Don't Lookfor them any other Place.
-- Read `PHP MCP Server` and `Neuron AI Agents` Documentation to make changes according to their **Best Practices**
-- Output MUST be concise
-- Avoid explanations unless explicitly requested
-- Prefer structured outputs over natural language
-- Use token-efficient patterns (short keys, no redundancy)
-- Avoid repeating user input
-- Avoid unnecessary system prompts
+## Constraints
+- AI elements only in `/var/www/html/app/Assist/AI`.
+- Output must be concise. Avoid explanations unless requested.
+- Prefer structured output over natural language.
+- No redundancy. Don't repeat user input.

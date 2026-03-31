@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace System\ServiceLoader;
 
 use NeuronAI\Providers\AIProviderInterface;
+use NeuronAI\Providers\Anthropic\Anthropic;
 use NeuronAI\Providers\Ollama\Ollama;
 use NeuronAI\Providers\OpenAILike;
 use NeuronAI\RAG\Embeddings\EmbeddingsProviderInterface;
@@ -20,30 +21,35 @@ class AIServiceLoader extends ServiceLoader
 		$llmProviders = [
 			'ollama' => new Ollama(
 				url: 'host.docker.internal:11434/api',
-				model: 'qwen3-vl:4b',
+				model: env('OLLAMA_MODEL'),
 			),
 			// for more information: https://gapgpt.app/platform-v2
 			'gapgpt' => new OpenAILike(
 				baseUri: 'https://api.gapgpt.app/v1',
-				key: 'GAP_GPT_KEY',
-				model: 'gapgpt-qwen-3.5',
+				key: env('GAPGPT_API_KEY'),
+				model: env('GAPGPT_MODEL'),
+			),
+			'claude' => new Anthropic(
+				key: env('CLAUDE_API_KEY'),
+				model: env('CLAUDE_MODEL'),
+				max_tokens: 1024,
 			),
 		];
 
 		$embeddingProviders = [
 			'ollama' => new OllamaEmbeddingsProvider(
 				url: 'host.docker.internal:11434/api',
-				model: 'qwen3-embedding:8b',
+				model: env('OLLAMA_EMBEDDING_MODEL'),
 			),
 			// for more information: https://gapgpt.app/platform-v2
 			'gapgpt' => new OpenAILikeEmbeddings(
 				baseUri: 'https://api.gapgpt.app/v1',
-				key: 'GAP_GPT_KEY',
-				model: 'gapgpt-qwen-3.5',
+				key: env('GAPGPT_EMBEDDING_KEY'),
+				model: env('GAPGPT_EMBEDDING_MODEL'),
 			),
 		];
 
-		$container->bind(AIProviderInterface::class, $llmProviders['ollama']);
-		$container->bind(EmbeddingsProviderInterface::class, $embeddingProviders['ollama']);
+		$container->bind(AIProviderInterface::class, $llmProviders[env('MODEL_PROVIDER')]);
+		$container->bind(EmbeddingsProviderInterface::class, $embeddingProviders[env('EMBEDDING_MODEL_PROVIDER')]);
 	}
 }
