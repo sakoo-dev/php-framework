@@ -41,7 +41,7 @@ readonly class GitIgnore
 
 		// @phpstan-ignore argument.type
 		$this->root = dirname(realpath($this->path));
-		$this->rules = $this->loadGitignore();
+		$this->rules = $this->parseRules();
 	}
 
 	/**
@@ -53,25 +53,25 @@ readonly class GitIgnore
 	 */
 	public function isIgnored(string $file): bool
 	{
-		$abs = realpath($file);
-
-		if (false === $abs) {
-			return false;
-		}
-
-		$rel = str_replace($this->root . '/', '', $abs);
-		$rel = ltrim($rel, '/');
+		$relativePath = $this->toRelativePath($file);
 
 		$ignored = false;
 
 		foreach ($this->rules as $rule) {
 			// @phpstan-ignore argument.type
-			if (preg_match($rule['regex'], $rel)) {
+			if (preg_match($rule['regex'], $relativePath)) {
 				$ignored = !$rule['negate'];
 			}
 		}
 
 		return $ignored;
+	}
+
+	private function toRelativePath(string $file): string
+	{
+		$absolute = str_starts_with($file, $this->root) ? $file : (realpath($file) ?: $file);
+
+		return ltrim(str_replace($this->root . '/', '', $absolute), '/');
 	}
 
 	/**
@@ -84,58 +84,80 @@ readonly class GitIgnore
 	 *
 	 * @return array<array<string, bool|string>>
 	 */
-	private function loadGitignore(): array
+	private function parseRules(): array
 	{
-		$lines = file($this->path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+		$lines = file($this->path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
 		Assert::array($lines, 'Cannot read gitignore.');
 
-		$rules = [];
-
-		/**
+		/*
 		 * @var string[] $lines
-		 *
 		 * @phpstan-ignore varTag.nativeType
 		 */
-		foreach ($lines as $line) {
-			$line = trim($line);
+		return array_values(array_filter(array_map($this->parseLine(...), $lines)));
+	}
 
-			if ('' === $line || '#' === $line[0]) {
-				continue;
-			}
+	/**
+	 * @return null|array<string, bool|string>
+	 */
+	private function parseLine(string $line): ?array
+	{
+		$line = trim($line);
 
-			$isNegation = false;
-
-			if ('!' === $line[0]) {
-				$isNegation = true;
-				$line = substr($line, 1);
-			}
-
-			$isRooted = str_starts_with($line, '/');
-
-			if ($isRooted) {
-				$line = substr($line, 1);
-			}
-
-			$regex = preg_quote($line, '/');
-			$regex = str_replace('\*', '.*', $regex);
-			$regex = str_replace('\?', '.', $regex);
-
-			$isDir = str_ends_with($line, '/');
-
-			if ($isDir) {
-				$regex = rtrim($regex, '\/') . '(\/.*)?';
-			}
-
-			$regex = $isRooted
-				? '/^' . $regex . '$/i'
-				: '/(^|\/)' . $regex . '$/i';
-
-			$rules[] = [
-				'regex' => $regex,
-				'negate' => $isNegation,
-			];
+		if ($this->isBlankOrComment($line)) {
+			return null;
 		}
 
-		return $rules;
+		[$line, $isNegated] = $this->extractNegation($line);
+		[$line, $isRooted] = $this->extractRootAnchor($line);
+		$line = rtrim($line, '/');
+
+		return [
+			'regex' => $this->buildRegex($line, $isRooted),
+			'negate' => $isNegated,
+		];
+	}
+
+	private function isBlankOrComment(string $line): bool
+	{
+		return '' === $line || str_starts_with($line, '#');
+	}
+
+	/**
+	 * @return array{string, bool}
+	 */
+	private function extractNegation(string $line): array
+	{
+		if (str_starts_with($line, '!')) {
+			return [substr($line, 1), true];
+		}
+
+		return [$line, false];
+	}
+
+	/**
+	 * @return array{string, bool}
+	 */
+	private function extractRootAnchor(string $line): array
+	{
+		if (str_starts_with($line, '/')) {
+			return [substr($line, 1), true];
+		}
+
+		return [$line, false];
+	}
+
+	private function buildRegex(string $pattern, bool $isRooted): string
+	{
+		$escaped = $this->toRegexSegment($pattern);
+
+		return $isRooted ? '/^' . $escaped . '(\/.*)?$/i' : '/(^|\/)' . $escaped . '(\/.*)?$/i';
+	}
+
+	private function toRegexSegment(string $pattern): string
+	{
+		$escaped = preg_quote($pattern, '/');
+		$escaped = str_replace('\*', '.*', $escaped);
+
+		return str_replace('\?', '.', $escaped);
 	}
 }

@@ -86,13 +86,7 @@ final class FileFinder
 	 */
 	public function getFiles(): array
 	{
-		$result = [];
-
-		foreach ($this->find() as $file) {
-			$result[] = new SplFileObject($file, 'r+');
-		}
-
-		return $result;
+		return array_map(fn (string $file) => new SplFileObject($file, 'r+'), $this->find());
 	}
 
 	/**
@@ -106,24 +100,14 @@ final class FileFinder
 		Assert::dir($this->path, "The path '{$this->path}' is not a valid directory.");
 
 		$directory = new \RecursiveDirectoryIterator($this->path, \FilesystemIterator::FOLLOW_SYMLINKS);
-		$filter = new \RecursiveCallbackFilterIterator($directory, fn (\SplFileInfo $file) => $this->cutRecursiveIteratorTree($file));
+		$filter = new \RecursiveCallbackFilterIterator($directory, fn (\SplFileInfo $file) => $this->shouldDescend($file));
 		$iterator = new \RecursiveIteratorIterator($filter, \RecursiveIteratorIterator::SELF_FIRST);
 
 		$files = [];
 
 		foreach ($iterator as $file) {
-			/** @var \SplFileObject $file */
-			$fileName = $file->getFilename();
-
-			if ($this->ignoreDotFiles && str_starts_with($fileName, '.')) {
-				continue;
-			}
-
-			if ($this->ignoreVCSIgnored && (new GitIgnore())->isIgnored($file->getRealPath())) {
-				continue;
-			}
-
-			if (!fnmatch($this->pattern, $fileName)) {
+			/** @var \SplFileInfo $file */
+			if ($this->shouldSkip($file)) {
 				continue;
 			}
 
@@ -135,22 +119,45 @@ final class FileFinder
 		return $files;
 	}
 
+	private function shouldSkip(\SplFileInfo $file): bool
+	{
+		$name = $file->getFilename();
+
+		if ($this->ignoreDotFiles && str_starts_with($name, '.')) {
+			return true;
+		}
+
+		if ($this->ignoreVCSIgnored && (new GitIgnore())->isIgnored($file->getPathname())) {
+			return true;
+		}
+
+		if (!fnmatch($this->pattern, $name)) {
+			return true;
+		}
+
+		return false;
+	}
+
 	/**
 	 * Callback for RecursiveCallbackFilterIterator that decides whether to descend
 	 * into a directory. VCS directories are pruned here (when ignoreVCS is active)
 	 * to avoid traversing potentially large and irrelevant directory trees.
 	 * Regular files always return true so the outer loop can apply its own filters.
 	 */
-	private function cutRecursiveIteratorTree(\SplFileInfo $file): bool
+	private function shouldDescend(\SplFileInfo $file): bool
 	{
-		if ($file->isDir()) {
-			$name = $file->getFilename();
-
-			if ($this->ignoreVCS && in_array($name, self::VCS_SYSTEMS)) {
-				return false;
-			}
-
+		if (!$file->isDir()) {
 			return true;
+		}
+
+		$name = $file->getFilename();
+
+		if ($this->ignoreVCS && in_array($name, self::VCS_SYSTEMS)) {
+			return false;
+		}
+
+		if ($this->ignoreDotFiles && str_starts_with($name, '.')) {
+			return false;
 		}
 
 		return true;

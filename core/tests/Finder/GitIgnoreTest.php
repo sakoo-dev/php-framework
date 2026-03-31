@@ -36,6 +36,8 @@ final class GitIgnoreTest extends TestCase
 			'*.tmp',
 			'folder/*.txt',
 			'!folder/keep.txt',
+			'simple',
+			'/vendor/',
 		]));
 
 		file_put_contents($this->tempDir . '/error.log', 'error');
@@ -47,14 +49,22 @@ final class GitIgnoreTest extends TestCase
 		mkdir($this->tempDir . '/cache');
 		file_put_contents($this->tempDir . '/cache/temp.txt', 'cached');
 
-		mkdir($this->tempDir . '/data');
-		mkdir($this->tempDir . '/data/level1');
-		mkdir($this->tempDir . '/data/level1/level2');
+		mkdir($this->tempDir . '/data/level1/level2', recursive: true);
 		file_put_contents($this->tempDir . '/data/level1/level2/item.json', 'json');
 
 		mkdir($this->tempDir . '/folder');
 		file_put_contents($this->tempDir . '/folder/a.txt', 'text');
 		file_put_contents($this->tempDir . '/folder/keep.txt', 'text');
+
+		mkdir($this->tempDir . '/simple');
+		file_put_contents($this->tempDir . '/simple/a.txt', 'text');
+
+		mkdir($this->tempDir . '/vendor/namespace/package', recursive: true);
+		file_put_contents($this->tempDir . '/vendor/namespace/package/composer.json', '{}');
+
+		mkdir($this->tempDir . '/actual-package');
+		file_put_contents($this->tempDir . '/actual-package/composer.json', '{}');
+		symlink($this->tempDir . '/actual-package', $this->tempDir . '/vendor/symlinked-package');
 	}
 
 	protected function tearDown(): void
@@ -116,6 +126,44 @@ final class GitIgnoreTest extends TestCase
 
 		$this->assertTrue($gitIgnore->isIgnored($this->tempDir . '/folder/a.txt'));
 		$this->assertFalse($gitIgnore->isIgnored($this->tempDir . '/folder/keep.txt'));
+	}
+
+	#[Test]
+	public function inner_file_follows_its_parent(): void
+	{
+		$gitIgnore = new GitIgnore($this->gitignorePath);
+
+		$this->assertTrue($gitIgnore->isIgnored($this->tempDir . '/simple'));
+		$this->assertTrue($gitIgnore->isIgnored($this->tempDir . '/simple/a.txt'));
+	}
+
+	#[Test]
+	public function nested_dirs_follow_their_parents(): void
+	{
+		$gitIgnore = new GitIgnore($this->gitignorePath);
+
+		$this->assertTrue($gitIgnore->isIgnored($this->tempDir . '/vendor'));
+		$this->assertTrue($gitIgnore->isIgnored($this->tempDir . '/vendor/namespace'));
+		$this->assertTrue($gitIgnore->isIgnored($this->tempDir . '/vendor/namespace/package'));
+		$this->assertTrue($gitIgnore->isIgnored($this->tempDir . '/vendor/namespace/package/composer.json'));
+	}
+
+	#[Test]
+	public function symlinked_path_repo_inside_vendor_is_ignored_by_symlink_name(): void
+	{
+		$gitIgnore = new GitIgnore($this->gitignorePath);
+
+		$this->assertTrue($gitIgnore->isIgnored($this->tempDir . '/vendor/symlinked-package'));
+		$this->assertTrue($gitIgnore->isIgnored($this->tempDir . '/vendor/symlinked-package/composer.json'));
+	}
+
+	#[Test]
+	public function symlink_target_outside_vendor_is_not_matched_as_vendor(): void
+	{
+		$gitIgnore = new GitIgnore($this->gitignorePath);
+
+		$this->assertFalse($gitIgnore->isIgnored($this->tempDir . '/actual-package'));
+		$this->assertFalse($gitIgnore->isIgnored($this->tempDir . '/actual-package/composer.json'));
 	}
 
 	#[Test]

@@ -24,6 +24,10 @@ trait CanBeDirectory
 	 */
 	private function removeRecursive(string $path): bool
 	{
+		if (is_link($path)) {
+			return unlink($path);
+		}
+
 		if (!file_exists($path)) {
 			return false;
 		}
