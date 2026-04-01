@@ -50,7 +50,7 @@ class AIServiceLoader extends ServiceLoader
 			),
 		];
 
-		$container->bind(AIProviderInterface::class, $llmProviders[Env::get('MODEL_PROVIDER', '')]);
-		$container->bind(EmbeddingsProviderInterface::class, $embeddingProviders[Env::get('EMBEDDING_MODEL_PROVIDER', '')]);
+		$container->bind(AIProviderInterface::class, $llmProviders[Env::get('MODEL_PROVIDER', 'ollama')]);
+		$container->bind(EmbeddingsProviderInterface::class, $embeddingProviders[Env::get('EMBEDDING_MODEL_PROVIDER', 'ollama')]);
 	}
 }

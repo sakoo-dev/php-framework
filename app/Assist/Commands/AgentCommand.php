@@ -49,8 +49,13 @@ class AgentCommand extends Command
 
 			$output->block('Processing...', Output::COLOR_CYAN);
 
-			$message = $agent->chat(new UserMessage($prompt))->getMessage()->getContent() ?? '';
-			$output->block($message, Output::COLOR_GREEN);
+			$agentMessage = $agent->chat(new UserMessage($prompt))->getMessage();
+			$agentUsage = $agentMessage->getUsage();
+
+			$output->block($agentMessage->getContent() ?? '', Output::COLOR_GREEN);
+			$output->block('Input Tokens: ' . ($agentUsage->inputTokens ?? 'N/A'), Output::COLOR_MAGENTA);
+			$output->block('Output Tokens: ' . ($agentUsage->outputTokens ?? 'N/A'), Output::COLOR_MAGENTA);
+			$output->block('Total Tokens: ' . ($agentUsage?->getTotal() ?? 'N/A'), Output::COLOR_MAGENTA);
 		}
 
 		// @phpstan-ignore deadCode.unreachable

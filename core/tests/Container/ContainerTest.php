@@ -92,20 +92,6 @@ final class ContainerTest extends TestCase
 	}
 
 	#[Test]
-	public function it_resolves_abstractions(): void
-	{
-		$this->container->bind(TestInterface::class, TestClass::class);
-		$resolved = $this->container->resolve(AutoWireTestClass::class);
-
-		$this->assertInstanceOf(TestClass::class, $resolved->first);
-		$this->assertNull($resolved->second);
-		$this->assertSame('', $resolved->third);
-		$this->assertSame('', $resolved->fourth);
-		$this->assertSame(0, $resolved->fifth);
-		$this->assertSame('Default Value', $resolved->sixth);
-	}
-
-	#[Test]
 	public function psr_11_the_has_function_works_properly(): void
 	{
 		$this->assertFalse($this->container->has('binded'));

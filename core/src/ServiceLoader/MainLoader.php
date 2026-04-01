@@ -46,6 +46,6 @@ class MainLoader extends ServiceLoader
 		$container->bind(ClockInterface::class, Clock::class);
 		$container->bind(Stringable::class, Str::class);
 		$container->bind(ProfilerInterface::class, Profiler::class);
-		$container->bind(ContainerInterface::class, Container::class);
+		$container->singleton(ContainerInterface::class, Container::class);
 	}
 }

@@ -57,6 +57,7 @@ class PhpBundler extends WatcherActions
 	private function makeLint(string $path): void
 	{
 		$vendor = Path::getVendorDir();
+		$path = escapeshellarg($path);
 		// @phpstan-ignore sakoo.vulnerability.dangerousFunctions
 		exec("php $vendor/bin/php-cs-fixer fix $path --quiet");
 	}

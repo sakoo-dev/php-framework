@@ -6,6 +6,7 @@ namespace Sakoo\Framework\Core\Testing;
 
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Sakoo\Framework\Core\Clock\Clock;
+use Sakoo\Framework\Core\Kernel\Kernel;
 use Sakoo\Framework\Core\Testing\Traits\FileAssertions;
 use Sakoo\Framework\Core\Testing\Traits\HelperAssertions;
 
@@ -14,10 +15,12 @@ use Sakoo\Framework\Core\Testing\Traits\HelperAssertions;
  *
  * Extends PHPUnit's TestCase and adds:
  *
- * - Kernel initialisation — the kernel is booted once per test class via
- *   setUpBeforeClass(). Subsequent classes reuse the already-initialised kernel
- *   because the $initialized flag is static. Concrete subclasses must implement
- *   NeedsKernel::runKernel() to configure and start the kernel for their context.
+ * - Kernel lifecycle management — the kernel is destroyed and re-booted fresh
+ *   for each test class via setUpBeforeClass() and tearDownAfterClass(). This
+ *   guarantees full isolation between test suites: a corrupted container, stale
+ *   singleton, or leaked service loader in one test class cannot affect any
+ *   subsequent class. Concrete subclasses must implement NeedsKernel::runKernel()
+ *   to configure and start the kernel for their context.
  *
  * - Clock reset — tearDown() resets Clock::setTestNow() to 'now' after every test
  *   so pinned test times never leak between test methods.
@@ -25,32 +28,42 @@ use Sakoo\Framework\Core\Testing\Traits\HelperAssertions;
  * - FileAssertions trait — adds assertIsExecutable() and assertIsNotExecutable().
  * - HelperAssertions trait — adds throwsException() for fluent exception assertion.
  *
- * Subclasses should not override setUpBeforeClass() without calling parent::, as
- * doing so would prevent kernel initialisation and cause all container resolutions
- * to fail.
+ * Subclasses should not override setUpBeforeClass() or tearDownAfterClass() without
+ * calling parent::, as doing so would break kernel lifecycle management.
  */
 abstract class TestCase extends PHPUnitTestCase implements NeedsKernel
 {
 	use FileAssertions;
 	use HelperAssertions;
 
-	private static bool $initialized = false;
-
 	/**
-	 * Boots the kernel once for the entire test class. Subsequent calls within the
-	 * same process are no-ops because $initialized guards against double-boot.
-	 * Logs a readiness message after successful initialisation.
+	 * Destroys any leftover kernel from a previous test class, then boots a
+	 * fresh kernel for this class via the NeedsKernel::runKernel() contract.
+	 *
+	 * This ensures every test class starts with a clean kernel regardless of
+	 * whether the previous class tore down correctly, and regardless of test
+	 * execution order.
 	 */
 	public static function setUpBeforeClass(): void
 	{
 		parent::setUpBeforeClass();
 
-		if (!self::$initialized) {
-			static::runKernel();
-			self::$initialized = true;
+		Kernel::destroy();
+		static::runKernel();
 
-			logger()->info('Automated Tests are ready to Run!');
-		}
+		logger()->info('Automated Tests are ready to Run!');
+	}
+
+	/**
+	 * Destroys the kernel after all tests in this class have completed,
+	 * releasing the singleton and clearing the container so the next test
+	 * class can boot its own kernel with independent configuration.
+	 */
+	public static function tearDownAfterClass(): void
+	{
+		Kernel::destroy();
+
+		parent::tearDownAfterClass();
 	}
 
 	/**

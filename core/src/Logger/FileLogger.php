@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sakoo\Framework\Core\Logger;
 
+use Psr\Clock\ClockInterface;
 use Psr\Log\AbstractLogger;
-use Sakoo\Framework\Core\Clock\Clock;
 use Sakoo\Framework\Core\Exception\Exception;
 use Sakoo\Framework\Core\FileSystem\Disk;
 use Sakoo\Framework\Core\FileSystem\File;
@@ -27,6 +27,8 @@ use Sakoo\Framework\Core\Path\Path;
  */
 class FileLogger extends AbstractLogger
 {
+	public function __construct(private ClockInterface $clock) {}
+
 	/**
 	 * Formats the log entry and appends it to today's rotating log file.
 	 *
@@ -69,6 +71,6 @@ class FileLogger extends AbstractLogger
 	 */
 	private function getLogFileName(): string
 	{
-		return Path::getLogsDir() . '/' . (new Clock())->now()->format('Y/m/d') . '.log';
+		return Path::getLogsDir() . '/' . $this->clock->now()->format('Y/m/d') . '.log';
 	}
 }

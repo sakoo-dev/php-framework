@@ -84,7 +84,7 @@ class Set implements IterableInterface
 	 */
 	public function __set(string $name, mixed $value): void
 	{
-		$this->items[$name] = $value;
+		$this->add($name, $value);
 	}
 
 	/**

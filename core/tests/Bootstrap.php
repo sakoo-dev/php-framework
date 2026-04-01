@@ -21,7 +21,7 @@ trait Bootstrap
 		$envFile = File::open(Disk::Local, Path::getRootDir() . '/.env.testing');
 		Env::load($envFile);
 
-		$loaders = require_once Path::getCoreDir() . '/ServiceLoader/Loaders.php';
+		$loaders = require Path::getCoreDir() . '/ServiceLoader/Loaders.php';
 		$timeZone = Env::get('SERVER_TIME_ZONE', 'UTC');
 
 		Kernel::prepare(Mode::Test, Environment::Debug)

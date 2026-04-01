@@ -7,6 +7,7 @@ namespace Sakoo\Framework\Core\Container\Parameter;
 use Sakoo\Framework\Core\Container\Container;
 use Sakoo\Framework\Core\Container\Exceptions\ClassNotFoundException;
 use Sakoo\Framework\Core\Container\Exceptions\ClassNotInstantiableException;
+use Sakoo\Framework\Core\Container\Exceptions\UnresolvableParameterException;
 
 /**
  * Resolves a single constructor parameter to a concrete value.
@@ -47,50 +48,7 @@ readonly class Parameter
 			return $parameter->getDefaultValue();
 		}
 
-		return $this->generateDefaultValue($dependency);
-	}
-
-	/**
-	 * Synthesises a safe zero-value from a reflection type.
-	 *
-	 * Named built-in types are mapped to their natural zero: string → '', int/integer → 0,
-	 * float/double → 0.0, bool/boolean → false, array → [], object/stdClass → new stdClass,
-	 * callable/closure → a no-op closure. Union and intersection types are resolved by
-	 * iterating their member types and returning the first non-null zero-value found.
-	 * Returns null when no suitable zero-value can be determined.
-	 */
-	private function generateDefaultValue(?\ReflectionType $type): mixed
-	{
-		if (is_null($type)) {
-			return null;
-		}
-
-		if ($type instanceof \ReflectionNamedType) {
-			return match ($type->getName()) {
-				'string' => '',
-				'int', 'integer' => 0,
-				'float', 'double' => 0.0,
-				'bool', 'boolean' => false,
-				'array' => [],
-				'object', 'stdClass' => new \stdClass(),
-				'callable', 'closure' => function () {},
-				default => null,
-			};
-		}
-
-		if ($type instanceof \ReflectionUnionType || $type instanceof \ReflectionIntersectionType) {
-			$types = $type->getTypes();
-
-			foreach ($types as $subType) {
-				$value = $this->generateDefaultValue($subType);
-
-				if (null !== $value) {
-					return $value;
-				}
-			}
-		}
-
-		return null;
+		throw new UnresolvableParameterException("Cannot resolve value of Parameter [$parameter->name]");
 	}
 
 	/**

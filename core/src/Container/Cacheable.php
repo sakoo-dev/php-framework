@@ -40,9 +40,12 @@ trait Cacheable
 	 */
 	private function doGenerateCache(string $key, array $mappingList): string
 	{
+		/** @var array<callable|object|string> $bindings */
+		$bindings = array_map(fn ($factory) => $this->getTypeFactory($factory), $mappingList);
+
 		$content = "\t'$key' => [" . PHP_EOL;
 
-		foreach ($mappingList as $id => $value) {
+		foreach ($bindings as $id => $value) {
 			$content .= "\t\t" . var_export($id, true) . ' => ' . print_r($value, true) . ',' . PHP_EOL;
 		}
 		$content .= "\t" . '],' . PHP_EOL;
@@ -168,16 +171,11 @@ trait Cacheable
 	{
 		throwIf(is_null($this->cachePath), new ContainerCacheException('Cache is not enabled'));
 
-		/** @var array<callable|object|string> $bindings */
-		$bindings = array_map(fn ($factory) => $this->getTypeFactory($factory), $this->bindings);
-		/** @var array<callable|object|string> $singletons */
-		$singletons = array_map(fn ($factory) => $this->getTypeFactory($factory), $this->singletons);
-
 		$this->flushCache();
 
 		$content = $this->prepareGenerateCache();
-		$content .= $this->doGenerateCache('bindings', $bindings);
-		$content .= $this->doGenerateCache('singletons', $singletons);
+		$content .= $this->doGenerateCache('bindings', $this->bindings);
+		$content .= $this->doGenerateCache('singletons', $this->singletons);
 		$content .= $this->postGenerateCache();
 
 		file_put_contents("$this->cachePath/container.cache.php", $content);

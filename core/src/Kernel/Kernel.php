@@ -6,6 +6,7 @@ namespace Sakoo\Framework\Core\Kernel;
 
 use Sakoo\Framework\Core\Container\Container;
 use Sakoo\Framework\Core\Container\Contracts\ContainerInterface;
+use Sakoo\Framework\Core\Kernel\Exceptions\IlegalKernelDestroyException;
 use Sakoo\Framework\Core\Kernel\Exceptions\KernelIsNotStartedException;
 use Sakoo\Framework\Core\Kernel\Exceptions\KernelTwiceCallException;
 use Sakoo\Framework\Core\Path\Path;
@@ -39,6 +40,10 @@ use Sakoo\Framework\Core\ServiceLoader\ServiceLoader;
  * In horizontal scaling scenarios each process replica should be assigned a unique
  * identifier via setReplicaId() so log correlation and distributed tracing remain
  * meaningful across instances.
+ *
+ * Test isolation: call destroy() between test suites to reset the singleton so
+ * prepare() can be called again with fresh configuration. This prevents state
+ * leakage across independent test classes running in the same PHP process.
  */
 class Kernel
 {
@@ -48,7 +53,7 @@ class Kernel
 	private ContainerInterface $container;
 	private string $replicaId = '';
 
-	private string $serverTimezone;
+	private string $serverTimezone = 'UTC';
 	/** @var null|callable */
 	private $errorHandler;
 	/** @var null|callable */
@@ -92,6 +97,38 @@ class Kernel
 	}
 
 	/**
+	 * Resets the singleton instance to null, clearing all kernel state.
+	 *
+	 * This allows prepare() to be called again with fresh Mode and Environment
+	 * values. The container, profiler, service loaders, and all other configuration
+	 * are discarded. When a container has been initialised, it is fully cleared
+	 * (cached instances, binding maps, and on-disk cache) before the reference is
+	 * released to prevent leaked singletons holding resources.
+	 *
+	 * Intended exclusively for test teardown — calling this in production code
+	 * will leave the application in a broken state where kernel(), container(),
+	 * resolve(), and all other global helpers throw KernelIsNotStartedException.
+	 *
+	 * Safe to call when no kernel exists (idempotent on null).
+	 *
+	 * @throws \RuntimeException|\Throwable when called outside of Test mode to prevent
+	 *                                      accidental destruction of a running production
+	 *                                      or console kernel
+	 */
+	public static function destroy(): void
+	{
+		if (self::$instance && !self::$instance->isInTestMode()) {
+			throw new IlegalKernelDestroyException();
+		}
+
+		if (self::$instance && isset(self::$instance->container)) {
+			self::$instance->container->clear();
+		}
+
+		self::$instance = null;
+	}
+
+	/**
 	 * Executes the full boot sequence:
 	 * applies the configured timezone, registers error and exception handlers,
 	 * enables display_errors in debug/test environments, loads the global helpers
@@ -101,15 +138,15 @@ class Kernel
 	 */
 	public function run(): void
 	{
-		if (!empty($this->serverTimezone)) {
+		if ($this->serverTimezone) {
 			date_default_timezone_set($this->serverTimezone);
 		}
 
-		if (!$this->errorHandler) {
+		if ($this->errorHandler) {
 			set_error_handler($this->errorHandler);
 		}
 
-		if (!$this->exceptionHandler) {
+		if ($this->exceptionHandler) {
 			set_exception_handler($this->exceptionHandler);
 		}
 
