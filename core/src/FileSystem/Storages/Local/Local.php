@@ -199,6 +199,105 @@ class Local implements Storage
 	}
 
 	/**
+	 * Reads a slice of lines from the file with optional character truncation.
+	 *
+	 * Returns an associative array with the sliced content string, total line count,
+	 * resolved from/to boundaries, and whether the result was truncated by $maxChars.
+	 * Returns false when the file cannot be read.
+	 *
+	 * @param int $from     1-based start line (default: 1)
+	 * @param int $to       inclusive end line; 0 = EOF (default: 0)
+	 * @param int $maxChars character cap; 0 = unlimited (default: 0)
+	 *
+	 * @return array{content: string, totalLines: int, from: int, to: int, truncated: bool}|false
+	 *
+	 * @throws InvalidArgumentException
+	 */
+	public function readChunk(int $from = 1, int $to = 0, int $maxChars = 0): array|false
+	{
+		$lines = $this->readLines();
+
+		if (false === $lines) {
+			return false;
+		}
+
+		$from = max(1, $from);
+		$totalLines = count($lines);
+		$to = ($to > 0) ? min($to, $totalLines) : $totalLines;
+
+		$lines = array_slice($lines, $from - 1, $to - $from + 1);
+		$content = implode(PHP_EOL, $lines);
+
+		$truncated = false;
+
+		if ($maxChars > 0 && mb_strlen($content) > $maxChars) {
+			$content = mb_substr($content, 0, $maxChars);
+			$truncated = true;
+		}
+
+		return [
+			'content' => $content,
+			'totalLines' => $totalLines,
+			'from' => $from,
+			'to' => $to,
+			'truncated' => $truncated,
+		];
+	}
+
+	/**
+	 * Convenience wrapper around readChunk() that returns just the text content.
+	 * Appends a truncation notice when the result was capped by $maxChars.
+	 * Returns false when the file cannot be read.
+	 *
+	 * @param int $from     1-based start line number (default: 1)
+	 * @param int $to       inclusive end line; 0 = EOF (default: 0)
+	 * @param int $maxChars character cap; 0 = unlimited (default: 0)
+	 *
+	 * @throws InvalidArgumentException
+	 */
+	public function readChunkText(int $from = 1, int $to = 0, int $maxChars = 0): false|string
+	{
+		$chunk = $this->readChunk($from, $to, $maxChars);
+
+		if (false === $chunk) {
+			return false;
+		}
+
+		$content = $chunk['content'];
+
+		if ($chunk['truncated'] && $maxChars > 0) {
+			$content .= "\n[truncated at {$maxChars} chars]";
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Returns the last $limit non-empty lines in reverse order (newest first).
+	 *
+	 * Useful for reading log files where the most recent entries are at the bottom.
+	 * Returns false when the file cannot be read.
+	 *
+	 * @param int $limit maximum lines to return
+	 *
+	 * @return false|string[]
+	 *
+	 * @throws InvalidArgumentException
+	 */
+	public function readTail(int $limit): array|false
+	{
+		$lines = $this->readLines();
+
+		if (false === $lines) {
+			return false;
+		}
+
+		$lines = array_filter($lines);
+
+		return array_values(array_slice(array_reverse($lines), 0, $limit));
+	}
+
+	/**
 	 * Sets the permission bits on the node. String permissions are converted from
 	 * octal notation to an integer before calling chmod().
 	 */

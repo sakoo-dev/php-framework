@@ -8,27 +8,29 @@ namespace Sakoo\Framework\Core\Kernel\Handlers;
  * Default PHP error handler for the Sakoo kernel.
  *
  * Registered via set_error_handler() during Kernel::run() when the host application
- * does not supply a custom handler. On invocation it prints the five innermost stack
- * frames (without arguments, to avoid leaking sensitive data) and terminates the
- * process with a formatted error summary containing the error code, message, file,
- * and line number.
+ * does not supply a custom handler. Converts PHP errors into ErrorException instances
+ * so they integrate with try/catch flows and do not silently continue execution.
  *
- * Because it calls exit() the handler satisfies the never return type and prevents
- * PHP from continuing execution after a non-fatal error that has been escalated to
- * this level.
+ * Respects the @ error-suppression operator: when error_reporting() returns 0 the
+ * handler returns false and lets PHP handle the error internally (this is the
+ * standard convention for suppressed errors).
  */
 class ErrorHandler
 {
 	/**
-	 * Prints a backtrace and terminates the process with a human-readable error summary.
+	 * Converts a PHP error into an ErrorException.
 	 *
 	 * Invoked by PHP's error handler mechanism with the standard four-argument
 	 * signature: error level code, error message, source file path, and line number.
+	 *
+	 * @throws \ErrorException always, unless the error was suppressed with @
 	 */
-	public function __invoke(string $errorNumber, string $errorString, string $errorFile, string $errorLine): never
+	public function __invoke(int $errorNumber, string $errorString, string $errorFile, int $errorLine): bool
 	{
-		debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5);
+		if (!(error_reporting() & $errorNumber)) {
+			return false;
+		}
 
-		exit("[$errorNumber] $errorString at $errorFile line $errorLine" . PHP_EOL);
+		throw new \ErrorException($errorString, 0, $errorNumber, $errorFile, $errorLine);
 	}
 }
