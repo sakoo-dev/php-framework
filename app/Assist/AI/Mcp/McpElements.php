@@ -536,6 +536,57 @@ class McpElements
 	}
 
 	/**
+	 * Runs PHPUnit with code coverage and returns per-file statistics and uncovered lines.
+	 *
+	 * Requires Xdebug or PCOV to be enabled. Files are sorted by line coverage
+	 * percentage ascending so the worst-covered files appear first.
+	 *
+	 * @param string $filter  optional PHPUnit filter expression
+	 * @param int    $maxPct  only include files strictly below this line-coverage % (0–100); 100 = include all
+	 */
+	#[McpTool('test_coverage', 'Runs PHPUnit with code coverage. Returns line/method/class stats and uncovered lines per file, sorted worst first.')]
+	public function testCoverageTool(string $filter = '', int $maxPct = 100): CallToolResult
+	{
+		$parsed = $this->shell->phpunitCoverageParsed($filter);
+
+		$stats = $parsed['stats'];
+		$files = $parsed['files'];
+
+		if ($maxPct < 100) {
+			$files = array_values(array_filter($files, static fn (array $f): bool => $f['lines_pct'] < $maxPct));
+		}
+
+		$summaryText = [] !== $stats
+			? sprintf(
+				'Coverage — Lines: %.2f%% (%d/%d) | Methods: %.2f%% (%d/%d) | Classes: %.2f%% (%d/%d)',
+				$stats['lines_pct'],
+				$stats['lines_covered'],
+				$stats['lines_total'],
+				$stats['methods_pct'],
+				$stats['methods_covered'],
+				$stats['methods_total'],
+				$stats['classes_pct'],
+				$stats['classes_covered'],
+				$stats['classes_total'],
+			)
+			: 'No coverage data available (Xdebug/PCOV required)';
+
+		$result = new CallToolResult(
+			[new TextContent($summaryText)],
+			structuredContent: [
+				'ok' => $parsed['ok'],
+				'tests_summary' => $parsed['summary'],
+				'stats' => $stats,
+				'files' => $files,
+			],
+		);
+
+		$this->observer->log('test_coverage', ['filter' => $filter, 'maxPct' => $maxPct], $summaryText);
+
+		return $result;
+	}
+
+	/**
 	 * Runs PHPStan, PHPUnit, and PHP-CS-Fixer sequentially.
 	 *
 	 * Each tool runs as a separate child process. Output is capped per tool

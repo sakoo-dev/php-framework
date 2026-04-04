@@ -254,6 +254,132 @@ final class Shell
 	}
 
 	/**
+	 * Runs PHPUnit with Clover XML coverage output to a temporary file.
+	 *
+	 * @param string $filter PHPUnit --filter value; empty = run all
+	 *
+	 * @return array{output: string, exitCode: int, cloverPath: string}
+	 */
+	public function phpunitCoverage(string $filter = ''): array
+	{
+		$cloverPath = sys_get_temp_dir() . '/phpunit_coverage.xml';
+		$filterArg = '' !== $filter ? ' --filter=' . escapeshellarg($filter) : '';
+
+		$result = $this->run(
+			'php vendor/bin/phpunit' . $filterArg
+			. ' --exclude-group=integration --no-progress --colors=never'
+			. ' --coverage-clover=' . escapeshellarg($cloverPath)
+		);
+
+		return $result + ['cloverPath' => $cloverPath];
+	}
+
+	/**
+	 * Runs PHPUnit with coverage and returns parsed statistics and uncovered lines.
+	 *
+	 * @param string $filter PHPUnit --filter value; empty = run all
+	 *
+	 * @return array{ok: bool, summary: string, stats: array<string, mixed>, files: array<int, array<string, mixed>>}
+	 */
+	public function phpunitCoverageParsed(string $filter = ''): array
+	{
+		['output' => $output, 'cloverPath' => $cloverPath] = $this->phpunitCoverage($filter);
+
+		$base = self::parsePhpunitOutput($output);
+		$coverage = self::parseCloverXml($cloverPath);
+
+		return [
+			'ok' => $base['ok'],
+			'summary' => $base['summary'],
+			'stats' => $coverage['stats'],
+			'files' => $coverage['files'],
+		];
+	}
+
+	/**
+	 * Parses a PHPUnit Clover XML file into summary stats and per-file uncovered lines.
+	 *
+	 * Files are sorted by line coverage percentage ascending (worst coverage first).
+	 *
+	 * @return array{stats: array<string, mixed>, files: array<int, array<string, mixed>>}
+	 */
+	public static function parseCloverXml(string $path): array
+	{
+		if (!is_file($path)) {
+			return ['stats' => [], 'files' => []];
+		}
+
+		$xml = simplexml_load_file($path);
+
+		if (false === $xml) {
+			return ['stats' => [], 'files' => []];
+		}
+
+		$root = rtrim((string) Path::getRootDir(), '/') . '/';
+
+		// Overall project metrics
+		$stats = [];
+		$metrics = $xml->project->metrics ?? null;
+
+		if (null !== $metrics) {
+			$totalStmts = (int) $metrics['statements'];
+			$coveredStmts = (int) $metrics['coveredstatements'];
+			$totalMethods = (int) $metrics['methods'];
+			$coveredMethods = (int) $metrics['coveredmethods'];
+			$totalClasses = (int) $metrics['classes'];
+			$coveredClasses = (int) $metrics['coveredclasses'];
+
+			$stats = [
+				'lines_pct' => $totalStmts > 0 ? round($coveredStmts / $totalStmts * 100, 2) : 0.0,
+				'lines_covered' => $coveredStmts,
+				'lines_total' => $totalStmts,
+				'methods_pct' => $totalMethods > 0 ? round($coveredMethods / $totalMethods * 100, 2) : 0.0,
+				'methods_covered' => $coveredMethods,
+				'methods_total' => $totalMethods,
+				'classes_pct' => $totalClasses > 0 ? round($coveredClasses / $totalClasses * 100, 2) : 0.0,
+				'classes_covered' => $coveredClasses,
+				'classes_total' => $totalClasses,
+			];
+		}
+
+		// Per-file breakdown
+		$files = [];
+
+		foreach ($xml->project->file ?? [] as $file) {
+			$filePath = str_replace($root, '', (string) $file['name']);
+			$uncoveredLines = [];
+
+			foreach ($file->line ?? [] as $line) {
+				if ('stmt' === (string) $line['type'] && 0 === (int) $line['count']) {
+					$uncoveredLines[] = (int) $line['num'];
+				}
+			}
+
+			$fileMetrics = $file->metrics ?? null;
+
+			if (null === $fileMetrics) {
+				continue;
+			}
+
+			$stmts = (int) $fileMetrics['statements'];
+			$covered = (int) $fileMetrics['coveredstatements'];
+			$pct = $stmts > 0 ? round($covered / $stmts * 100, 2) : 100.0;
+
+			$files[] = [
+				'file' => $filePath,
+				'lines_pct' => $pct,
+				'lines_covered' => $covered,
+				'lines_total' => $stmts,
+				'uncovered_lines' => $uncoveredLines,
+			];
+		}
+
+		usort($files, static fn (array $a, array $b): int => $a['lines_pct'] <=> $b['lines_pct']);
+
+		return ['stats' => $stats, 'files' => $files];
+	}
+
+	/**
 	 * Parses raw PHPUnit output into ok/summary.
 	 *
 	 * @return array{ok: bool, summary: string}
