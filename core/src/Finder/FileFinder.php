@@ -16,6 +16,7 @@ use Sakoo\Framework\Core\Assert\Assert;
  * - ignoreVCS()       — skips directories used by common VCS systems (.git, .svn, .hg, .bzr).
  * - ignoreVCSIgnored()— skips files that would be excluded by the nearest .gitignore.
  * - ignoreDotFiles()  — skips any file or directory whose name begins with '.'.
+ * - limit()           — caps the number of returned results.
  *
  * getFiles() returns an array of SplFileObject instances ready for further inspection,
  * while find() returns raw pathname strings for callers that need the paths only.
@@ -29,6 +30,8 @@ final class FileFinder
 	private bool $ignoreVCS = false;
 	private bool $ignoreVCSIgnored = false;
 	private bool $ignoreDotFiles = false;
+	private int $limit = 0;
+	private bool $truncated = false;
 
 	private const VCS_SYSTEMS = ['.git', '.svn', '.hg', '.bzr'];
 
@@ -79,6 +82,35 @@ final class FileFinder
 	}
 
 	/**
+	 * Caps the number of results returned by find() and getFiles().
+	 * A value of 0 (the default) means no limit.
+	 */
+	public function limit(int $limit): FileFinder
+	{
+		$this->limit = $limit;
+
+		return $this;
+	}
+
+	/**
+	 * Returns whether the result set was truncated by the configured limit.
+	 * Only meaningful after calling find() or getFiles().
+	 */
+	public function isLimited(): bool
+	{
+		return $this->limit > 0;
+	}
+
+	/**
+	 * Returns whether the last find() call was truncated by the configured limit.
+	 * Only meaningful after calling find() or getFiles().
+	 */
+	public function wasTruncated(): bool
+	{
+		return $this->truncated;
+	}
+
+	/**
 	 * Executes the search and returns all matching files as SplFileObject instances
 	 * opened in read-write ('r+') mode.
 	 *
@@ -99,6 +131,8 @@ final class FileFinder
 	{
 		Assert::dir($this->path, "The path '{$this->path}' is not a valid directory.");
 
+		$this->truncated = false;
+
 		$directory = new \RecursiveDirectoryIterator($this->path, \FilesystemIterator::FOLLOW_SYMLINKS);
 		$filter = new \RecursiveCallbackFilterIterator($directory, fn (\SplFileInfo $file) => $this->shouldDescend($file));
 		$iterator = new \RecursiveIteratorIterator($filter, \RecursiveIteratorIterator::SELF_FIRST);
@@ -113,6 +147,12 @@ final class FileFinder
 
 			if ($file->isFile()) {
 				$files[] = $file->getPathname();
+
+				if ($this->limit > 0 && count($files) >= $this->limit) {
+					$this->truncated = true;
+
+					break;
+				}
 			}
 		}
 

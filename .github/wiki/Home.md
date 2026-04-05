@@ -20,6 +20,12 @@
 
 
 
+#### How to use the Class:
+
+```php
+$fileLogger = new FileLogger(ClockInterface $clock);
+```
+
 ### - `log` Function
 
 <sub><sup>Formats the log entry and appends it to today&#039;s rotating log file. </sup></sub>
@@ -978,6 +984,79 @@ $local->append($data);
 public function readLines(): array|false
 // --- Usage
 $local->readLines();
+```
+
+### - `readChunk` Function
+
+<sub><sup>Reads a slice of lines from the file with optional character truncation. </sup></sub>
+
+
+
+<sub><sup>Returns an associative array with the sliced content string, total line count, resolved from/to boundaries, and whether the result was truncated by $maxChars. Returns false when the file cannot be read. </sup></sub>
+
+
+
+<sub><sup>@param int $from     1-based start line (default: 1) @param int $to       inclusive end line; 0 = EOF (default: 0) @param int $maxChars character cap; 0 = unlimited (default: 0) </sup></sub>
+
+
+
+<sub><sup>@return array{content: string, totalLines: int, from: int, to: int, truncated: bool}|false </sup></sub>
+
+
+
+> @throws InvalidArgumentException
+
+```php
+// --- Contract
+public function readChunk(int $from, int $to, int $maxChars): array|false
+// --- Usage
+$local->readChunk($from, $to, $maxChars);
+```
+
+### - `readChunkText` Function
+
+<sub><sup>Convenience wrapper around readChunk() that returns just the text content. Appends a truncation notice when the result was capped by $maxChars. Returns false when the file cannot be read. </sup></sub>
+
+
+
+<sub><sup>@param int $from     1-based start line number (default: 1) @param int $to       inclusive end line; 0 = EOF (default: 0) @param int $maxChars character cap; 0 = unlimited (default: 0) </sup></sub>
+
+
+
+> @throws InvalidArgumentException
+
+```php
+// --- Contract
+public function readChunkText(int $from, int $to, int $maxChars): string|false
+// --- Usage
+$local->readChunkText($from, $to, $maxChars);
+```
+
+### - `readTail` Function
+
+<sub><sup>Returns the last $limit non-empty lines in reverse order (newest first). </sup></sub>
+
+
+
+<sub><sup>Useful for reading log files where the most recent entries are at the bottom. Returns false when the file cannot be read. </sup></sub>
+
+
+
+<sub><sup>@param int $limit maximum lines to return </sup></sub>
+
+
+
+<sub><sup>@return false|string[] </sup></sub>
+
+
+
+> @throws InvalidArgumentException
+
+```php
+// --- Contract
+public function readTail(int $limit): array|false
+// --- Usage
+$local->readTail($limit);
 ```
 
 ### - `setPermission` Function
@@ -3155,6 +3234,12 @@ $container->dumpCache();
 
 
 
+### 🟥 UnresolvableParameterException
+
+<sub><sup>Thrown when a concrete class or object is registered against an interface it does not implement. Prevents silent runtime errors that would only surface later during actual usage of the resolved object. Implements PSR-11 ContainerExceptionInterface. </sup></sub>
+
+
+
 ### 🟥 ClassNotFoundException
 
 <sub><sup>Thrown when the container cannot locate the requested class during resolution or direct instantiation, typically because the class does not exist or is not autoloadable. Implements PSR-11 ContainerExceptionInterface. </sup></sub>
@@ -3547,7 +3632,7 @@ $markdown->get();
 
 
 
-<sub><sup>- pattern()         — restricts results to filenames matching a glob (default: &#039;*&#039;). - ignoreVCS()       — skips directories used by common VCS systems (.git, .svn, .hg, .bzr). - ignoreVCSIgnored()— skips files that would be excluded by the nearest .gitignore. - ignoreDotFiles()  — skips any file or directory whose name begins with &#039;.&#039;. </sup></sub>
+<sub><sup>- pattern()         — restricts results to filenames matching a glob (default: &#039;*&#039;). - ignoreVCS()       — skips directories used by common VCS systems (.git, .svn, .hg, .bzr). - ignoreVCSIgnored()— skips files that would be excluded by the nearest .gitignore. - ignoreDotFiles()  — skips any file or directory whose name begins with &#039;.&#039;. - limit()           — caps the number of returned results. </sup></sub>
 
 
 
@@ -3615,6 +3700,45 @@ $fileFinder->ignoreVCSIgnored($value);
 public function ignoreDotFiles(bool $value): FileFinder
 // --- Usage
 $fileFinder->ignoreDotFiles($value);
+```
+
+### - `limit` Function
+
+<sub><sup>Caps the number of results returned by find() and getFiles(). A value of 0 (the default) means no limit. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function limit(int $limit): FileFinder
+// --- Usage
+$fileFinder->limit($limit);
+```
+
+### - `isLimited` Function
+
+<sub><sup>Returns whether the result set was truncated by the configured limit. Only meaningful after calling find() or getFiles(). </sup></sub>
+
+
+
+```php
+// --- Contract
+public function isLimited(): bool
+// --- Usage
+$fileFinder->isLimited();
+```
+
+### - `wasTruncated` Function
+
+<sub><sup>Returns whether the last find() call was truncated by the configured limit. Only meaningful after calling find() or getFiles(). </sup></sub>
+
+
+
+```php
+// --- Contract
+public function wasTruncated(): bool
+// --- Usage
+$fileFinder->wasTruncated();
 ```
 
 ### - `getFiles` Function
@@ -3742,6 +3866,25 @@ $gitIgnore = new GitIgnore(string $path);
 public function isIgnored(string $file): bool
 // --- Usage
 $gitIgnore->isIgnored($file);
+```
+
+### 🟢 Makefile
+
+#### How to use the Class:
+
+```php
+$makefile = new Makefile(string $path);
+```
+
+### - `getTargets` Function
+
+<sub><sup>@return array&lt;string, string[]&gt;</sup></sub>
+
+```php
+// --- Contract
+public function getTargets(): array
+// --- Usage
+$makefile->getTargets();
 ```
 
 ## 📦 Sakoo\Framework\Core\Locker
@@ -6212,6 +6355,10 @@ $environment = Environment::tryFrom(string|int $value);
 
 
 
+<sub><sup>Test isolation: call destroy() between test suites to reset the singleton so prepare() can be called again with fresh configuration. This prevents state leakage across independent test classes running in the same PHP process. </sup></sub>
+
+
+
 #### How to use the Class:
 
 ```php
@@ -6222,6 +6369,37 @@ $kernel = Kernel::prepare(Mode $mode, Environment $environment);
 
 ```php
 $kernel = Kernel::getInstance();
+```
+
+### - `destroy` Function
+
+<sub><sup>Resets the singleton instance to null, clearing all kernel state. </sup></sub>
+
+
+
+<sub><sup>This allows prepare() to be called again with fresh Mode and Environment values. The container, profiler, service loaders, and all other configuration are discarded. When a container has been initialised, it is fully cleared (cached instances, binding maps, and on-disk cache) before the reference is released to prevent leaked singletons holding resources. </sup></sub>
+
+
+
+<sub><sup>Intended exclusively for test teardown — calling this in production code will leave the application in a broken state where kernel(), container(), resolve(), and all other global helpers throw KernelIsNotStartedException. </sup></sub>
+
+
+
+<sub><sup>Safe to call when no kernel exists (idempotent on null). </sup></sub>
+
+
+
+> @throws \RuntimeException|\Throwable when called outside of Test mode to prevent
+
+<sub><sup>accidental destruction of a running production or console kernel </sup></sub>
+
+
+
+```php
+// --- Contract
+public static function destroy(): void
+// --- Usage
+Kernel::destroy();
 ```
 
 ### - `run` Function
@@ -6438,6 +6616,16 @@ $kernel->isInProductionEnv();
 
 ## 📦 Sakoo\Framework\Core\Kernel\Exceptions
 
+### 🟥 IllegalKernelDestroyException
+
+<sub><sup>Thrown when {@see Kernel::destroy()} is called outside of Test mode. </sup></sub>
+
+
+
+<sub><sup>Destroying the kernel in Console or HTTP mode would leave the application in a broken state where all global helpers (kernel(), container(), resolve()) throw {@see KernelIsNotStartedException}. This exception prevents accidental destruction of a running production or console kernel. </sup></sub>
+
+
+
 ### 🟥 KernelTwiceCallException
 
 <sub><sup>Thrown when Kernel::prepare() is called a second time within the same process. </sup></sub>
@@ -6480,11 +6668,11 @@ $kernel->isInProductionEnv();
 
 
 
-<sub><sup>Registered via set_error_handler() during Kernel::run() when the host application does not supply a custom handler. On invocation it prints the five innermost stack frames (without arguments, to avoid leaking sensitive data) and terminates the process with a formatted error summary containing the error code, message, file, and line number. </sup></sub>
+<sub><sup>Registered via set_error_handler() during Kernel::run() when the host application does not supply a custom handler. Converts PHP errors into ErrorException instances so they integrate with try/catch flows and do not silently continue execution. </sup></sub>
 
 
 
-<sub><sup>Because it calls exit() the handler satisfies the never return type and prevents PHP from continuing execution after a non-fatal error that has been escalated to this level. </sup></sub>
+<sub><sup>Respects the @ error-suppression operator: when error_reporting() returns 0 the handler returns false and lets PHP handle the error internally (this is the standard convention for suppressed errors). </sup></sub>
 
 
 
