@@ -89,11 +89,39 @@ interface Storage
 
 	/**
 	 * Reads the file at the configured path and returns its contents as an ordered
-	 * array of lines (without the trailing newline character). Returns false on failure.
+	 * array of lines (without the trailing newline character).
 	 *
-	 * @return false|string[]
+	 * @return string[]
 	 */
-	public function readLines(): array|false;
+	public function readLines(): array;
+
+	/**
+	 * Reads a slice of lines from the file, optionally truncating the result to a
+	 * maximum character count.
+	 *
+	 * @param int $from     1-based start line number (default: 1)
+	 * @param int $to       inclusive end line number; 0 means EOF (default: 0)
+	 * @param int $maxChars maximum characters to return; 0 means unlimited (default: 0)
+	 */
+	public function readChunk(int $from = 1, int $to = 0, int $maxChars = 0): FileChunk;
+
+	/**
+	 * Convenience wrapper around readChunk() that returns just the text content.
+	 * Appends a truncation notice when the result was capped by $maxChars.
+	 *
+	 * @param int $from     1-based start line number (default: 1)
+	 * @param int $to       inclusive end line number; 0 means EOF (default: 0)
+	 * @param int $maxChars character cap; 0 means unlimited (default: 0)
+	 */
+	public function readChunkText(int $from = 1, int $to = 0, int $maxChars = 0): string;
+
+	/**
+	 * Reads the last $limit non-empty lines from the file, returned in
+	 * reverse-chronological order (newest first).
+	 *
+	 * @param int $limit maximum number of lines to return
+	 */
+	public function readTail(int $limit): FileTail;
 
 	/**
 	 * Sets the filesystem permission bits on the node. Accepts both octal integers

@@ -6,6 +6,8 @@ namespace Sakoo\Framework\Core\FileSystem\Storages\Local;
 
 use Sakoo\Framework\Core\Assert\Assert;
 use Sakoo\Framework\Core\Assert\Exception\InvalidArgumentException;
+use Sakoo\Framework\Core\FileSystem\FileChunk;
+use Sakoo\Framework\Core\FileSystem\FileTail;
 use Sakoo\Framework\Core\FileSystem\Storage;
 use Sakoo\Framework\Core\Finder\FileFinder;
 
@@ -183,19 +185,164 @@ class Local implements Storage
 	}
 
 	/**
-	 * Reads the file into an ordered array of lines. Throws when the path does not
-	 * exist or is a directory.
+	 * Reads the file into an ordered array of lines.
 	 *
-	 * @return false|string[]
+	 * @return string[]
 	 *
-	 * @throws InvalidArgumentException
+	 * @throws InvalidArgumentException when the path does not exist, is a directory, or is not readable
 	 */
-	public function readLines(): array|false
+	public function readLines(): array
 	{
 		Assert::exists($this->path, 'File Does not Exist');
 		Assert::notDir($this->path, 'File could not be a Directory');
+		Assert::readableFile($this->path, "Cannot read file: {$this->path}");
 
-		return file($this->path);
+		return file($this->path) ?: [];
+	}
+
+	/**
+	 * Reads a slice of lines from the file with optional character truncation.
+	 *
+	 * Returns a FileChunk DTO with the sliced content string, total line count,
+	 * resolved from/to boundaries, and whether the result was truncated by $maxChars.
+	 *
+	 * @param int $from     1-based start line (default: 1)
+	 * @param int $to       inclusive end line; 0 = EOF (default: 0)
+	 * @param int $maxChars character cap; 0 = unlimited (default: 0)
+	 *
+	 * @throws InvalidArgumentException
+	 */
+	public function readChunk(int $from = 1, int $to = 0, int $maxChars = 0): FileChunk
+	{
+		$from = max(1, $from);
+		$to = max(0, $to);
+		$maxChars = max(0, $maxChars);
+		$totalLines = 0;
+		$content = '';
+		$truncated = false;
+		$stream = $this->openReadStream();
+
+		while (false !== ($line = fgets($stream))) {
+			++$totalLines;
+
+			if (!$this->isLineWithinRange($totalLines, $from, $to)) {
+				continue;
+			}
+
+			if ($truncated) {
+				continue;
+			}
+
+			$content .= $line;
+
+			if ($maxChars > 0 && mb_strlen($content) > $maxChars) {
+				$content = mb_substr($content, 0, $maxChars);
+				$truncated = true;
+			}
+		}
+
+		fclose($stream);
+		$resolvedTo = $to > 0 ? min($to, $totalLines) : $totalLines;
+
+		return new FileChunk(
+			content: $content,
+			totalLines: $totalLines,
+			from: $from,
+			to: $resolvedTo,
+			truncated: $truncated,
+		);
+	}
+
+	/**
+	 * Convenience wrapper around readChunk() that returns just the text content.
+	 * Appends a truncation notice when the result was capped by $maxChars.
+	 *
+	 * @param int $from     1-based start line number (default: 1)
+	 * @param int $to       inclusive end line; 0 = EOF (default: 0)
+	 * @param int $maxChars character cap; 0 = unlimited (default: 0)
+	 *
+	 * @throws InvalidArgumentException
+	 */
+	public function readChunkText(int $from = 1, int $to = 0, int $maxChars = 0): string
+	{
+		$chunk = $this->readChunk($from, $to, $maxChars);
+
+		$content = $chunk->content;
+
+		if ($chunk->truncated && $maxChars > 0) {
+			$content .= "\n[truncated at {$maxChars} chars]";
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Returns the last $limit non-empty lines in reverse order (newest first).
+	 *
+	 * Useful for reading log files where the most recent entries are at the bottom.
+	 *
+	 * @param int $limit maximum lines to return
+	 *
+	 * @throws InvalidArgumentException
+	 */
+	public function readTail(int $limit): FileTail
+	{
+		$limit = max(0, $limit);
+
+		if (0 === $limit) {
+			return new FileTail(lines: []);
+		}
+
+		$buffer = [];
+		$stream = $this->openReadStream();
+
+		while (false !== ($line = fgets($stream))) {
+			if ('' === trim($line)) {
+				continue;
+			}
+
+			$buffer[] = $line;
+
+			if (count($buffer) > $limit) {
+				array_shift($buffer);
+			}
+		}
+
+		fclose($stream);
+
+		return new FileTail(
+			lines: array_reverse($buffer),
+		);
+	}
+
+	/**
+	 * Opens the configured file path for streaming read operations.
+	 *
+	 * @return resource
+	 *
+	 * @throws InvalidArgumentException
+	 */
+	private function openReadStream()
+	{
+		Assert::exists($this->path, 'File Does not Exist');
+		Assert::notDir($this->path, 'File could not be a Directory');
+		Assert::readableFile($this->path, "Cannot read file: {$this->path}");
+
+		$stream = fopen($this->path, 'r');
+
+		if (false === $stream) {
+			throw new InvalidArgumentException("Cannot open file stream: {$this->path}");
+		}
+
+		return $stream;
+	}
+
+	/**
+	 * Returns true when a line number should be included in a [from, to] slice.
+	 */
+	private function isLineWithinRange(int $line, int $from, int $to): bool
+	{
+		return $line >= $from && (0 === $to || $line <= $to);
 	}
 
 	/**

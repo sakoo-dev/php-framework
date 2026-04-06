@@ -7,10 +7,13 @@ namespace App\Assist\AI\Mcp;
 use Mcp\Capability\Attribute\McpPrompt;
 use Mcp\Capability\Attribute\McpResource;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Exception\ExceptionInterface;
 use Mcp\Schema\Content\PromptMessage;
 use Mcp\Schema\Content\TextContent;
 use Mcp\Schema\Enum\Role;
+use Mcp\Schema\Result\CallToolResult;
 use Sakoo\Framework\Core\Assert\Assert;
+use Sakoo\Framework\Core\Assert\Exception\InvalidArgumentException;
 use Sakoo\Framework\Core\Console\Application;
 use Sakoo\Framework\Core\Console\Command;
 use Sakoo\Framework\Core\Env\Env;
@@ -22,17 +25,27 @@ use Sakoo\Framework\Core\Kernel\Kernel;
 use System\Path\Path;
 
 /**
- * Design contract:
- *   - Tools    → LLM selects and invokes (prefer for dynamic/stateful data).
- *   - Resources → User attaches explicitly (prefer for static/reusable context).
- *   - Prompts  → User runs as template shortcuts.
+ * Declares all MCP capabilities (Tools, Resources, Prompts) for the Sakoo PHP Framework.
  *
- * Token-efficiency rules applied throughout:
- *   - Short JSON keys on all tool responses.
- *   - No redundant prose in return values.
- *   - Resources used for stable data so Claude Desktop can cache them.
- *   - Prompts compose system + user from pre-authored Markdown files.
- *   - Static/semi-static data exposed as Resources, not Tools — reduces tool-selection overhead.
+ * Every tool method returns a {@see CallToolResult} from the official php-mcp/schema
+ * package, providing first-class MCP protocol compatibility. The SDK serialises
+ * CallToolResult directly into the JSON-RPC response — no wrapping needed.
+ *
+ * Response conventions:
+ *   - {@see CallToolResult::success()} for successful operations.
+ *   - {@see CallToolResult::error()} for tool-level failures (LLM can self-correct).
+ *   - {@see TextContent} carries the human/LLM-readable text payload.
+ *   - `structuredContent` carries machine-readable JSON for complex data.
+ *   - `_meta` carries optional metadata (counts, truncation flags).
+ *
+ * Architecture:
+ *   - Tools    -> LLM invokes. Return CallToolResult.
+ *   - Resources -> User attaches. Return raw data.
+ *   - Prompts  -> User runs as template. Return PromptMessage[].
+ *
+ * @see FileFinder::guard()    Path-traversal protection.
+ * @see McpShell               Project-scoped shell executor.
+ * @see ExceptionInterface     Base marker for all MCP SDK exceptions.
  */
 class McpElements
 {
@@ -42,51 +55,155 @@ class McpElements
 	//	#[McpTool('database_query', 'Executes a read-only SQL query against the default PDO connection and returns results.')]
 	//	#[McpTool('database_schema', 'Returns the schema (tables and columns) of the configured database.')]
 
-	#[McpTool('read_file', 'Reads content of a file in the Sakoo PHP Framework')]
-	public function readFileTool(string $path): string
+	/** Maximum characters of tool output to include in check_code structured results. */
+	private const CHECK_OUTPUT_CAP = 10000;
+
+	private McpShell $shell;
+	private McpTokenObserver $observer;
+
+	public function __construct()
 	{
+		$this->shell = resolve(McpShell::class);
+		$this->observer = resolve(McpTokenObserver::class);
+	}
+
+	#[McpTool('read_file', 'Reads file content. Use `from`/`to` for line ranges, `maxChars` to cap size. Scoped to project.')]
+	public function readFileTool(string $path, int $from = 1, int $to = 0, int $maxChars = 50000): CallToolResult
+	{
+		$path = FileFinder::guard($path);
+		$input = compact('path', 'from', 'to', 'maxChars');
+
 		Assert::lazy()
 			->file($path, "Not a file: {$path}")
 			->notDir($path, "Is a directory: {$path}")
 			->validate();
 
-		/** @var string[] $lines */
-		$lines = File::open(Disk::Local, $path)->readLines();
-		Assert::array($lines, "Cannot read: {$path}");
+		$chunk = File::open(Disk::Local, $path)->readChunk($from, $to, $maxChars);
 
-		return implode(PHP_EOL, $lines);
+		$result = new CallToolResult(
+			[new TextContent($chunk->content)],
+			structuredContent: ['path' => $path, 'from' => $chunk->from, 'to' => $chunk->to, 'totalLines' => $chunk->totalLines, 'truncated' => $chunk->truncated],
+			meta: ['truncated' => $chunk->truncated],
+		);
+
+		$this->observer->log('read_file', $input, $chunk->content);
+
+		return $result;
 	}
 
-	#[McpTool('write_file', 'Writes content in a new file in the Sakoo PHP Framework')]
-	public function writeFileTool(string $path, string $content): string
+	#[McpTool('write_file', 'Writes content to a file. Scoped to project.')]
+	public function writeFileTool(string $path, string $content): CallToolResult
 	{
+		$path = FileFinder::guard($path);
 		$stored = File::open(Disk::Local, $path)->write($content);
 
-		return $stored ? "ok:{$path}" : "fail:{$path}";
+		if (!$stored) {
+			return CallToolResult::error([new TextContent("Write failed: {$path}")]);
+		}
+
+		$result = new CallToolResult(
+			[new TextContent("ok:{$path}")],
+			structuredContent: ['path' => $path],
+		);
+
+		$this->observer->log('write_file', compact('path'), "ok:{$path}");
+
+		return $result;
 	}
 
-	/** @return array<string,string[]> */
-	#[McpTool('dir_files', 'Extracts files from input directory.')]
-	public function getDirFileListTool(string $path): array
+	#[McpTool('remove_file', 'Deletes a file from the project. Scoped to project. Refuses directories.')]
+	public function removeFileTool(string $path): CallToolResult
 	{
-		$files = (new FileFinder($path))
-			->ignoreDotFiles()
-			->ignoreVCS()
-			->ignoreVCSIgnored()
-			->find();
+		$path = FileFinder::guard($path);
 
-		return ['files' => $files];
+		if (is_dir($path)) {
+			return CallToolResult::error([new TextContent("Is a directory: {$path}")]);
+		}
+
+		if (!is_file($path)) {
+			return CallToolResult::error([new TextContent("Not found: {$path}")]);
+		}
+
+		$removed = File::open(Disk::Local, $path)->remove();
+
+		if (!$removed) {
+			return CallToolResult::error([new TextContent("Remove failed: {$path}")]);
+		}
+
+		$this->observer->log('remove_file', compact('path'), "ok:{$path}");
+
+		return new CallToolResult(
+			[new TextContent("ok:{$path}")],
+			structuredContent: ['path' => $path],
+		);
 	}
 
 	/**
-	 * Token-efficient alternative to list_files.
-	 * Returns only app/ and system/ and core/ trees, grouped by module, with vendor excluded.
-	 * Use this before read_file to locate relevant files without loading all paths.
-	 *
-	 * @return array{app: string[], core: string[], system: string[]}
+	 * @param string[] $paths
 	 */
-	#[McpTool('project_structure', 'Returns compact app/ and system/ and core/ file trees (no vendor). Use before read_file to locate files.')]
-	public function projectStructureTool(): array
+	#[McpTool('read_files', 'Reads multiple files. Returns {path: content} map. Use maxChars to limit per-file output.')]
+	public function readFilesTool(array $paths, int $maxChars = 30000): CallToolResult
+	{
+		$paths = FileFinder::guardMany($paths);
+		$files = [];
+		$errors = [];
+
+		foreach ($paths as $path) {
+			if (!is_file($path) || !is_readable($path)) {
+				$errors[$path] = 'not_readable';
+
+				continue;
+			}
+
+			$files[$path] = File::open(Disk::Local, $path)->readChunkText(maxChars: $maxChars);
+		}
+
+		$contents = array_map(
+			fn (string $p, string $c): TextContent => new TextContent("[{$p}]\n{$c}"),
+			array_keys($files),
+			array_values($files),
+		);
+
+		$result = new CallToolResult(
+			$contents,
+			structuredContent: ['files' => $files, 'errors' => $errors],
+			meta: ['requested' => count($paths), 'read' => count($files)],
+		);
+
+		$this->observer->log('read_files', ['paths' => $paths, 'maxChars' => $maxChars], $files);
+
+		return $result;
+	}
+
+	#[McpTool('dir_files', 'Lists files in a directory. Use pattern/limit to control scope. Scoped to project.')]
+	public function getDirFileListTool(string $path, string $pattern = '', int $limit = 500): CallToolResult
+	{
+		$path = FileFinder::guard($path);
+
+		$finder = (new FileFinder($path))
+			->ignoreDotFiles()
+			->ignoreVCS()
+			->limit($limit);
+
+		if ('' !== $pattern) {
+			$finder->pattern($pattern);
+		}
+
+		$files = $finder->find();
+
+		$result = new CallToolResult(
+			[new TextContent($files)],
+			structuredContent: ['files' => $files],
+			meta: ['total' => count($files), 'truncated' => $finder->wasTruncated()],
+		);
+
+		$this->observer->log('dir_files', compact('path', 'pattern', 'limit'), $files);
+
+		return $result;
+	}
+
+	#[McpTool('project_structure', 'Compact app/ + core/ + system/ file trees (no vendor).')]
+	public function projectStructureTool(): CallToolResult
 	{
 		$appFiles = (new FileFinder(Path::getAppDir() ?: __DIR__))
 			->ignoreDotFiles()
@@ -106,61 +223,42 @@ class McpElements
 			->ignoreVCSIgnored()
 			->find();
 
-		return [
-			'app' => $appFiles,
-			'core' => $coreFiles,
-			'system' => $systemFiles,
-		];
-	}
+		$structured = ['app' => $appFiles, 'core' => $coreFiles, 'system' => $systemFiles];
 
-	/**
-	 * Reads multiple files in one call, returning a map of path → content.
-	 * Eliminates N sequential read_file round-trips; reduces total tool-call overhead.
-	 *
-	 * @param string[] $paths
-	 *
-	 * @return array<string, string>
-	 */
-	#[McpTool('read_files', 'Reads multiple files in one call. Pass an array of absolute paths. Returns {path: content} map.')]
-	public function readFilesTool(array $paths): array
-	{
-		$result = [];
+		$result = new CallToolResult(
+			[new TextContent($structured)],
+			structuredContent: $structured,
+		);
 
-		foreach ($paths as $path) {
-			if (!is_file($path) || !is_readable($path)) {
-				$result[$path] = 'err:not_readable';
-
-				continue;
-			}
-
-			/** @var false|string[] $lines */
-			$lines = File::open(Disk::Local, $path)->readLines();
-			$result[$path] = is_array($lines) ? implode(PHP_EOL, $lines) : 'err:read_failed';
-		}
+		$this->observer->log('project_structure', [], $structured);
 
 		return $result;
 	}
 
-	/** @phpstan-ignore missingType.iterableValue */
-	#[McpTool('browser_logs', "Returns the latest HTTP VarDump entries stored by the framework's HttpDumper.")]
-	public function browserLogsTool(int $limit = 50): array
+	#[McpTool('browser_logs', 'Returns latest HTTP VarDump entries. Use limit to control size.')]
+	public function browserLogsTool(int $limit = 50): CallToolResult
 	{
 		$logFile = Path::getStorageDir() . '/browser/http.log';
 		$file = File::open(Disk::Local, $logFile);
 
 		if (!$file->exists()) {
-			return ['entries' => [], 'note' => 'no_log'];
+			return CallToolResult::success([new TextContent('No browser log found.')], ['note' => 'no_log']);
 		}
 
-		/** @var string[] $lines */
-		$lines = array_filter((array) $file->readLines());
+		$entries = $file->readTail($limit)->lines;
 
-		return ['entries' => array_slice(array_reverse($lines), 0, $limit)];
+		$result = new CallToolResult(
+			[new TextContent($entries)],
+			structuredContent: ['entries' => $entries],
+		);
+
+		$this->observer->log('browser_logs', ['limit' => $limit], $entries);
+
+		return $result;
 	}
 
-	/** @phpstan-ignore missingType.iterableValue  */
-	#[McpTool('read_log_entries', 'Reads log entries from the framework log file. Optionally filter by date (Y/m/d) and limit results.')]
-	public function readLogEntriesTool(string $date = '', int $limit = 100): array
+	#[McpTool('read_log_entries', 'Reads framework log entries. Filter by date (Y/m/d) and limit.')]
+	public function readLogEntriesTool(string $date = '', int $limit = 100): CallToolResult
 	{
 		if ('' === $date) {
 			$date = date('Y/m/d');
@@ -170,47 +268,61 @@ class McpElements
 		$file = File::open(Disk::Local, $logPath);
 
 		if (!$file->exists()) {
-			return ['entries' => [], 'note' => "no_log:{$date}"];
+			return CallToolResult::success(
+				[new TextContent("No log file for {$date}")],
+				['date' => $date, 'n' => 0, 'note' => 'no_log'],
+			);
 		}
 
-		/** @var string[] $lines */
-		$lines = array_filter((array) $file->readLines());
-		$entries = array_slice(array_reverse($lines), 0, $limit);
+		$entries = $file->readTail($limit)->lines;
 
-		return ['date' => $date, 'n' => count($entries), 'entries' => $entries];
+		$result = new CallToolResult(
+			[new TextContent($entries)],
+			structuredContent: ['entries' => $entries],
+			meta: ['date' => $date, 'n' => count($entries)],
+		);
+
+		$this->observer->log('read_log_entries', compact('date', 'limit'), $entries);
+
+		return $result;
 	}
 
-	/** @phpstan-ignore missingType.iterableValue  */
-	#[McpTool('last_error', 'Returns the last PHP error recorded via error_get_last().')]
-	public function lastErrorTool(): array
+	#[McpTool('last_error', 'Returns the last PHP error via error_get_last().')]
+	public function lastErrorTool(): CallToolResult
 	{
 		$error = error_get_last();
 
 		if (null === $error) {
-			return ['error' => null];
+			return CallToolResult::success([new TextContent('No PHP error recorded.')]);
 		}
 
-		return [
+		$data = [
 			'type' => $error['type'],
 			'msg' => $error['message'],
 			'file' => $error['file'],
 			'line' => $error['line'],
 		];
+
+		return new CallToolResult(
+			[new TextContent("[{$error['type']}] {$error['message']} in {$error['file']}:{$error['line']}")],
+			structuredContent: $data,
+		);
 	}
 
-	/** @phpstan-ignore missingType.iterableValue */
-	#[McpTool('search_docs', 'Searches the generated wiki documentation for a given keyword and returns matching lines.')]
-	public function searchDocsTool(string $keyword, int $limit = 30): array
+	#[McpTool('search_docs', 'Searches wiki documentation for a keyword. Returns matching lines.')]
+	public function searchDocsTool(string $keyword, int $limit = 30): CallToolResult
 	{
 		$wikiFile = Path::getRootDir() . '/.github/wiki/Home.md';
 		$file = File::open(Disk::Local, $wikiFile);
 
 		if (!$file->exists()) {
-			return ['matches' => [], 'note' => 'run: php assist doc:gen'];
+			return CallToolResult::success(
+				[new TextContent('Wiki not generated. Run: php assist doc:gen')],
+				['kw' => $keyword, 'n' => 0],
+			);
 		}
 
-		/** @var string[] $lines */
-		$lines = (array) $file->readLines();
+		$lines = $file->readLines();
 		$matches = [];
 
 		foreach ($lines as $lineNo => $line) {
@@ -223,148 +335,199 @@ class McpElements
 			}
 		}
 
-		return ['kw' => $keyword, 'n' => count($matches), 'matches' => $matches];
+		$result = new CallToolResult(
+			[new TextContent($matches)],
+			structuredContent: ['matches' => $matches],
+			meta: ['kw' => $keyword, 'n' => count($matches)],
+		);
+
+		$this->observer->log('search_docs', compact('keyword', 'limit'), $matches);
+
+		return $result;
 	}
 
-	#[McpTool('get_absolute_url', 'Resolves an absolute URL for a given path using APP_URL from the environment.')]
-	public function getAbsoluteUrlTool(string $path = '/'): string
+	#[McpTool('get_absolute_url', 'Resolves absolute URL for a path using APP_URL.')]
+	public function getAbsoluteUrlTool(string $path = '/'): CallToolResult
 	{
 		/** @var string $appUrl */
 		$appUrl = Env::get('APP_URL', 'http://localhost');
+		$url = rtrim($appUrl, '/') . '/' . ltrim($path, '/');
 
-		return rtrim($appUrl, '/') . '/' . ltrim($path, '/');
+		return CallToolResult::success([new TextContent($url)]);
 	}
 
-	/**
-	 * Structured git log with separated hash and message.
-	 *
-	 * @phpstan-ignore missingType.iterableValue
-	 */
-	#[McpTool('git_log', 'Returns recent git commits as {hash, msg} objects. Optionally limit count and filter by path.')]
-	public function gitLogTool(int $limit = 20, string $path = ''): array
+	#[McpTool('git_log', 'Recent git commits as {hash, msg}. Use limit and path to narrow.')]
+	public function gitLogTool(int $limit = 20, string $path = ''): CallToolResult
 	{
-		$root = Path::getRootDir();
-		$pathArg = '' !== $path ? ' -- ' . escapeshellarg($path) : '';
+		$this->guardOptionalPath($path);
 
-		/** @phpstan-ignore sakoo.vulnerability.dangerousFunctions */
-		$output = (string) shell_exec(
-			"git -C {$root} log --format='%h|%s' --no-decorate -n {$limit}{$pathArg} 2>&1"
+		$parsed = $this->shell->gitLogParsed($limit, $path);
+
+		$result = new CallToolResult(
+			[new TextContent($parsed['commits'])],
+			structuredContent: ['commits' => $parsed['commits']],
+			meta: ['n' => count($parsed['commits'])],
 		);
 
-		$lines = array_filter(explode("\n", trim($output)));
+		$this->observer->log('git_log', compact('limit', 'path'), $parsed['commits']);
 
-		$commits = array_map(static function (string $line): array {
-			$parts = explode('|', $line, 2);
-
-			return ['hash' => $parts[0], 'msg' => $parts[1] ?? ''];
-		}, $lines);
-
-		return ['n' => count($commits), 'commits' => $commits];
+		return $result;
 	}
 
-	/**
-	 * Bounded git diff with truncation to prevent context blowout.
-	 *
-	 * @phpstan-ignore missingType.iterableValue
-	 */
-	#[McpTool('git_diff', 'Returns git diff output. Defaults to unstaged changes. Pass ref to diff against a commit/branch. Truncates at maxLines.')]
-	public function gitDiffTool(string $ref = '', string $path = '', int $maxLines = 200): array
+	#[McpTool('git_diff', 'Git diff output. Defaults to unstaged. Use ref, path, maxLines to control.')]
+	public function gitDiffTool(string $ref = '', string $path = '', int $maxLines = 200): CallToolResult
 	{
-		$root = Path::getRootDir();
-		$refArg = '' !== $ref ? ' ' . escapeshellarg($ref) : '';
-		$pathArg = '' !== $path ? ' -- ' . escapeshellarg($path) : '';
+		$this->guardOptionalPath($path);
 
-		// @phpstan-ignore sakoo.vulnerability.dangerousFunctions
-		$raw = trim((string) shell_exec(
-			"git -C {$root} diff{$refArg}{$pathArg} 2>&1"
-		));
+		$parsed = $this->shell->gitDiffParsed($ref, $path, $maxLines);
 
-		$lines = explode("\n", $raw);
-		$total = count($lines);
-		$truncated = $total > $maxLines;
+		$result = new CallToolResult(
+			[new TextContent($parsed['diff'])],
+			structuredContent: ['diff' => $parsed['diff']],
+			meta: ['lines' => $parsed['total'], 'truncated' => $parsed['truncated']],
+		);
 
-		if ($truncated) {
-			$lines = array_slice($lines, 0, $maxLines);
-		}
+		$this->observer->log('git_diff', compact('ref', 'path', 'maxLines'), $parsed['diff']);
 
-		return [
-			'diff' => implode("\n", $lines),
-			'lines' => $total,
-			'truncated' => $truncated,
+		return $result;
+	}
+
+	#[McpTool('git_status', 'Shows uncommitted changes (staged, unstaged, untracked). Use before committing.')]
+	public function gitStatusTool(string $path = ''): CallToolResult
+	{
+		$this->guardOptionalPath($path);
+
+		$parsed = $this->shell->gitStatusParsed($path);
+
+		$result = new CallToolResult(
+			[new TextContent($parsed['summary'])],
+			structuredContent: ['clean' => $parsed['clean'], 'files' => $parsed['files']],
+			meta: ['summary' => $parsed['summary']],
+		);
+
+		$this->observer->log('git_status', ['path' => $path], $parsed['files']);
+
+		return $result;
+	}
+
+	#[McpTool('test_run', 'Runs PHPUnit tests. Optional filter. Returns pass/fail.')]
+	public function testRunTool(string $filter = ''): CallToolResult
+	{
+		$parsed = $this->shell->phpunitParsed($filter);
+
+		$result = new CallToolResult(
+			[new TextContent($parsed['output'])],
+			isError: !$parsed['ok'],
+			structuredContent: ['ok' => $parsed['ok'], 'summary' => $parsed['summary'], 'exitCode' => $parsed['exitCode']],
+		);
+
+		$this->observer->log('test_run', ['filter' => $filter], $parsed['output']);
+
+		return $result;
+	}
+
+	#[McpTool('test_coverage', 'Runs PHPUnit with code coverage. Returns line/method/class stats and uncovered lines per file, sorted worst first.')]
+	public function testCoverageTool(string $filter = '', int $maxPct = 100): CallToolResult
+	{
+		$parsed = $this->shell->phpunitCoverageParsed($filter);
+		$stats = $parsed['stats'];
+		$files = $this->filterCoverageFiles($parsed['files'], $maxPct);
+		$summaryText = $this->formatCoverageSummary($stats);
+
+		$result = new CallToolResult(
+			[new TextContent($summaryText)],
+			structuredContent: [
+				'ok' => $parsed['ok'],
+				'tests_summary' => $parsed['summary'],
+				'exitCode' => $parsed['exitCode'],
+				'stats' => $stats,
+				'files' => $files,
+			],
+		);
+
+		$this->observer->log('test_coverage', ['filter' => $filter, 'maxPct' => $maxPct], $summaryText);
+
+		return $result;
+	}
+
+	#[McpTool('check_code', 'Runs PHPStan + PHPUnit + PHP-CS-Fixer. Like `make check`. Set fix=true to auto-fix lint.')]
+	public function checkCodeTool(bool $fix = false): CallToolResult
+	{
+		$phpstan = $this->compactCheckResult($this->shell->phpstanParsed());
+		$phpunit = $this->compactCheckResult($this->shell->phpunitParsed());
+		$lint = $this->compactCheckResult($this->shell->phpCsFixerParsed($fix));
+
+		$allOk = $phpstan['ok'] && $phpunit['ok'] && $lint['ok'];
+		$summaryText = sprintf(
+			'%s | phpstan:%s phpunit:%s lint:%s',
+			$allOk ? 'All checks passed' : 'Checks failed',
+			$phpstan['ok'] ? 'ok' : 'fail',
+			$phpunit['ok'] ? 'ok' : 'fail',
+			$lint['ok'] ? 'ok' : 'fail',
+		);
+
+		$structured = [
+			'ok' => $allOk,
+			'phpstan' => $phpstan,
+			'phpunit' => $phpunit,
+			'lint' => $lint,
 		];
+
+		$result = new CallToolResult(
+			[new TextContent($summaryText)],
+			isError: !$allOk,
+			structuredContent: $structured,
+		);
+
+		$this->observer->log('check_code', ['fix' => $fix], $summaryText);
+
+		return $result;
+	}
+
+	#[McpTool('token_usage', "Today's MCP token usage summary. Tracks I/O across all clients.")]
+	public function tokenUsageTool(): CallToolResult
+	{
+		$summary = $this->observer->todaySummary();
+
+		return new CallToolResult(
+			[new TextContent($summary)],
+			structuredContent: $summary,
+		);
+	}
+
+	#[McpTool('sakoo_exec', 'Runs a ./sakoo command. Allowed: assist, composer, npm.')]
+	public function sakooExecTool(string $command): CallToolResult
+	{
+		try {
+			$result = $this->shell->sakoo($command);
+		} catch (ExceptionInterface $e) {
+			return CallToolResult::error([new TextContent($e->getMessage())]);
+		}
+
+		$output = $result['output'];
+		$exitCode = $result['exitCode'];
+
+		$this->observer->log('sakoo_exec', ['command' => $command], $output);
+
+		return new CallToolResult(
+			[new TextContent($output)],
+			isError: 0 !== $exitCode,
+			structuredContent: ['exitCode' => $exitCode],
+		);
 	}
 
 	/**
-	 * Structured test runner with parsed pass/fail output.
-	 *
 	 * @phpstan-ignore missingType.iterableValue
-	 */
-	#[McpTool('test_run', 'Runs PHPUnit tests. Optional filter for specific test. Returns structured pass/fail results.')]
-	public function testRunTool(string $filter = ''): array
-	{
-		$root = Path::getRootDir();
-		$filterArg = '' !== $filter ? ' --filter=' . escapeshellarg($filter) : '';
-
-		// @phpstan-ignore sakoo.vulnerability.dangerousFunctions
-		$output = trim((string) shell_exec(
-			"cd {$root} && php vendor/bin/phpunit{$filterArg} --no-progress --colors=never 2>&1"
-		));
-
-		$lines = explode("\n", $output);
-		$summary = '';
-		$ok = false;
-
-		foreach (array_reverse($lines) as $line) {
-			if (preg_match('/^(OK|FAILURES|ERRORS|Tests:)/', trim($line))) {
-				$summary = trim($line);
-				$ok = str_starts_with($summary, 'OK');
-
-				break;
-			}
-		}
-
-		return [
-			'ok' => $ok,
-			'summary' => $summary,
-			'output' => $output,
-		];
-	}
-
-	#[McpTool('sakoo_exec', 'Runs a ./sakoo command (docker proxy). E.g. "composer info", "assist doc:gen".')]
-	public function sakooExecTool(string $command): string
-	{
-		$root = Path::getRootDir();
-		$allowed = ['assist', 'composer', 'npm'];
-		$parts = explode(' ', trim($command), 2);
-		$sub = $parts[0];
-
-		if (!in_array($sub, $allowed, true)) {
-			return 'err:denied. Allowed sub-commands: ' . implode(', ', $allowed);
-		}
-
-		// @phpstan-ignore sakoo.vulnerability.dangerousFunctions
-		return trim((string) shell_exec(
-			"cd {$root} && " . escapeshellcmd($command) . ' 2>&1'
-		));
-	}
-
-	/**
-	 * Exposes the full project file tree as an MCP resource.
-	 *
-	 * @return array<string,string[]>
 	 */
 	#[McpResource('file://list')]
 	public function getFilesListResource(): array
 	{
 		$path = Path::getRootDir() ?: __DIR__;
+		$result = $this->getDirFileListTool($path);
 
-		return $this->getDirFileListTool($path);
+		return $result->structuredContent ?? [];
 	}
 
-	/**
-	 * Exposes the system prompt as a cacheable MCP resource.
-	 * Attach once per session instead of re-sending ~500 tokens on every message.
-	 */
 	#[McpResource('prompt://system')]
 	public function systemPromptResource(): string
 	{
@@ -372,19 +535,17 @@ class McpElements
 	}
 
 	/**
-	 * Exposes the compact project structure (app/ + system/ + core/ only) as a cacheable resource.
-	 *
-	 * @return array{app: string[], core: string[], system: string[]}
+	 * @phpstan-ignore missingType.iterableValue
 	 */
 	#[McpResource('project://structure')]
 	public function projectStructureResource(): array
 	{
-		return $this->projectStructureTool();
+		$result = $this->projectStructureTool();
+
+		return $result->structuredContent ?? [];
 	}
 
 	/**
-	 * App info (mode, env, paths) as a cacheable resource — doesn't change during a session.
-	 *
 	 * @phpstan-ignore missingType.iterableValue
 	 */
 	#[McpResource('project://info')]
@@ -408,8 +569,6 @@ class McpElements
 	}
 
 	/**
-	 * Makefile targets as a cacheable resource — rarely changes during a session.
-	 *
 	 * @phpstan-ignore missingType.iterableValue
 	 */
 	#[McpResource('project://makefile')]
@@ -425,8 +584,6 @@ class McpElements
 	}
 
 	/**
-	 * Console commands as a cacheable resource — doesn't change during a session.
-	 *
 	 * @phpstan-ignore missingType.iterableValue
 	 */
 	#[McpResource('project://commands')]
@@ -444,42 +601,42 @@ class McpElements
 		return ['commands' => array_values($list)];
 	}
 
-	/** Architecture patterns: SOLID, DDD, Hexagonal, CQRS, Security, Performance, Testing. */
+	/** @see app/Assist/AI/Prompt/Reference/architecture-reference.md */
 	#[McpResource('reference://architecture')]
 	public function architectureReferenceResource(): string
 	{
 		return $this->readReferenceFile('Reference/architecture-reference.md');
 	}
 
-	/** Sakoo PHP coding conventions: file structure, types, naming, collections, DI, docs. */
+	/** @see app/Assist/AI/Prompt/Reference/coding-conventions.md */
 	#[McpResource('reference://conventions')]
 	public function conventionsResource(): string
 	{
 		return $this->readReferenceFile('Reference/coding-conventions.md');
 	}
 
-	/** Sakoo framework identity: value propositions, core components, system layer. */
+	/** @see app/Assist/AI/Prompt/Reference/sakoo-identity.md */
 	#[McpResource('reference://sakoo-identity')]
 	public function sakooIdentityResource(): string
 	{
 		return $this->readReferenceFile('Reference/sakoo-identity.md');
 	}
 
-	/** Prompt engineering: skill architecture, token efficiency, MCP element design, anti-patterns. */
+	/** @see app/Assist/AI/Prompt/Reference/prompt-engineering.md */
 	#[McpResource('reference://prompt-engineering')]
 	public function promptEngineeringResource(): string
 	{
 		return $this->readReferenceFile('Reference/prompt-engineering.md');
 	}
 
-	/** QA & verification: code review checklist, test writing, visual QA, document QA. */
+	/** @see app/Assist/AI/Prompt/Reference/quality-assurance.md */
 	#[McpResource('reference://quality-assurance')]
 	public function qualityAssuranceResource(): string
 	{
 		return $this->readReferenceFile('Reference/quality-assurance.md');
 	}
 
-	/** File handling: reading strategies by type, PDF/XLSX/DOCX/PPTX processing, common pitfalls. */
+	/** @see app/Assist/AI/Prompt/Reference/file-handling.md */
 	#[McpResource('reference://file-handling')]
 	public function fileHandlingResource(): string
 	{
@@ -487,18 +644,16 @@ class McpElements
 	}
 
 	/**
-	 * Builds a two-message prompt (system + user) from a stored Markdown prompt file.
+	 * @param string $fileName relative path under Assist/AI/Prompt/
 	 *
 	 * @return PromptMessage[]
 	 */
 	#[McpPrompt('dev_task')]
 	public function devTaskPrompt(string $fileName): array
 	{
-		/** @var string[] $systemPrompt */
+		$userPromptPath = $this->resolvePromptFilePath($fileName);
 		$systemPrompt = File::open(Disk::Local, Path::getAppDir() . '/Assist/AI/Prompt/Skill/software-engineer.md')->readLines();
-
-		/** @var string[] $userPrompt */
-		$userPrompt = File::open(Disk::Local, Path::getAppDir() . "/Assist/AI/Prompt/{$fileName}")->readLines();
+		$userPrompt = File::open(Disk::Local, $userPromptPath)->readLines();
 
 		return [
 			new PromptMessage(Role::User, new TextContent(["[System context]\n" . implode(PHP_EOL, $systemPrompt)])),
@@ -507,16 +662,16 @@ class McpElements
 	}
 
 	/**
-	 * Returns a minimal prompt for a single-file code review.
+	 * @param string $path path to the file to review (scoped to project)
 	 *
 	 * @return PromptMessage[]
 	 */
 	#[McpPrompt('review_file')]
 	public function reviewFilePrompt(string $path): array
 	{
+		$path = FileFinder::guard($path);
 		Assert::file($path, "Not a file: {$path}");
 
-		/** @var string[] $lines */
 		$lines = File::open(Disk::Local, $path)->readLines();
 		$content = implode(PHP_EOL, $lines);
 		$tokens = (new McpTokenCalculator())->countText($content);
@@ -529,9 +684,121 @@ class McpElements
 		];
 	}
 
+	/**
+	 * Guards an optional path when provided.
+	 */
+	private function guardOptionalPath(string $path): void
+	{
+		if ('' !== $path) {
+			FileFinder::guard($path);
+		}
+	}
+
+	/**
+	 * Resolves a dev_task prompt file and guarantees it stays under Assist/AI/Prompt.
+	 *
+	 * @throws InvalidArgumentException
+	 */
+	private function resolvePromptFilePath(string $fileName): string
+	{
+		$promptBase = FileFinder::guard(Path::getAppDir() . '/Assist/AI/Prompt');
+		$resolved = FileFinder::guard($promptBase . '/' . ltrim($fileName, '/'));
+		$prefix = rtrim($promptBase, '/') . '/';
+
+		if (!str_starts_with($resolved, $prefix)) {
+			throw new InvalidArgumentException("Prompt path escapes Assist/AI/Prompt: {$fileName}");
+		}
+
+		return $resolved;
+	}
+
+	/**
+	 * @param array{ok: bool, output: string, exitCode: int, summary?: string} $result
+	 *
+	 * @return array{ok: bool, output: string, exitCode: int, summary?: string}
+	 */
+	private function compactCheckResult(array $result): array
+	{
+		if ($result['ok']) {
+			$result['output'] = '';
+
+			return $result;
+		}
+
+		$result['output'] = mb_substr($result['output'], 0, self::CHECK_OUTPUT_CAP);
+
+		return $result;
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $files
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function filterCoverageFiles(array $files, int $maxPct): array
+	{
+		if ($maxPct >= 100) {
+			return $files;
+		}
+
+		return array_values(array_filter($files, static fn (array $f): bool => $f['lines_pct'] < $maxPct));
+	}
+
+	/**
+	 * @param array<string, mixed> $stats
+	 */
+	private function formatCoverageSummary(array $stats): string
+	{
+		if ([] === $stats) {
+			return 'No coverage data available (Xdebug/PCOV required)';
+		}
+
+		return sprintf(
+			'Coverage — Lines: %.2f%% (%d/%d) | Methods: %.2f%% (%d/%d) | Classes: %.2f%% (%d/%d)',
+			$this->toFloatStat($stats['lines_pct'] ?? null),
+			$this->toIntStat($stats['lines_covered'] ?? null),
+			$this->toIntStat($stats['lines_total'] ?? null),
+			$this->toFloatStat($stats['methods_pct'] ?? null),
+			$this->toIntStat($stats['methods_covered'] ?? null),
+			$this->toIntStat($stats['methods_total'] ?? null),
+			$this->toFloatStat($stats['classes_pct'] ?? null),
+			$this->toIntStat($stats['classes_covered'] ?? null),
+			$this->toIntStat($stats['classes_total'] ?? null),
+		);
+	}
+
+	private function toFloatStat(mixed $value): float
+	{
+		if (is_int($value) || is_float($value)) {
+			return (float) $value;
+		}
+
+		if (is_string($value) && is_numeric($value)) {
+			return (float) $value;
+		}
+
+		return 0.0;
+	}
+
+	private function toIntStat(mixed $value): int
+	{
+		if (is_int($value)) {
+			return $value;
+		}
+
+		if (is_float($value)) {
+			return (int) round($value);
+		}
+
+		if (is_string($value) && is_numeric($value)) {
+			return (int) round((float) $value);
+		}
+
+		return 0;
+	}
+
 	private function readReferenceFile(string $relativePath): string
 	{
-		/** @var string[] $lines */
 		$lines = File::open(Disk::Local, Path::getAppDir() . '/Assist/AI/Prompt/' . $relativePath)->readLines();
 
 		return implode(PHP_EOL, $lines);

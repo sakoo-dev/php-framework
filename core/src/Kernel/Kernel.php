@@ -6,7 +6,7 @@ namespace Sakoo\Framework\Core\Kernel;
 
 use Sakoo\Framework\Core\Container\Container;
 use Sakoo\Framework\Core\Container\Contracts\ContainerInterface;
-use Sakoo\Framework\Core\Kernel\Exceptions\IlegalKernelDestroyException;
+use Sakoo\Framework\Core\Kernel\Exceptions\IllegalKernelDestroyException;
 use Sakoo\Framework\Core\Kernel\Exceptions\KernelIsNotStartedException;
 use Sakoo\Framework\Core\Kernel\Exceptions\KernelTwiceCallException;
 use Sakoo\Framework\Core\Path\Path;
@@ -118,7 +118,7 @@ class Kernel
 	public static function destroy(): void
 	{
 		if (self::$instance && !self::$instance->isInTestMode()) {
-			throw new IlegalKernelDestroyException();
+			throw new IllegalKernelDestroyException();
 		}
 
 		if (self::$instance && isset(self::$instance->container)) {
