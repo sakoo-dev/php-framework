@@ -7,22 +7,24 @@ namespace Sakoo\Framework\Core\Profiler;
 use Psr\Clock\ClockInterface;
 
 /**
- * Millisecond-precision profiler backed by a PSR-20 ClockInterface.
+ * Millisecond-precision profiler with request concurrency tracking.
  *
- * Timestamps are captured in Unix milliseconds (seconds × 1000 + milliseconds)
- * by formatting the ClockInterface::now() result with the 'Uv' format string,
- * where 'U' is Unix epoch seconds and 'v' is milliseconds. This approach keeps
- * the implementation fully deterministic in tests when the clock is pinned via
- * Clock::setTestNow().
+ * Timestamps are captured in Unix milliseconds via ClockInterface for
+ * deterministic test control. High-resolution timing uses hrtime(true)
+ * for sub-millisecond precision without DateTimeImmutable allocation.
  *
- * Multiple concurrent timings can coexist by using distinct key strings. Keys are
- * not validated — callers must ensure they call start() before elapsedTime() for
- * any given key to avoid an undefined array key error.
+ * The concurrency counter tracks active/peak/total requests at the process
+ * level. Under Swoole's single-threaded cooperative model, a simple int
+ * is safe — coroutine switches only happen at yield points, never mid-opcode.
  */
 class Profiler implements ProfilerInterface
 {
 	/** @var int[] */
 	protected array $instances = [];
+
+	private int $activeRequests = 0;
+	private int $peakRequests = 0;
+	private int $totalRequests = 0;
 
 	public function __construct(private readonly ClockInterface $clock) {}
 
@@ -40,5 +42,49 @@ class Profiler implements ProfilerInterface
 	public function elapsedTime(string $key): int
 	{
 		return (int) $this->clock->now()->format('Uv') - $this->instances[$key];
+	}
+
+	/**
+	 * Returns nanosecond-precision monotonic timestamp via hrtime.
+	 */
+	public function hrtimeNs(): int
+	{
+		return hrtime(true);
+	}
+
+	/**
+	 * Increments the active request counter and updates peak.
+	 */
+	public function requestStarted(): void
+	{
+		++$this->activeRequests;
+		++$this->totalRequests;
+
+		if ($this->activeRequests > $this->peakRequests) {
+			$this->peakRequests = $this->activeRequests;
+		}
+	}
+
+	/**
+	 * Decrements the active request counter.
+	 */
+	public function requestFinished(): void
+	{
+		--$this->activeRequests;
+	}
+
+	public function activeRequests(): int
+	{
+		return $this->activeRequests;
+	}
+
+	public function peakRequests(): int
+	{
+		return $this->peakRequests;
+	}
+
+	public function totalRequests(): int
+	{
+		return $this->totalRequests;
 	}
 }
