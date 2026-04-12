@@ -23,6 +23,7 @@ class AIServiceLoader extends ServiceLoader
 			'ollama' => new Ollama(
 				url: 'host.docker.internal:11434/api',
 				model: Env::get('OLLAMA_MODEL', ''),
+				parameters: ['num_ctx' => 64 * 1024],
 			),
 			// for more information: https://gapgpt.app/platform-v2
 			'gapgpt' => new OpenAILike(

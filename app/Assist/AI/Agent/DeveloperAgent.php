@@ -8,17 +8,13 @@ use NeuronAI\Agent\SystemPrompt;
 
 class DeveloperAgent extends BaseAgent
 {
-	public function instructions(): string
+	protected function instructions(): string
 	{
-		return (string) new SystemPrompt(
-			background: [
-				file_get_contents(__DIR__ . '/../Prompt/Skill/software-engineer.md'),
-			],
-		);
+		return (string) new SystemPrompt([file_get_contents(__DIR__ . '/../Prompt/Skill/software-engineer.md')]);
 	}
 
-	protected function tools(): array
+	protected function getName(): string
 	{
-		return $this->mcpTools();
+		return 'developer';
 	}
 }

@@ -8,12 +8,13 @@ use NeuronAI\Agent\SystemPrompt;
 
 class ProductManagerAgent extends BaseAgent
 {
-	public function instructions(): string
+	protected function instructions(): string
 	{
-		return (string) new SystemPrompt(
-			background: [
-				file_get_contents(__DIR__ . '/../Prompt/Skill/product-manager.md'),
-			],
-		);
+		return (string) new SystemPrompt([file_get_contents(__DIR__ . '/../Prompt/Skill/product-manager.md')]);
+	}
+
+	protected function getName(): string
+	{
+		return 'productmanager';
 	}
 }
