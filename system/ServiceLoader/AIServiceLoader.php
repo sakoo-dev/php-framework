@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace System\ServiceLoader;
 
+use App\Assist\AI\Mcp\McpTokenObserver;
+use App\Assist\AI\Neuron\AiLogger;
 use NeuronAI\Providers\AIProviderInterface;
 use NeuronAI\Providers\Anthropic\Anthropic;
 use NeuronAI\Providers\Ollama\Ollama;
@@ -23,6 +25,7 @@ class AIServiceLoader extends ServiceLoader
 			'ollama' => new Ollama(
 				url: 'host.docker.internal:11434/api',
 				model: Env::get('OLLAMA_MODEL', ''),
+				parameters: ['num_ctx' => 64 * 1024],
 			),
 			// for more information: https://gapgpt.app/platform-v2
 			'gapgpt' => new OpenAILike(
@@ -52,5 +55,20 @@ class AIServiceLoader extends ServiceLoader
 
 		$container->bind(AIProviderInterface::class, $llmProviders[Env::get('MODEL_PROVIDER', 'ollama')]);
 		$container->bind(EmbeddingsProviderInterface::class, $embeddingProviders[Env::get('EMBEDDING_MODEL_PROVIDER', 'ollama')]);
+
+		$container->bind('ai.provider.sonnet', new OpenAILike(
+			baseUri: 'https://api.gapgpt.app/v1',
+			key: Env::get('GAPGPT_API_KEY', ''),
+			model: Env::get('CLAUDE_SONNET_MODEL', 'claude-sonnet-4-6'),
+		));
+
+		$container->bind('ai.provider.opus', new OpenAILike(
+			baseUri: 'https://api.gapgpt.app/v1',
+			key: Env::get('GAPGPT_API_KEY', ''),
+			model: Env::get('CLAUDE_OPUS_MODEL', 'claude-opus-4-6'),
+		));
+
+		$container->singleton(AiLogger::class, AiLogger::class);
+		$container->singleton(McpTokenObserver::class, McpTokenObserver::class);
 	}
 }

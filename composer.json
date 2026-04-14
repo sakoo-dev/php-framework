@@ -35,8 +35,8 @@
     "phpstan/phpstan": "^2",
     "phpunit/phpunit": "^10",
     "swoole/ide-helper": "^6.0",
-    "mcp/sdk": "dev-main",
-    "neuron-core/neuron-ai": "3.x-dev"
+    "neuron-core/neuron-ai": "^3.3",
+    "mcp/sdk": "dev-main"
   },
   "scripts": {
     "lint": "./vendor/bin/php-cs-fixer check . --using-cache=no",

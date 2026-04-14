@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace App\Assist\Commands;
 
 use App\Assist\AI\Mcp\McpServer;
+use App\Assist\AI\Neuron\AiLogger;
 use Mcp\Server\Transport\StdioTransport;
-use Psr\Log\LoggerInterface;
 use Sakoo\Framework\Core\Console\Command;
 use Sakoo\Framework\Core\Console\Input;
 use Sakoo\Framework\Core\Console\Output;
 
 /**
- * You can test command using below comand:
+ * You can test command using below command:
  * ```npx [at]modelcontextprotocol/inspector ./bin/mcp```
  */
 class McpServerCommand extends Command
@@ -30,7 +30,8 @@ class McpServerCommand extends Command
 	public function run(Input $input, Output $output): int
 	{
 		try {
-			$logger = resolve(LoggerInterface::class);
+			/** @var AiLogger $logger */
+			$logger = resolve(AiLogger::class);
 			McpServer::factory()->run(new StdioTransport(logger: $logger));
 		} catch (\Throwable $e) {
 			fwrite(STDERR, '[CRITICAL ERROR] ' . $e->getMessage() . "\n");

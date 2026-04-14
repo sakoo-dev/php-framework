@@ -4,55 +4,20 @@ declare(strict_types=1);
 
 namespace App\Assist\AI\Mcp;
 
-use Psr\Log\LoggerInterface;
 use Sakoo\Framework\Core\FileSystem\Disk;
 use Sakoo\Framework\Core\FileSystem\File;
 use System\Path\Path;
 
-/**
- * Logs MCP tool I/O token usage to a project-local JSONL file.
- *
- * Serves two complementary purposes:
- *   1. Appends a structured JSON line per tool invocation to
- *      {@see self::LOG_FILE} for persistent, client-agnostic usage tracking.
- *   2. Forwards a human-readable summary to the injected PSR-3
- *      {@see LoggerInterface} so MCP activity appears in the framework's
- *      standard daily log files alongside all other application events.
- *
- * JSONL entry schema:
- *   - ts         : ISO-8601 timestamp
- *   - tool       : tool name (e.g. 'read_file')
- *   - in_chars   : input character count
- *   - out_chars  : output character count
- *   - in_tokens  : estimated input tokens
- *   - out_tokens : estimated output tokens
- *   - total      : in_tokens + out_tokens
- *
- * The JSONL log lives at `storage/ai/mcp-token-usage.jsonl` inside the project,
- * persisting regardless of which MCP client is used (Claude Desktop, Codex,
- * Inspector, etc.).
- *
- * @see McpTokenCalculator  Token estimation engine.
- * @see McpElements         Calls {@see log()} after every tool invocation.
- */
 final class McpTokenObserver
 {
-	/** Relative path from storage root to the JSONL token log. */
-	private const LOG_FILE = '/ai/mcp-token-usage.jsonl';
+	private const MCP_LOG_FILE = '/ai/mcp-token-usage.jsonl';
+	private const AGENT_LOG_FILE = '/ai/agent-token-usage.jsonl';
 
 	public function __construct(
 		private readonly McpTokenCalculator $calculator,
-		private readonly LoggerInterface $logger,
 	) {}
 
 	/**
-	 * Records a single MCP tool invocation.
-	 *
-	 * Estimates token counts for both input and output, appends a JSONL entry
-	 * to the persistent log file, and writes a PSR-3 debug entry to the
-	 * framework's daily log.
-	 *
-	 * @param string              $tool   tool name (e.g. 'read_file')
 	 * @param array<mixed>|string $input  raw input parameters or serialised string
 	 * @param array<mixed>|string $output raw tool output (text or serialisable array)
 	 */
@@ -64,7 +29,7 @@ final class McpTokenObserver
 		$inTokens = $this->calculator->countText($inputStr);
 		$outTokens = $this->calculator->countText($outputStr);
 
-		$entry = [
+		$this->appendJsonl(self::MCP_LOG_FILE, [
 			'ts' => date('c'),
 			'tool' => $tool,
 			'in_chars' => mb_strlen($inputStr),
@@ -72,26 +37,36 @@ final class McpTokenObserver
 			'in_tokens' => $inTokens,
 			'out_tokens' => $outTokens,
 			'total' => $inTokens + $outTokens,
-		];
-
-		$this->appendJsonl($entry);
-
-		$this->logger->debug("MCP tool:{$tool} in:{$inTokens} out:{$outTokens} total:" . ($inTokens + $outTokens));
+		]);
 	}
 
-	/**
-	 * Returns a summary of today's cumulative MCP token usage.
-	 *
-	 * Scans the JSONL log for entries matching today's date and aggregates
-	 * call count and token totals.
-	 *
-	 * @return array{date: string, calls: int, in_tokens: int, out_tokens: int, total_tokens: int}
-	 */
-	public function todaySummary(): array
+	public function logAgent(string $agent, int|string $inTokens, int|string $outTokens, int|string $total): void
 	{
-		$logFile = Path::getStorageDir() . self::LOG_FILE;
-		$today = date('Y-m-d');
+		$this->appendJsonl(self::AGENT_LOG_FILE, [
+			'ts' => date('c'),
+			'agent' => $agent,
+			'in_tokens' => $inTokens,
+			'out_tokens' => $outTokens,
+			'total' => $total,
+		]);
+	}
 
+	/** @return array{date: string, calls: int, in_tokens: int, out_tokens: int, total_tokens: int} */
+	public function todayMcpSummary(): array
+	{
+		return $this->buildDailySummary(Path::getStorageDir() . self::MCP_LOG_FILE);
+	}
+
+	/** @return array{date: string, calls: int, in_tokens: int, out_tokens: int, total_tokens: int} */
+	public function todayAgentSummary(): array
+	{
+		return $this->buildDailySummary(Path::getStorageDir() . self::AGENT_LOG_FILE);
+	}
+
+	/** @return array{date: string, calls: int, in_tokens: int, out_tokens: int, total_tokens: int} */
+	private function buildDailySummary(string $logFile): array
+	{
+		$today = date('Y-m-d');
 		$calls = 0;
 		$inTotal = 0;
 		$outTotal = 0;
@@ -113,7 +88,7 @@ final class McpTokenObserver
 				continue;
 			}
 
-			/** @var null|array{ts?: string, in_tokens?: int, out_tokens?: int} $entry */
+			/** @var null|array{ts?: string, in_tokens?: null|int, out_tokens?: null|int} $entry */
 			$entry = json_decode($line, true);
 
 			if (!is_array($entry) || !isset($entry['ts'])) {
@@ -139,21 +114,17 @@ final class McpTokenObserver
 	}
 
 	/**
-	 * Appends a single JSON entry as a line to the JSONL log file.
-	 *
-	 * Creates the parent directory if it does not exist.
-	 *
 	 * @param array<string, mixed> $entry log entry to serialise and append
 	 */
-	private function appendJsonl(array $entry): void
+	private function appendJsonl(string $relativePath, array $entry): void
 	{
 		$logDir = Path::getStorageDir() . '/ai';
+		$logFile = Path::getStorageDir() . $relativePath;
 
 		if (!is_dir($logDir)) {
 			mkdir($logDir, 0755, true);
 		}
 
-		$logFile = $logDir . '/mcp-token-usage.jsonl';
 		File::open(Disk::Local, $logFile)->append(
 			json_encode($entry, JSON_UNESCAPED_SLASHES) . "\n"
 		);

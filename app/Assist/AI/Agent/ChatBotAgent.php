@@ -4,53 +4,32 @@ declare(strict_types=1);
 
 namespace App\Assist\AI\Agent;
 
-use NeuronAI\Agent\SystemPrompt;
-use NeuronAI\MCP\McpConnector;
-use NeuronAI\Providers\AIProviderInterface;
-use NeuronAI\RAG\Embeddings\EmbeddingsProviderInterface;
-use NeuronAI\RAG\RAG;
-use NeuronAI\RAG\VectorStore\FileVectorStore;
-use NeuronAI\RAG\VectorStore\VectorStoreInterface;
-use System\Path\Path;
-
-class ChatBotAgent extends RAG
+class ChatBotAgent extends BaseAgent
 {
-	protected function provider(): AIProviderInterface
+	protected function agentInstructions(): string
 	{
-		return resolve(AIProviderInterface::class);
+		return (string) file_get_contents(__DIR__ . '/../Prompt/Skill/chatbot.md');
 	}
 
-	protected function embeddings(): EmbeddingsProviderInterface
+	public function getName(): string
 	{
-		return resolve(EmbeddingsProviderInterface::class);
+		return 'chatbot';
 	}
 
-	protected function vectorStore(): VectorStoreInterface
+	public function getExcludedTools(): array
 	{
-		$path = Path::getStorageDir() . '/ai/embeddings';
-
-		return new FileVectorStore(
-			directory: $path,
-			name: 'chatbot'
-		);
+		return ['write_file', 'remove_file', 'sakoo_exec', 'test_run', 'test_coverage', 'check_code'] + $this->neuronToolkitNames();
 	}
 
-	protected function instructions(): string
-	{
-		return (string) new SystemPrompt(
-			background: [
-				file_get_contents(__DIR__ . '/../Prompt/Skill/chatbot.md'),
-			],
-		);
-	}
-
-	protected function tools(): array
+	public function getExcludedContexts(): array
 	{
 		return [
-			...McpConnector::make([
-				'command' => 'php',
-				'args' => ['assist', 'mcp:run'],
-			])->tools(),
+			'file://list',
+			'prompt://system',
+			'project://makefile',
+			'reference://prompt-engineering',
+			'prompt:dev_task',
+			'prompt:review_file',
 		];
 	}
 }

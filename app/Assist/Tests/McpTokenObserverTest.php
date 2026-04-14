@@ -7,7 +7,6 @@ namespace App\Assist\Tests;
 use App\Assist\AI\Mcp\McpTokenCalculator;
 use App\Assist\AI\Mcp\McpTokenObserver;
 use PHPUnit\Framework\Attributes\Test;
-use Psr\Log\NullLogger;
 use System\Path\Path;
 use System\Testing\TestCase;
 
@@ -27,10 +26,7 @@ final class McpTokenObserverTest extends TestCase
 	{
 		parent::setUp();
 
-		$this->observer = new McpTokenObserver(
-			new McpTokenCalculator(),
-			new NullLogger(),
-		);
+		$this->observer = new McpTokenObserver(new McpTokenCalculator());
 
 		$storageDir = Path::getStorageDir();
 		$this->logDir = $storageDir . '/ai';
@@ -89,7 +85,7 @@ final class McpTokenObserverTest extends TestCase
 	{
 		$this->observer->log('summary_test', 'input', 'output');
 
-		$summary = $this->observer->todaySummary();
+		$summary = $this->observer->todayMcpSummary();
 
 		$this->assertSame(date('Y-m-d'), $summary['date']);
 		$this->assertGreaterThanOrEqual(1, $summary['calls']);
@@ -110,7 +106,7 @@ final class McpTokenObserverTest extends TestCase
 		}
 
 		try {
-			$summary = $this->observer->todaySummary();
+			$summary = $this->observer->todayMcpSummary();
 
 			$this->assertSame(0, $summary['calls']);
 			$this->assertSame(0, $summary['in_tokens']);
