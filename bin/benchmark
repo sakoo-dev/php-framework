@@ -1,0 +1,105 @@
+#!/bin/bash
+
+# Sakoo HTTP Benchmark Runner
+# Runs Apache Benchmark and stores results as JSONL for the /metrics/benchmark dashboard.
+#
+# Usage:
+#   ./bin/benchmark [concurrency] [requests] [path]
+#
+# Defaults: concurrency=100, requests=1000, path=/health
+
+set -euo pipefail
+
+CONCURRENCY=${1:-100}
+REQUESTS=${2:-1000}
+PATH_TARGET=${3:-/health}
+HOST=${BENCHMARK_HOST:-http://localhost}
+TARGET="${HOST}${PATH_TARGET}"
+RESULTS_FILE="./storage/benchmark/results.jsonl"
+
+WHITE='\033[1;37m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+if ! command -v ab &> /dev/null; then
+    echo -e "${WHITE}Apache Benchmark (ab) is not installed.${NC}"
+    echo "  macOS:  brew install httpd"
+    echo "  Linux:  sudo apt install apache2-utils"
+    exit 1
+fi
+
+# Verify server is reachable
+if ! curl -sf "${HOST}/health" > /dev/null 2>&1; then
+    echo -e "${WHITE}Server not reachable at ${HOST}/health${NC}"
+    echo "  Start the server first: make up"
+    exit 1
+fi
+
+# Detect transport by checking response headers
+SAPI=$(curl -sf -o /dev/null -D - "${HOST}/health" 2>/dev/null | grep -i "x-runtime-sapi" | awk '{print $2}' | tr -d '\r\n')
+if [ -z "$SAPI" ]; then
+    SAPI="unknown"
+fi
+
+TRANSPORT="unknown"
+if [ "$SAPI" = "cli" ]; then
+    TRANSPORT="swoole"
+elif [ "$SAPI" = "fpm-fcgi" ]; then
+    TRANSPORT="fpm"
+fi
+
+echo ""
+echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║                    Sakoo HTTP Benchmark                      ║${NC}"
+echo -e "${CYAN}╠══════════════════════════════════════════════════════════════╣${NC}"
+echo -e "${CYAN}║${NC}  Target:       ${WHITE}${TARGET}${NC}"
+echo -e "${CYAN}║${NC}  Concurrency:  ${WHITE}${CONCURRENCY}${NC}"
+echo -e "${CYAN}║${NC}  Requests:     ${WHITE}${REQUESTS}${NC}"
+echo -e "${CYAN}║${NC}  Transport:    ${WHITE}${TRANSPORT} (${SAPI})${NC}"
+echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+# Run Apache Benchmark
+AB_OUTPUT=$(ab -n "$REQUESTS" -c "$CONCURRENCY" -s 10 "$TARGET" 2>&1)
+
+echo "$AB_OUTPUT"
+
+# Parse results and store as JSONL
+mkdir -p "$(dirname "$RESULTS_FILE")"
+
+TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+COMPLETED=$(echo "$AB_OUTPUT" | grep "Complete requests:" | awk '{print $3}')
+FAILED=$(echo "$AB_OUTPUT" | grep "Failed requests:" | awk '{print $3}')
+TOTAL_TIME=$(echo "$AB_OUTPUT" | grep "Time taken for tests:" | awk '{print $5}')
+RPS=$(echo "$AB_OUTPUT" | grep "Requests per second:" | awk '{print $4}')
+MEAN=$(echo "$AB_OUTPUT" | grep "Time per request:" | head -1 | awk '{print $4}')
+P50=$(echo "$AB_OUTPUT" | grep "  50%" | awk '{print $2}')
+P90=$(echo "$AB_OUTPUT" | grep "  90%" | awk '{print $2}')
+P95=$(echo "$AB_OUTPUT" | grep "  95%" | awk '{print $2}')
+P99=$(echo "$AB_OUTPUT" | grep "  99%" | awk '{print $2}')
+LONGEST=$(echo "$AB_OUTPUT" | grep " 100%" | awk '{print $2}')
+
+# Default empty values
+COMPLETED=${COMPLETED:-0}
+FAILED=${FAILED:-0}
+TOTAL_TIME=${TOTAL_TIME:-0}
+RPS=${RPS:-0}
+MEAN=${MEAN:-0}
+P50=${P50:-0}
+P90=${P90:-0}
+P95=${P95:-0}
+P99=${P99:-0}
+LONGEST=${LONGEST:-0}
+
+JSON=$(cat <<EOF
+{"timestamp":"${TIMESTAMP}","target":"${TARGET}","concurrency":${CONCURRENCY},"total_requests":${REQUESTS},"completed":${COMPLETED},"failed":${FAILED},"total_time_sec":${TOTAL_TIME},"rps":${RPS},"mean_ms":${MEAN},"p50_ms":${P50},"p90_ms":${P90},"p95_ms":${P95},"p99_ms":${P99},"longest_ms":${LONGEST},"sapi":"${SAPI}"}
+EOF
+)
+
+echo "$JSON" >> "$RESULTS_FILE"
+
+echo ""
+echo -e "${GREEN}Result stored in ${RESULTS_FILE}${NC}"
+echo ""

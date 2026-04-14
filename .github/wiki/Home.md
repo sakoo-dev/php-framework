@@ -3648,6 +3648,2598 @@ public function get(): string
 $markdown->get();
 ```
 
+## 📦 Sakoo\Framework\Core\Http\Middleware
+
+### 🟢 MiddlewarePipeline
+
+<sub><sup>PSR-15 middleware dispatcher implementing a FIFO pipeline. </sup></sub>
+
+
+
+<sub><sup>Middleware classes are resolved from the container on dispatch, enabling lazy instantiation and constructor injection. Each middleware receives the request and a handler that delegates to the next middleware in the stack. When all middleware have executed, the fallback handler is invoked. </sup></sub>
+
+
+
+<sub><sup>The pipeline is immutable after construction — adding middleware returns a new MiddlewarePipeline instance rather than mutating the existing one. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$middlewarePipeline = new MiddlewarePipeline(RequestHandlerInterface $fallbackHandler, array $middleware);
+```
+
+### - `pipe` Function
+
+<sub><sup>Returns a new pipeline with $middleware appended at the end. </sup></sub>
+
+
+
+<sub><sup>@param class-string&lt;MiddlewareInterface&gt; $middleware </sup></sub>
+
+
+
+```php
+// --- Contract
+public function pipe(string $middleware): self
+// --- Usage
+$middlewarePipeline->pipe($middleware);
+```
+
+### - `handle` Function
+
+<sub><sup>Dispatches the request through the middleware stack. Each middleware is resolved from the container so dependencies are injected automatically. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function handle(ServerRequestInterface $request): ResponseInterface
+// --- Usage
+$middlewarePipeline->handle($request);
+```
+
+## 📦 Sakoo\Framework\Core\Http\Transport\Swoole
+
+### 🟢 SwooleResponseEmitter
+
+<sub><sup>Emits a PSR-7 response through a Swoole HTTP response object. </sup></sub>
+
+
+
+<sub><sup>Translates status code, headers, and body from the immutable PSR-7 response into the Swoole response API. The Swoole response object is provided per-request by the Swoole HTTP server event loop. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$swooleResponseEmitter = new SwooleResponseEmitter(Response $swooleResponse);
+```
+
+### - `emit` Function
+
+```php
+// --- Contract
+public function emit(ResponseInterface $response): void
+// --- Usage
+$swooleResponseEmitter->emit($response);
+```
+
+### 🟢 SwooleTransportRequest
+
+<sub><sup>Swoole transport request adapter. </sup></sub>
+
+
+
+<sub><sup>Converts a Swoole\Http\Request into a PSR-7 ServerRequest. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$swooleTransportRequest = new SwooleTransportRequest(Request $swooleRequest);
+```
+
+### - `toPsrRequest` Function
+
+```php
+// --- Contract
+public function toPsrRequest(): ServerRequestInterface
+// --- Usage
+$swooleTransportRequest->toPsrRequest();
+```
+
+## 📦 Sakoo\Framework\Core\Http\Transport\Fpm
+
+### 🟢 FpmResponseEmitter
+
+<sub><sup>Emits a PSR-7 response via PHP-FPM&#039;s header() and output stream. </sup></sub>
+
+
+
+<sub><sup>Sends the status line, all headers, and the body content using standard PHP output functions. This emitter must only be used in FPM/CGI contexts where header() is available. </sup></sub>
+
+
+
+### - `emit` Function
+
+```php
+// --- Contract
+public function emit(ResponseInterface $response): void
+// --- Usage
+$fpmResponseEmitter->emit($response);
+```
+
+### 🟢 FpmTransportRequest
+
+<sub><sup>FPM transport request adapter. </sup></sub>
+
+
+
+<sub><sup>Reads PHP superglobals and php://input to assemble a PSR-7 ServerRequest. This is the only place in the framework that touches superglobals directly. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$fpmTransportRequest = new FpmTransportRequest(array $server, array $get, array $post, array $cookies, array $files, string $body);
+```
+
+### - `fromGlobals` Function
+
+<sub><sup>Factory that captures the current PHP superglobal state. </sup></sub>
+
+
+
+```php
+// --- Contract
+public static function fromGlobals(): self
+// --- Usage
+FpmTransportRequest::fromGlobals();
+```
+
+### - `toPsrRequest` Function
+
+```php
+// --- Contract
+public function toPsrRequest(): ServerRequestInterface
+// --- Usage
+$fpmTransportRequest->toPsrRequest();
+```
+
+## 📦 Sakoo\Framework\Core\Http
+
+### 🟢 HttpRequest
+
+<sub><sup>Developer-friendly wrapper around a PSR-7 ServerRequestInterface. </sup></sub>
+
+
+
+<sub><sup>Provides typed, convenient accessors for every part of an HTTP request (input, query, headers, cookies, files, path parameters, method, URL) without requiring the developer to work with the PSR interfaces directly. </sup></sub>
+
+
+
+<sub><sup>The underlying PSR-7 request is always available via psrRequest() for cases where the raw interface is needed (e.g. middleware interop). </sup></sub>
+
+
+
+<sub><sup>HttpRequest is immutable (readonly) — the withPsr() and withAttribute() methods return new instances wrapping the modified PSR-7 request. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$httpRequest = new HttpRequest(ServerRequestInterface $request);
+```
+
+### - `psrRequest` Function
+
+<sub><sup>Returns the underlying PSR-7 ServerRequestInterface. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function psrRequest(): ServerRequestInterface
+// --- Usage
+$httpRequest->psrRequest();
+```
+
+### - `withPsr` Function
+
+<sub><sup>Returns a new HttpRequest wrapping a different PSR-7 request. Used in middleware to forward a modified request down the pipeline while staying in the HttpRequest world. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withPsr(ServerRequestInterface $request): self
+// --- Usage
+$httpRequest->withPsr($request);
+```
+
+### - `withAttribute` Function
+
+<sub><sup>Returns a new HttpRequest with an added request attribute. Convenience shorthand for withPsr($request-&gt;psrRequest()-&gt;withAttribute(...)). </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withAttribute(string $name, mixed $value): self
+// --- Usage
+$httpRequest->withAttribute($name, $value);
+```
+
+### - `method` Function
+
+<sub><sup>Returns the HTTP method (GET, POST, PUT, etc.). </sup></sub>
+
+
+
+```php
+// --- Contract
+public function method(): string
+// --- Usage
+$httpRequest->method();
+```
+
+### - `isMethod` Function
+
+<sub><sup>Returns true when the request method matches $method (case-insensitive). </sup></sub>
+
+
+
+```php
+// --- Contract
+public function isMethod(string $method): bool
+// --- Usage
+$httpRequest->isMethod($method);
+```
+
+### - `path` Function
+
+<sub><sup>Returns the request path without query string (e.g. &quot;/users/42&quot;). </sup></sub>
+
+
+
+```php
+// --- Contract
+public function path(): string
+// --- Usage
+$httpRequest->path();
+```
+
+### - `url` Function
+
+<sub><sup>Returns the full URL including scheme, host, path, and query string. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function url(): string
+// --- Usage
+$httpRequest->url();
+```
+
+### - `scheme` Function
+
+<sub><sup>Returns the URI scheme (&quot;http&quot; or &quot;https&quot;). </sup></sub>
+
+
+
+```php
+// --- Contract
+public function scheme(): string
+// --- Usage
+$httpRequest->scheme();
+```
+
+### - `host` Function
+
+<sub><sup>Returns the host name from the URI (e.g. &quot;example.com&quot;). </sup></sub>
+
+
+
+```php
+// --- Contract
+public function host(): string
+// --- Usage
+$httpRequest->host();
+```
+
+### - `port` Function
+
+<sub><sup>Returns the port number, or null when using a standard port. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function port(): int
+// --- Usage
+$httpRequest->port();
+```
+
+### - `isSecure` Function
+
+<sub><sup>Returns true when the request was made over HTTPS. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function isSecure(): bool
+// --- Usage
+$httpRequest->isSecure();
+```
+
+### - `input` Function
+
+<sub><sup>Returns a value from the parsed body (POST data), falling back to the query string, then to $default. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function input(string $key, mixed $default): mixed
+// --- Usage
+$httpRequest->input($key, $default);
+```
+
+### - `all` Function
+
+<sub><sup>Returns all input data merged from the parsed body and query parameters. </sup></sub>
+
+
+
+<sub><sup>@return array&lt;string, mixed&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function all(): array
+// --- Usage
+$httpRequest->all();
+```
+
+### - `has` Function
+
+<sub><sup>Returns true when the input key exists in parsed body or query params. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function has(string $key): bool
+// --- Usage
+$httpRequest->has($key);
+```
+
+### - `query` Function
+
+<sub><sup>Returns a query string parameter by name, or $default when absent. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function query(string $key, mixed $default): mixed
+// --- Usage
+$httpRequest->query($key, $default);
+```
+
+### - `queryAll` Function
+
+<sub><sup>Returns all query string parameters. </sup></sub>
+
+
+
+<sub><sup>@return array&lt;string, mixed&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function queryAll(): array
+// --- Usage
+$httpRequest->queryAll();
+```
+
+### - `header` Function
+
+<sub><sup>Returns a header value as a single string, or $default when absent. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function header(string $name, string $default): string
+// --- Usage
+$httpRequest->header($name, $default);
+```
+
+### - `headers` Function
+
+<sub><sup>Returns all values for a given header as an array. </sup></sub>
+
+
+
+<sub><sup>@return string[] </sup></sub>
+
+
+
+```php
+// --- Contract
+public function headers(string $name): array
+// --- Usage
+$httpRequest->headers($name);
+```
+
+### - `hasHeader` Function
+
+<sub><sup>Returns true when the request has the given header. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function hasHeader(string $name): bool
+// --- Usage
+$httpRequest->hasHeader($name);
+```
+
+### - `bearerToken` Function
+
+<sub><sup>Returns the Bearer token from the Authorization header, or null when no Bearer token is present. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function bearerToken(): string
+// --- Usage
+$httpRequest->bearerToken();
+```
+
+### - `cookie` Function
+
+<sub><sup>Returns a cookie value by name, or $default when absent. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function cookie(string $name, string $default): string
+// --- Usage
+$httpRequest->cookie($name, $default);
+```
+
+### - `cookies` Function
+
+<sub><sup>Returns all cookies as a key-value array. </sup></sub>
+
+
+
+<sub><sup>@return array&lt;string, string&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function cookies(): array
+// --- Usage
+$httpRequest->cookies();
+```
+
+### - `routeParam` Function
+
+<sub><sup>Returns a route parameter (request attribute) by name, or $default. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function routeParam(string $name, mixed $default): mixed
+// --- Usage
+$httpRequest->routeParam($name, $default);
+```
+
+### - `routeParams` Function
+
+<sub><sup>Returns all route parameters (request attributes). </sup></sub>
+
+
+
+<sub><sup>@return array&lt;string, mixed&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function routeParams(): array
+// --- Usage
+$httpRequest->routeParams();
+```
+
+### - `file` Function
+
+<sub><sup>Returns a single uploaded file by form field name, or null when absent. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function file(string $name): UploadedFileInterface
+// --- Usage
+$httpRequest->file($name);
+```
+
+### - `files` Function
+
+<sub><sup>Returns all uploaded files. </sup></sub>
+
+
+
+<sub><sup>@return array&lt;mixed&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function files(): array
+// --- Usage
+$httpRequest->files();
+```
+
+### - `hasFile` Function
+
+<sub><sup>Returns true when the uploaded file for the given field exists. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function hasFile(string $name): bool
+// --- Usage
+$httpRequest->hasFile($name);
+```
+
+### - `body` Function
+
+<sub><sup>Returns the raw request body as a string. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function body(): string
+// --- Usage
+$httpRequest->body();
+```
+
+### - `json` Function
+
+<sub><sup>Decodes the request body as JSON and returns the result. </sup></sub>
+
+
+
+<sub><sup>@return array&lt;string, mixed&gt; </sup></sub>
+
+
+
+> @throws \JsonException
+
+```php
+// --- Contract
+public function json(): array
+// --- Usage
+$httpRequest->json();
+```
+
+### - `contentType` Function
+
+<sub><sup>Returns the Content-Type header value, or an empty string. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function contentType(): string
+// --- Usage
+$httpRequest->contentType();
+```
+
+### - `isJson` Function
+
+<sub><sup>Returns true when the Content-Type indicates a JSON payload. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function isJson(): bool
+// --- Usage
+$httpRequest->isJson();
+```
+
+### - `ip` Function
+
+<sub><sup>Returns the client IP address from the server parameters. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function ip(): string
+// --- Usage
+$httpRequest->ip();
+```
+
+### - `userAgent` Function
+
+<sub><sup>Returns the value of the User-Agent header, or an empty string. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function userAgent(): string
+// --- Usage
+$httpRequest->userAgent();
+```
+
+### - `server` Function
+
+<sub><sup>Returns a server parameter by key, or $default. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function server(string $key, mixed $default): mixed
+// --- Usage
+$httpRequest->server($key, $default);
+```
+
+### 🟢 Response
+
+<sub><sup>Immutable PSR-7 HTTP response. </sup></sub>
+
+
+
+<sub><sup>Carries the status code, reason phrase, headers, and body. When no reason phrase is provided, the standard RFC 7231 phrase for the given status code is used automatically. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$response = new Response(int $statusCode, string $reasonPhrase, HeaderBag $headers, StreamInterface $body, string $protocolVersion);
+```
+
+### - `getStatusCode` Function
+
+```php
+// --- Contract
+public function getStatusCode(): int
+// --- Usage
+$response->getStatusCode();
+```
+
+### - `withStatus` Function
+
+> @throws \InvalidArgumentException
+
+```php
+// --- Contract
+public function withStatus(int $code, string $reasonPhrase): ResponseInterface
+// --- Usage
+$response->withStatus($code, $reasonPhrase);
+```
+
+### - `getReasonPhrase` Function
+
+```php
+// --- Contract
+public function getReasonPhrase(): string
+// --- Usage
+$response->getReasonPhrase();
+```
+
+### - `cloneWith` Function
+
+```php
+// --- Contract
+protected function cloneWith(string $protocolVersion, HeaderBag $headers, StreamInterface $body): static
+// --- Usage
+$response->cloneWith($protocolVersion, $headers, $body);
+```
+
+### - `getProtocolVersion` Function
+
+```php
+// --- Contract
+public function getProtocolVersion(): string
+// --- Usage
+$response->getProtocolVersion();
+```
+
+### - `withProtocolVersion` Function
+
+```php
+// --- Contract
+public function withProtocolVersion(string $version): MessageInterface
+// --- Usage
+$response->withProtocolVersion($version);
+```
+
+### - `getHeaders` Function
+
+<sub><sup>@return array&lt;string, string[]&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getHeaders(): array
+// --- Usage
+$response->getHeaders();
+```
+
+### - `hasHeader` Function
+
+```php
+// --- Contract
+public function hasHeader(string $name): bool
+// --- Usage
+$response->hasHeader($name);
+```
+
+### - `getHeader` Function
+
+<sub><sup>@return string[] </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getHeader(string $name): array
+// --- Usage
+$response->getHeader($name);
+```
+
+### - `getHeaderLine` Function
+
+```php
+// --- Contract
+public function getHeaderLine(string $name): string
+// --- Usage
+$response->getHeaderLine($name);
+```
+
+### - `withHeader` Function
+
+<sub><sup>@param string|string[] $value </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withHeader(string $name,  $value): MessageInterface
+// --- Usage
+$response->withHeader($name, $value);
+```
+
+### - `withAddedHeader` Function
+
+<sub><sup>@param string|string[] $value </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withAddedHeader(string $name,  $value): MessageInterface
+// --- Usage
+$response->withAddedHeader($name, $value);
+```
+
+### - `withoutHeader` Function
+
+```php
+// --- Contract
+public function withoutHeader(string $name): MessageInterface
+// --- Usage
+$response->withoutHeader($name);
+```
+
+### - `getBody` Function
+
+```php
+// --- Contract
+public function getBody(): StreamInterface
+// --- Usage
+$response->getBody();
+```
+
+### - `withBody` Function
+
+```php
+// --- Contract
+public function withBody(StreamInterface $body): MessageInterface
+// --- Usage
+$response->withBody($body);
+```
+
+### - `getHeaderBag` Function
+
+```php
+// --- Contract
+protected function getHeaderBag(): HeaderBag
+// --- Usage
+$response->getHeaderBag();
+```
+
+### 🟢 HttpResponse
+
+<sub><sup>Fluent response builder that wraps the immutable PSR-7 Response. </sup></sub>
+
+
+
+<sub><sup>Provides developer-friendly factory methods for the most common response types (JSON, plain text, HTML, redirects, no-content) and fluent mutators for headers, cookies, and status codes. Every mutation returns the same HttpResponse instance — it rebuilds the internal PSR-7 Response on each call so the builder itself stays mutable and chainable while the underlying PSR-7 object remains immutable. </sup></sub>
+
+
+
+<sub><sup>The final PSR-7 ResponseInterface is obtained via toPsrResponse() and is what the Router returns to the middleware pipeline. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$httpResponse = new HttpResponse(int $statusCode, string $reasonPhrase);
+```
+
+### - `fromPsr` Function
+
+<sub><sup>Wraps an existing PSR-7 ResponseInterface in an HttpResponse. Used by the Middleware base class to convert the downstream PSR-7 response back into the fluent builder so middleware can chain withHeader(), withStatus(), etc. </sup></sub>
+
+
+
+```php
+// --- Contract
+public static function fromPsr(ResponseInterface $response): self
+// --- Usage
+HttpResponse::fromPsr($response);
+```
+
+### - `json` Function
+
+<sub><sup>Creates a JSON response with the given data and status code. </sup></sub>
+
+
+
+<sub><sup>@param array&lt;mixed&gt;|object $data </sup></sub>
+
+
+
+> @throws \JsonException
+
+```php
+// --- Contract
+public static function json(object|array $data, int $status): self
+// --- Usage
+HttpResponse::json($data, $status);
+```
+
+### - `text` Function
+
+<sub><sup>Creates a plain text response with the given content and status code. </sup></sub>
+
+
+
+```php
+// --- Contract
+public static function text(string $content, int $status): self
+// --- Usage
+HttpResponse::text($content, $status);
+```
+
+### - `html` Function
+
+<sub><sup>Creates an HTML response with the given content and status code. </sup></sub>
+
+
+
+```php
+// --- Contract
+public static function html(string $content, int $status): self
+// --- Usage
+HttpResponse::html($content, $status);
+```
+
+### - `redirect` Function
+
+<sub><sup>Creates a redirect response (302 by default) to the given URL. </sup></sub>
+
+
+
+```php
+// --- Contract
+public static function redirect(string $url, int $status): self
+// --- Usage
+HttpResponse::redirect($url, $status);
+```
+
+### - `noContent` Function
+
+<sub><sup>Creates a 204 No Content response with an empty body. </sup></sub>
+
+
+
+```php
+// --- Contract
+public static function noContent(): self
+// --- Usage
+HttpResponse::noContent();
+```
+
+### - `created` Function
+
+<sub><sup>Creates a 201 Created response, optionally with a Location header and JSON body. </sup></sub>
+
+
+
+<sub><sup>@param null|array&lt;mixed&gt;|object $data </sup></sub>
+
+
+
+> @throws \JsonException
+
+```php
+// --- Contract
+public static function created(string $location, object|array|null $data): self
+// --- Usage
+HttpResponse::created($location, $data);
+```
+
+### - `status` Function
+
+<sub><sup>Returns the HTTP status code. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function status(): int
+// --- Usage
+$httpResponse->status();
+```
+
+### - `withStatus` Function
+
+<sub><sup>Sets the HTTP status code. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withStatus(int $code, string $reasonPhrase): self
+// --- Usage
+$httpResponse->withStatus($code, $reasonPhrase);
+```
+
+### - `header` Function
+
+<sub><sup>Returns a header value as a string, or $default when absent. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function header(string $name, string $default): string
+// --- Usage
+$httpResponse->header($name, $default);
+```
+
+### - `hasHeader` Function
+
+<sub><sup>Returns true when the response has the given header. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function hasHeader(string $name): bool
+// --- Usage
+$httpResponse->hasHeader($name);
+```
+
+### - `withHeader` Function
+
+<sub><sup>Sets a response header, replacing any existing value. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withHeader(string $name, string $value): self
+// --- Usage
+$httpResponse->withHeader($name, $value);
+```
+
+### - `withAddedHeader` Function
+
+<sub><sup>Appends a value to an existing response header. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withAddedHeader(string $name, string $value): self
+// --- Usage
+$httpResponse->withAddedHeader($name, $value);
+```
+
+### - `withoutHeader` Function
+
+<sub><sup>Removes a response header. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withoutHeader(string $name): self
+// --- Usage
+$httpResponse->withoutHeader($name);
+```
+
+### - `withBody` Function
+
+<sub><sup>Sets the response body from a string. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withBody(string $content): self
+// --- Usage
+$httpResponse->withBody($content);
+```
+
+### - `withCookie` Function
+
+<sub><sup>Appends a Set-Cookie header following RFC 6265. </sup></sub>
+
+
+
+<sub><sup>@param array&lt;string, mixed&gt; $options Supports: path, domain, secure, httponly, samesite, expires, maxage </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withCookie(string $name, string $value, array $options): self
+// --- Usage
+$httpResponse->withCookie($name, $value, $options);
+```
+
+### - `withCacheControl` Function
+
+<sub><sup>Sets the Cache-Control header. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withCacheControl(string $directive): self
+// --- Usage
+$httpResponse->withCacheControl($directive);
+```
+
+### - `toPsrResponse` Function
+
+<sub><sup>Returns the underlying PSR-7 ResponseInterface. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function toPsrResponse(): ResponseInterface
+// --- Usage
+$httpResponse->toPsrResponse();
+```
+
+### 🟢 Stream
+
+<sub><sup>PSR-7 stream implementation wrapping a native PHP stream resource. </sup></sub>
+
+
+
+<sub><sup>All read/write/seek operations delegate to the underlying resource. Once detach() or close() is called the stream becomes inert and most operations will throw RuntimeException to signal the unusable state. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$stream = new Stream( $resource);
+```
+
+### - `createFromString` Function
+
+<sub><sup>Named constructor that opens a php://temp stream populated with $content. </sup></sub>
+
+
+
+```php
+// --- Contract
+public static function createFromString(string $content): self
+// --- Usage
+Stream::createFromString($content);
+```
+
+### - `create` Function
+
+<sub><sup>Named constructor that wraps an already-opened PHP resource. </sup></sub>
+
+
+
+<sub><sup>@param resource $resource </sup></sub>
+
+
+
+```php
+// --- Contract
+public static function create( $resource): self
+// --- Usage
+Stream::create($resource);
+```
+
+### - `close` Function
+
+```php
+// --- Contract
+public function close(): void
+// --- Usage
+$stream->close();
+```
+
+### - `detach` Function
+
+```php
+// --- Contract
+public function detach()
+// --- Usage
+$stream->detach();
+```
+
+### - `getSize` Function
+
+```php
+// --- Contract
+public function getSize(): int
+// --- Usage
+$stream->getSize();
+```
+
+### - `tell` Function
+
+> @throws \RuntimeException
+
+```php
+// --- Contract
+public function tell(): int
+// --- Usage
+$stream->tell();
+```
+
+### - `eof` Function
+
+```php
+// --- Contract
+public function eof(): bool
+// --- Usage
+$stream->eof();
+```
+
+### - `isSeekable` Function
+
+```php
+// --- Contract
+public function isSeekable(): bool
+// --- Usage
+$stream->isSeekable();
+```
+
+### - `seek` Function
+
+> @throws \RuntimeException
+
+```php
+// --- Contract
+public function seek(int $offset, int $whence): void
+// --- Usage
+$stream->seek($offset, $whence);
+```
+
+### - `rewind` Function
+
+> @throws \RuntimeException
+
+```php
+// --- Contract
+public function rewind(): void
+// --- Usage
+$stream->rewind();
+```
+
+### - `isWritable` Function
+
+```php
+// --- Contract
+public function isWritable(): bool
+// --- Usage
+$stream->isWritable();
+```
+
+### - `write` Function
+
+> @throws \RuntimeException
+
+```php
+// --- Contract
+public function write(string $string): int
+// --- Usage
+$stream->write($string);
+```
+
+### - `isReadable` Function
+
+```php
+// --- Contract
+public function isReadable(): bool
+// --- Usage
+$stream->isReadable();
+```
+
+### - `read` Function
+
+> @throws \RuntimeException
+
+```php
+// --- Contract
+public function read(int $length): string
+// --- Usage
+$stream->read($length);
+```
+
+### - `getContents` Function
+
+> @throws \RuntimeException
+
+```php
+// --- Contract
+public function getContents(): string
+// --- Usage
+$stream->getContents();
+```
+
+### - `getMetadata` Function
+
+```php
+// --- Contract
+public function getMetadata(string $key)
+// --- Usage
+$stream->getMetadata($key);
+```
+
+### 🟢 Request
+
+<sub><sup>Immutable PSR-7 HTTP request message. </sup></sub>
+
+
+
+<sub><sup>Represents an outgoing, client-side request. The Host header is synchronised from the URI on construction when no Host header is present, and on withUri() unless $preserveHost is true and a Host header already exists. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$request = new Request(string $method, UriInterface $uri, HeaderBag $headers, StreamInterface $body, string $protocolVersion, string $requestTarget);
+```
+
+### - `getRequestTarget` Function
+
+```php
+// --- Contract
+public function getRequestTarget(): string
+// --- Usage
+$request->getRequestTarget();
+```
+
+### - `withRequestTarget` Function
+
+```php
+// --- Contract
+public function withRequestTarget(string $requestTarget): RequestInterface
+// --- Usage
+$request->withRequestTarget($requestTarget);
+```
+
+### - `getMethod` Function
+
+```php
+// --- Contract
+public function getMethod(): string
+// --- Usage
+$request->getMethod();
+```
+
+### - `withMethod` Function
+
+```php
+// --- Contract
+public function withMethod(string $method): RequestInterface
+// --- Usage
+$request->withMethod($method);
+```
+
+### - `getUri` Function
+
+```php
+// --- Contract
+public function getUri(): UriInterface
+// --- Usage
+$request->getUri();
+```
+
+### - `withUri` Function
+
+```php
+// --- Contract
+public function withUri(UriInterface $uri, bool $preserveHost): RequestInterface
+// --- Usage
+$request->withUri($uri, $preserveHost);
+```
+
+### - `cloneWith` Function
+
+```php
+// --- Contract
+protected function cloneWith(string $protocolVersion, HeaderBag $headers, StreamInterface $body): static
+// --- Usage
+$request->cloneWith($protocolVersion, $headers, $body);
+```
+
+### - `getProtocolVersion` Function
+
+```php
+// --- Contract
+public function getProtocolVersion(): string
+// --- Usage
+$request->getProtocolVersion();
+```
+
+### - `withProtocolVersion` Function
+
+```php
+// --- Contract
+public function withProtocolVersion(string $version): MessageInterface
+// --- Usage
+$request->withProtocolVersion($version);
+```
+
+### - `getHeaders` Function
+
+<sub><sup>@return array&lt;string, string[]&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getHeaders(): array
+// --- Usage
+$request->getHeaders();
+```
+
+### - `hasHeader` Function
+
+```php
+// --- Contract
+public function hasHeader(string $name): bool
+// --- Usage
+$request->hasHeader($name);
+```
+
+### - `getHeader` Function
+
+<sub><sup>@return string[] </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getHeader(string $name): array
+// --- Usage
+$request->getHeader($name);
+```
+
+### - `getHeaderLine` Function
+
+```php
+// --- Contract
+public function getHeaderLine(string $name): string
+// --- Usage
+$request->getHeaderLine($name);
+```
+
+### - `withHeader` Function
+
+<sub><sup>@param string|string[] $value </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withHeader(string $name,  $value): MessageInterface
+// --- Usage
+$request->withHeader($name, $value);
+```
+
+### - `withAddedHeader` Function
+
+<sub><sup>@param string|string[] $value </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withAddedHeader(string $name,  $value): MessageInterface
+// --- Usage
+$request->withAddedHeader($name, $value);
+```
+
+### - `withoutHeader` Function
+
+```php
+// --- Contract
+public function withoutHeader(string $name): MessageInterface
+// --- Usage
+$request->withoutHeader($name);
+```
+
+### - `getBody` Function
+
+```php
+// --- Contract
+public function getBody(): StreamInterface
+// --- Usage
+$request->getBody();
+```
+
+### - `withBody` Function
+
+```php
+// --- Contract
+public function withBody(StreamInterface $body): MessageInterface
+// --- Usage
+$request->withBody($body);
+```
+
+### - `getHeaderBag` Function
+
+```php
+// --- Contract
+protected function getHeaderBag(): HeaderBag
+// --- Usage
+$request->getHeaderBag();
+```
+
+### 🟢 HttpFactory
+
+<sub><sup>Unified PSR-17 HTTP factory implementing all six factory interfaces. </sup></sub>
+
+
+
+<sub><sup>Provides a single class for creating PSR-7 value objects. Bind it against each individual PSR-17 interface in the ServiceLoader so consumers can depend on any granularity they need. </sup></sub>
+
+
+
+### - `createRequest` Function
+
+<sub><sup>@param string|UriInterface $uri </sup></sub>
+
+
+
+```php
+// --- Contract
+public function createRequest(string $method,  $uri): RequestInterface
+// --- Usage
+$httpFactory->createRequest($method, $uri);
+```
+
+### - `createResponse` Function
+
+```php
+// --- Contract
+public function createResponse(int $code, string $reasonPhrase): ResponseInterface
+// --- Usage
+$httpFactory->createResponse($code, $reasonPhrase);
+```
+
+### - `createServerRequest` Function
+
+<sub><sup>@param string|UriInterface  $uri @param array&lt;string, mixed&gt; $serverParams </sup></sub>
+
+
+
+```php
+// --- Contract
+public function createServerRequest(string $method,  $uri, array $serverParams): ServerRequestInterface
+// --- Usage
+$httpFactory->createServerRequest($method, $uri, $serverParams);
+```
+
+### - `createStream` Function
+
+```php
+// --- Contract
+public function createStream(string $content): StreamInterface
+// --- Usage
+$httpFactory->createStream($content);
+```
+
+### - `createStreamFromFile` Function
+
+> @throws \RuntimeException
+
+> @throws \InvalidArgumentException
+
+```php
+// --- Contract
+public function createStreamFromFile(string $filename, string $mode): StreamInterface
+// --- Usage
+$httpFactory->createStreamFromFile($filename, $mode);
+```
+
+### - `createStreamFromResource` Function
+
+<sub><sup>@param resource $resource </sup></sub>
+
+
+
+```php
+// --- Contract
+public function createStreamFromResource( $resource): StreamInterface
+// --- Usage
+$httpFactory->createStreamFromResource($resource);
+```
+
+### - `createUploadedFile` Function
+
+```php
+// --- Contract
+public function createUploadedFile(StreamInterface $stream, int $size, int $error, string $clientFilename, string $clientMediaType): UploadedFileInterface
+// --- Usage
+$httpFactory->createUploadedFile($stream, $size, $error, $clientFilename, $clientMediaType);
+```
+
+### - `createUri` Function
+
+> @throws \InvalidArgumentException
+
+```php
+// --- Contract
+public function createUri(string $uri): UriInterface
+// --- Usage
+$httpFactory->createUri($uri);
+```
+
+### 🟢 Uri
+
+<sub><sup>Immutable PSR-7 URI value object implementing RFC 3986. </sup></sub>
+
+
+
+<sub><sup>Each with*() method returns a new instance, leaving the original unchanged. Scheme and host are normalised to lowercase on storage. Standard ports (80 for http, 443 for https) are omitted from getAuthority() and __toString() output as recommended by the specification. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$uri = new Uri(string $scheme, string $userInfo, string $host, int $port, string $path, string $query, string $fragment);
+```
+
+### - `fromString` Function
+
+<sub><sup>Parses a URI string into its components and returns a new Uri instance. </sup></sub>
+
+
+
+> @throws \InvalidArgumentException
+
+```php
+// --- Contract
+public static function fromString(string $uri): self
+// --- Usage
+Uri::fromString($uri);
+```
+
+### - `getScheme` Function
+
+```php
+// --- Contract
+public function getScheme(): string
+// --- Usage
+$uri->getScheme();
+```
+
+### - `getAuthority` Function
+
+```php
+// --- Contract
+public function getAuthority(): string
+// --- Usage
+$uri->getAuthority();
+```
+
+### - `getUserInfo` Function
+
+```php
+// --- Contract
+public function getUserInfo(): string
+// --- Usage
+$uri->getUserInfo();
+```
+
+### - `getHost` Function
+
+```php
+// --- Contract
+public function getHost(): string
+// --- Usage
+$uri->getHost();
+```
+
+### - `getPort` Function
+
+```php
+// --- Contract
+public function getPort(): int
+// --- Usage
+$uri->getPort();
+```
+
+### - `getPath` Function
+
+```php
+// --- Contract
+public function getPath(): string
+// --- Usage
+$uri->getPath();
+```
+
+### - `getQuery` Function
+
+```php
+// --- Contract
+public function getQuery(): string
+// --- Usage
+$uri->getQuery();
+```
+
+### - `getFragment` Function
+
+```php
+// --- Contract
+public function getFragment(): string
+// --- Usage
+$uri->getFragment();
+```
+
+### - `withScheme` Function
+
+```php
+// --- Contract
+public function withScheme(string $scheme): UriInterface
+// --- Usage
+$uri->withScheme($scheme);
+```
+
+### - `withUserInfo` Function
+
+```php
+// --- Contract
+public function withUserInfo(string $user, string $password): UriInterface
+// --- Usage
+$uri->withUserInfo($user, $password);
+```
+
+### - `withHost` Function
+
+```php
+// --- Contract
+public function withHost(string $host): UriInterface
+// --- Usage
+$uri->withHost($host);
+```
+
+### - `withPort` Function
+
+> @throws \InvalidArgumentException
+
+```php
+// --- Contract
+public function withPort(int $port): UriInterface
+// --- Usage
+$uri->withPort($port);
+```
+
+### - `withPath` Function
+
+```php
+// --- Contract
+public function withPath(string $path): UriInterface
+// --- Usage
+$uri->withPath($path);
+```
+
+### - `withQuery` Function
+
+```php
+// --- Contract
+public function withQuery(string $query): UriInterface
+// --- Usage
+$uri->withQuery($query);
+```
+
+### - `withFragment` Function
+
+```php
+// --- Contract
+public function withFragment(string $fragment): UriInterface
+// --- Usage
+$uri->withFragment($fragment);
+```
+
+### 🟢 UploadedFile
+
+<sub><sup>Immutable PSR-7 uploaded file value object. </sup></sub>
+
+
+
+<sub><sup>Works in both SAPI (move_uploaded_file) and non-SAPI (stream copy) environments. Once moveTo() has been called the file is consumed and further calls to moveTo() or getStream() will throw RuntimeException. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$uploadedFile = new UploadedFile(StreamInterface $stream, int $size, int $error, string $clientFilename, string $clientMediaType);
+```
+
+### - `getStream` Function
+
+> @throws \RuntimeException
+
+```php
+// --- Contract
+public function getStream(): StreamInterface
+// --- Usage
+$uploadedFile->getStream();
+```
+
+### - `moveTo` Function
+
+> @throws \InvalidArgumentException
+
+> @throws \RuntimeException
+
+```php
+// --- Contract
+public function moveTo(string $targetPath): void
+// --- Usage
+$uploadedFile->moveTo($targetPath);
+```
+
+### - `getSize` Function
+
+```php
+// --- Contract
+public function getSize(): int
+// --- Usage
+$uploadedFile->getSize();
+```
+
+### - `getError` Function
+
+```php
+// --- Contract
+public function getError(): int
+// --- Usage
+$uploadedFile->getError();
+```
+
+### - `getClientFilename` Function
+
+```php
+// --- Contract
+public function getClientFilename(): string
+// --- Usage
+$uploadedFile->getClientFilename();
+```
+
+### - `getClientMediaType` Function
+
+```php
+// --- Contract
+public function getClientMediaType(): string
+// --- Usage
+$uploadedFile->getClientMediaType();
+```
+
+### 🟢 HeaderBag
+
+<sub><sup>Case-insensitive header collection for PSR-7 messages. </sup></sub>
+
+
+
+<sub><sup>Stores headers in their original casing while performing all lookups via a normalised lowercase key map. Immutable — every mutation returns a new instance. Used internally by Message and its subtypes; not part of the public PSR-7 surface. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$headerBag = new HeaderBag(array $headers, array $nameMap);
+```
+
+### - `fromArray` Function
+
+<sub><sup>Builds a HeaderBag from an associative array of name → value(s). </sup></sub>
+
+
+
+<sub><sup>@param array&lt;string, string|string[]&gt; $headers </sup></sub>
+
+
+
+```php
+// --- Contract
+public static function fromArray(array $headers): self
+// --- Usage
+HeaderBag::fromArray($headers);
+```
+
+### - `has` Function
+
+```php
+// --- Contract
+public function has(string $name): bool
+// --- Usage
+$headerBag->has($name);
+```
+
+### - `get` Function
+
+<sub><sup>@return string[] </sup></sub>
+
+
+
+```php
+// --- Contract
+public function get(string $name): array
+// --- Usage
+$headerBag->get($name);
+```
+
+### - `getLine` Function
+
+```php
+// --- Contract
+public function getLine(string $name): string
+// --- Usage
+$headerBag->getLine($name);
+```
+
+### - `all` Function
+
+<sub><sup>@return array&lt;string, string[]&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function all(): array
+// --- Usage
+$headerBag->all();
+```
+
+### - `withHeader` Function
+
+<sub><sup>@param string|string[] $value </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withHeader(string $name, array|string $value): self
+// --- Usage
+$headerBag->withHeader($name, $value);
+```
+
+### - `withAddedHeader` Function
+
+<sub><sup>@param string|string[] $value </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withAddedHeader(string $name, array|string $value): self
+// --- Usage
+$headerBag->withAddedHeader($name, $value);
+```
+
+### - `withoutHeader` Function
+
+```php
+// --- Contract
+public function withoutHeader(string $name): self
+// --- Usage
+$headerBag->withoutHeader($name);
+```
+
+### 🟢 ServerRequest
+
+<sub><sup>Immutable PSR-7 incoming server-side HTTP request. </sup></sub>
+
+
+
+<sub><sup>Extends Request with server parameters, cookies, query parameters, uploaded files, parsed body, and arbitrary request attributes. Every with*() mutator returns a new instance. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$serverRequest = new ServerRequest(string $method, UriInterface $uri, HeaderBag $headers, StreamInterface $body, string $protocolVersion, array $serverParams, array $cookieParams, array $queryParams, array $uploadedFiles, object|array|null $parsedBody, array $attributes);
+```
+
+### - `getServerParams` Function
+
+<sub><sup>@return array&lt;string, mixed&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getServerParams(): array
+// --- Usage
+$serverRequest->getServerParams();
+```
+
+### - `getCookieParams` Function
+
+<sub><sup>@return array&lt;string, string&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getCookieParams(): array
+// --- Usage
+$serverRequest->getCookieParams();
+```
+
+### - `withCookieParams` Function
+
+<sub><sup>@param array&lt;string, string&gt; $cookies </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withCookieParams(array $cookies): ServerRequestInterface
+// --- Usage
+$serverRequest->withCookieParams($cookies);
+```
+
+### - `getQueryParams` Function
+
+<sub><sup>@return array&lt;string, mixed&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getQueryParams(): array
+// --- Usage
+$serverRequest->getQueryParams();
+```
+
+### - `withQueryParams` Function
+
+<sub><sup>@param array&lt;string, mixed&gt; $query </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withQueryParams(array $query): ServerRequestInterface
+// --- Usage
+$serverRequest->withQueryParams($query);
+```
+
+### - `getUploadedFiles` Function
+
+<sub><sup>@return array&lt;mixed&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getUploadedFiles(): array
+// --- Usage
+$serverRequest->getUploadedFiles();
+```
+
+### - `withUploadedFiles` Function
+
+<sub><sup>@param array&lt;mixed&gt; $uploadedFiles </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withUploadedFiles(array $uploadedFiles): ServerRequestInterface
+// --- Usage
+$serverRequest->withUploadedFiles($uploadedFiles);
+```
+
+### - `getParsedBody` Function
+
+<sub><sup>@return null|array&lt;mixed&gt;|object </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getParsedBody(): object|array|null
+// --- Usage
+$serverRequest->getParsedBody();
+```
+
+### - `withParsedBody` Function
+
+<sub><sup>@param null|array&lt;mixed&gt;|object $data </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withParsedBody( $data): ServerRequestInterface
+// --- Usage
+$serverRequest->withParsedBody($data);
+```
+
+### - `getAttributes` Function
+
+<sub><sup>@return array&lt;string, mixed&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getAttributes(): array
+// --- Usage
+$serverRequest->getAttributes();
+```
+
+### - `getAttribute` Function
+
+```php
+// --- Contract
+public function getAttribute(string $name,  $default): mixed
+// --- Usage
+$serverRequest->getAttribute($name, $default);
+```
+
+### - `withAttribute` Function
+
+```php
+// --- Contract
+public function withAttribute(string $name,  $value): ServerRequestInterface
+// --- Usage
+$serverRequest->withAttribute($name, $value);
+```
+
+### - `withoutAttribute` Function
+
+```php
+// --- Contract
+public function withoutAttribute(string $name): ServerRequestInterface
+// --- Usage
+$serverRequest->withoutAttribute($name);
+```
+
+### - `cloneWith` Function
+
+```php
+// --- Contract
+protected function cloneWith(string $protocolVersion, HeaderBag $headers, StreamInterface $body): static
+// --- Usage
+$serverRequest->cloneWith($protocolVersion, $headers, $body);
+```
+
+### - `getRequestTarget` Function
+
+```php
+// --- Contract
+public function getRequestTarget(): string
+// --- Usage
+$serverRequest->getRequestTarget();
+```
+
+### - `withRequestTarget` Function
+
+```php
+// --- Contract
+public function withRequestTarget(string $requestTarget): RequestInterface
+// --- Usage
+$serverRequest->withRequestTarget($requestTarget);
+```
+
+### - `getMethod` Function
+
+```php
+// --- Contract
+public function getMethod(): string
+// --- Usage
+$serverRequest->getMethod();
+```
+
+### - `withMethod` Function
+
+```php
+// --- Contract
+public function withMethod(string $method): RequestInterface
+// --- Usage
+$serverRequest->withMethod($method);
+```
+
+### - `getUri` Function
+
+```php
+// --- Contract
+public function getUri(): UriInterface
+// --- Usage
+$serverRequest->getUri();
+```
+
+### - `withUri` Function
+
+```php
+// --- Contract
+public function withUri(UriInterface $uri, bool $preserveHost): RequestInterface
+// --- Usage
+$serverRequest->withUri($uri, $preserveHost);
+```
+
+### - `getProtocolVersion` Function
+
+```php
+// --- Contract
+public function getProtocolVersion(): string
+// --- Usage
+$serverRequest->getProtocolVersion();
+```
+
+### - `withProtocolVersion` Function
+
+```php
+// --- Contract
+public function withProtocolVersion(string $version): MessageInterface
+// --- Usage
+$serverRequest->withProtocolVersion($version);
+```
+
+### - `getHeaders` Function
+
+<sub><sup>@return array&lt;string, string[]&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getHeaders(): array
+// --- Usage
+$serverRequest->getHeaders();
+```
+
+### - `hasHeader` Function
+
+```php
+// --- Contract
+public function hasHeader(string $name): bool
+// --- Usage
+$serverRequest->hasHeader($name);
+```
+
+### - `getHeader` Function
+
+<sub><sup>@return string[] </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getHeader(string $name): array
+// --- Usage
+$serverRequest->getHeader($name);
+```
+
+### - `getHeaderLine` Function
+
+```php
+// --- Contract
+public function getHeaderLine(string $name): string
+// --- Usage
+$serverRequest->getHeaderLine($name);
+```
+
+### - `withHeader` Function
+
+<sub><sup>@param string|string[] $value </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withHeader(string $name,  $value): MessageInterface
+// --- Usage
+$serverRequest->withHeader($name, $value);
+```
+
+### - `withAddedHeader` Function
+
+<sub><sup>@param string|string[] $value </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withAddedHeader(string $name,  $value): MessageInterface
+// --- Usage
+$serverRequest->withAddedHeader($name, $value);
+```
+
+### - `withoutHeader` Function
+
+```php
+// --- Contract
+public function withoutHeader(string $name): MessageInterface
+// --- Usage
+$serverRequest->withoutHeader($name);
+```
+
+### - `getBody` Function
+
+```php
+// --- Contract
+public function getBody(): StreamInterface
+// --- Usage
+$serverRequest->getBody();
+```
+
+### - `withBody` Function
+
+```php
+// --- Contract
+public function withBody(StreamInterface $body): MessageInterface
+// --- Usage
+$serverRequest->withBody($body);
+```
+
+### - `getHeaderBag` Function
+
+```php
+// --- Contract
+protected function getHeaderBag(): HeaderBag
+// --- Usage
+$serverRequest->getHeaderBag();
+```
+
+## 📦 Sakoo\Framework\Core\Http\Router\Exceptions
+
+### 🟥 RouteNotFoundException
+
+<sub><sup>Thrown when no route matches the requested URI path (HTTP 404). </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$routeNotFoundException = new RouteNotFoundException(string $path);
+```
+
+### 🟥 MethodNotAllowedException
+
+<sub><sup>Thrown when a route exists for the path but not for the requested HTTP method (HTTP 405). Carries the list of methods that are allowed so the caller can populate the Allow response header. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$methodNotAllowedException = new MethodNotAllowedException(array $allowedMethods);
+```
+
+### - `getAllowedMethods` Function
+
+<sub><sup>@return HttpMethod[] </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getAllowedMethods(): array
+// --- Usage
+$methodNotAllowedException->getAllowedMethods();
+```
+
+## 📦 Sakoo\Framework\Core\Http\Router
+
+### 🟢 Route
+
+<sub><sup>Immutable value object representing a single route definition. </sup></sub>
+
+
+
+<sub><sup>Binds an HTTP method and a URI pattern to a controller action. The handler is always a class name; the optional action specifies which method to call. When action is null, the controller&#039;s __invoke() is used (single-action). </sup></sub>
+
+
+
+<sub><sup>The pattern supports named placeholders in the form {name} which are captured as request attributes during matching. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$route = new Route(HttpMethod $method, string $pattern, string $handler, string $action, array $middleware);
+```
+
+### - `match` Function
+
+<sub><sup>Attempts to match $path against this route&#039;s pattern. Returns the captured parameters on success, or null when the path does not match. </sup></sub>
+
+
+
+<sub><sup>@return null|array&lt;string, string&gt; </sup></sub>
+
+
+
+```php
+// --- Contract
+public function match(string $path): array
+// --- Usage
+$route->match($path);
+```
+
+### 🟢 Router
+
+<sub><sup>Typed route registry with method+pattern→controller mapping. </sup></sub>
+
+
+
+<sub><sup>Routes are registered via convenience methods (get, post, put, patch, delete) or the generic addRoute(). Each route maps an HTTP method and a URI pattern to a controller class (single-action invokable) or a [Controller, &#039;method&#039;] pair (multi-action), resolved from the container at dispatch time. </sup></sub>
+
+
+
+<sub><sup>Trailing slashes are normalised automatically — /users and /users/ resolve to the same route. The root path / is preserved as-is. </sup></sub>
+
+
+
+<sub><sup>Route handler formats: </sup></sub>
+
+
+
+<sub><sup>Single-action — calls __invoke() $router-&gt;get(&#039;/health&#039;, HealthCheckController::class); </sup></sub>
+
+
+
+<sub><sup>Multi-action — calls the named method $router-&gt;get(&#039;/users&#039;, [UserController::class, &#039;index&#039;]); $router-&gt;get(&#039;/users/{id}&#039;, [UserController::class, &#039;show&#039;]); $router-&gt;post(&#039;/users&#039;, [UserController::class, &#039;store&#039;]); </sup></sub>
+
+
+
+<sub><sup>The Router itself implements RequestHandlerInterface so it can serve as the terminal handler in a middleware pipeline. </sup></sub>
+
+
+
+> @throws RouteNotFoundException    when no route matches the request path (404)
+
+> @throws MethodNotAllowedException when a route matches the path but not the method (405)
+
+### - `get` Function
+
+<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt;       $middleware </sup></sub>
+
+
+
+```php
+// --- Contract
+public function get(string $pattern, array|string $handler, array $middleware): void
+// --- Usage
+$router->get($pattern, $handler, $middleware);
+```
+
+### - `post` Function
+
+<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt;       $middleware </sup></sub>
+
+
+
+```php
+// --- Contract
+public function post(string $pattern, array|string $handler, array $middleware): void
+// --- Usage
+$router->post($pattern, $handler, $middleware);
+```
+
+### - `put` Function
+
+<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt;       $middleware </sup></sub>
+
+
+
+```php
+// --- Contract
+public function put(string $pattern, array|string $handler, array $middleware): void
+// --- Usage
+$router->put($pattern, $handler, $middleware);
+```
+
+### - `patch` Function
+
+<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt;       $middleware </sup></sub>
+
+
+
+```php
+// --- Contract
+public function patch(string $pattern, array|string $handler, array $middleware): void
+// --- Usage
+$router->patch($pattern, $handler, $middleware);
+```
+
+### - `delete` Function
+
+<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt;       $middleware </sup></sub>
+
+
+
+```php
+// --- Contract
+public function delete(string $pattern, array|string $handler, array $middleware): void
+// --- Usage
+$router->delete($pattern, $handler, $middleware);
+```
+
+### - `addRoute` Function
+
+<sub><sup>Registers a route for the given method, pattern, and handler. </sup></sub>
+
+
+
+<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt;       $middleware </sup></sub>
+
+
+
+```php
+// --- Contract
+public function addRoute(HttpMethod $method, string $pattern, array|string $handler, array $middleware): void
+// --- Usage
+$router->addRoute($method, $pattern, $handler, $middleware);
+```
+
+### - `group` Function
+
+<sub><sup>Applies middleware to all routes registered inside $callback. </sup></sub>
+
+
+
+<sub><sup>@param array&lt;class-string&lt;MiddlewareInterface&gt;&gt; $middleware </sup></sub>
+
+
+
+```php
+// --- Contract
+public function group(array $middleware, callable $callback): void
+// --- Usage
+$router->group($middleware, $callback);
+```
+
+### - `handle` Function
+
+<sub><sup>Matches the request against registered routes and dispatches the controller. </sup></sub>
+
+
+
+<sub><sup>Trailing slashes are stripped before matching so /path and /path/ resolve identically. The root path / is preserved. </sup></sub>
+
+
+
+> @throws RouteNotFoundException
+
+> @throws MethodNotAllowedException
+
+```php
+// --- Contract
+public function handle(ServerRequestInterface $request): ResponseInterface
+// --- Usage
+$router->handle($request);
+```
+
+### - `getRoutes` Function
+
+<sub><sup>Returns all registered routes. </sup></sub>
+
+
+
+<sub><sup>@return Route[] </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getRoutes(): array
+// --- Usage
+$router->getRoutes();
+```
+
+### 🟢 HttpMethod
+
+<sub><sup>Enumerates the standard HTTP methods used for route registration. </sup></sub>
+
+
+
+<sub><sup>Backed by uppercase strings matching the HTTP specification. Used by the Router to enforce type-safe method constraints on route definitions. </sup></sub>
+
+
+
+### - `cases` Function
+
+```php
+// --- Contract
+public static function cases(): array
+// --- Usage
+HttpMethod::cases();
+```
+
+#### How to use the Class:
+
+```php
+$httpMethod = HttpMethod::from(string|int $value);
+```
+
+#### How to use the Class:
+
+```php
+$httpMethod = HttpMethod::tryFrom(string|int $value);
+```
+
 ## 📦 Sakoo\Framework\Core\Finder
 
 ### 🟢 FileFinder
@@ -5626,15 +8218,15 @@ $watchCommand->getApplication();
 
 ### 🟢 Profiler
 
-<sub><sup>Millisecond-precision profiler backed by a PSR-20 ClockInterface. </sup></sub>
+<sub><sup>Millisecond-precision profiler with request concurrency tracking. </sup></sub>
 
 
 
-<sub><sup>Timestamps are captured in Unix milliseconds (seconds × 1000 + milliseconds) by formatting the ClockInterface::now() result with the &#039;Uv&#039; format string, where &#039;U&#039; is Unix epoch seconds and &#039;v&#039; is milliseconds. This approach keeps the implementation fully deterministic in tests when the clock is pinned via Clock::setTestNow(). </sup></sub>
+<sub><sup>Timestamps are captured in Unix milliseconds via ClockInterface for deterministic test control. High-resolution timing uses hrtime(true) for sub-millisecond precision without DateTimeImmutable allocation. </sup></sub>
 
 
 
-<sub><sup>Multiple concurrent timings can coexist by using distinct key strings. Keys are not validated — callers must ensure they call start() before elapsedTime() for any given key to avoid an undefined array key error. </sup></sub>
+<sub><sup>The concurrency counter tracks active/peak/total requests at the process level. Under Swoole&#039;s single-threaded cooperative model, a simple int is safe — coroutine switches only happen at yield points, never mid-opcode. </sup></sub>
 
 
 
@@ -5668,6 +8260,72 @@ $profiler->start($key);
 public function elapsedTime(string $key): int
 // --- Usage
 $profiler->elapsedTime($key);
+```
+
+### - `hrtimeNs` Function
+
+<sub><sup>Returns nanosecond-precision monotonic timestamp via hrtime. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function hrtimeNs(): int
+// --- Usage
+$profiler->hrtimeNs();
+```
+
+### - `requestStarted` Function
+
+<sub><sup>Increments the active request counter and updates peak. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function requestStarted(): void
+// --- Usage
+$profiler->requestStarted();
+```
+
+### - `requestFinished` Function
+
+<sub><sup>Decrements the active request counter. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function requestFinished(): void
+// --- Usage
+$profiler->requestFinished();
+```
+
+### - `activeRequests` Function
+
+```php
+// --- Contract
+public function activeRequests(): int
+// --- Usage
+$profiler->activeRequests();
+```
+
+### - `peakRequests` Function
+
+```php
+// --- Contract
+public function peakRequests(): int
+// --- Usage
+$profiler->peakRequests();
+```
+
+### - `totalRequests` Function
+
+```php
+// --- Contract
+public function totalRequests(): int
+// --- Usage
+$profiler->totalRequests();
 ```
 
 ## 📦 Sakoo\Framework\Core\Set\Exceptions
@@ -6871,7 +9529,7 @@ $varDumpLoader->load($container);
 
 
 
-<sub><sup>- LoggerInterface  → FileLogger    (singleton — one logger per process) - Markup           → Markdown      (transient — stateless renderer) - ClockInterface   → Clock         (transient — PSR-20 clock) - Stringable       → Str           (transient — fluent string wrapper) - ProfilerInterface→ Profiler      (transient — millisecond profiler) - ContainerInterface→ Container    (transient — self-reference for code that needs the container via its interface) </sup></sub>
+<sub><sup>- LoggerInterface   → FileLogger    (singleton — one logger per process) - ProfilerInterface → Profiler      (singleton — process-scoped concurrency tracker) - ContainerInterface→ Container     (singleton — self-reference) - Markup            → Markdown      (transient — stateless renderer) - ClockInterface    → Clock         (transient — PSR-20 clock) - Stringable        → Str           (transient — fluent string wrapper) </sup></sub>
 
 
 
@@ -6921,6 +9579,42 @@ $mainLoader->load($container);
 public function load(Container $container): void
 // --- Usage
 $watcherLoader->load($container);
+```
+
+### 🟢 HttpServiceLoader
+
+<sub><sup>Registers all HTTP module bindings into the container. </sup></sub>
+
+
+
+<sub><sup>Wires the PSR-17 factory interfaces to HttpFactory and registers the Router as a singleton. After bindings are registered, discovers and loads route files from all app modules by scanning app/{Module}/routes.php. </sup></sub>
+
+
+
+### - `load` Function
+
+<sub><sup>Registers HTTP factory, router, and transport bindings, then loads route definitions from all app modules. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function load(Container $container): void
+// --- Usage
+$httpServiceLoader->load($container);
+```
+
+### - `loadRoutes` Function
+
+<sub><sup>Scans all subdirectories of $appDir for routes.php files and invokes each with the Router instance. Called after the container is fully populated so handlers can be resolved. </sup></sub>
+
+
+
+```php
+// --- Contract
+public static function loadRoutes(Router $router): void
+// --- Usage
+HttpServiceLoader::loadRoutes($router);
 ```
 
 ## 📦 Sakoo\Framework\Core\Console

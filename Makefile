@@ -82,5 +82,19 @@ cache-clear:
 	@./sakoo assist container:cache --clear
 	@./sakoo composer dump-autoload
 
-.PHONY mcp-test:
+.PHONY: mcp-test
+mcp-test:
 	@npx @modelcontextprotocol/inspector ./bin/mcp
+
+.PHONY: benchmark
+benchmark:
+	@chmod +x ./bin/benchmark
+	@echo ""
+	@./bin/benchmark 10000 1000000 /health
+	@echo ""
+	@echo "Benchmark complete. View dashboard: http://localhost/metrics"
+
+.PHONY: benchmark-clear
+benchmark-clear:
+	@rm -f ./storage/benchmark/results.jsonl
+	@echo "Benchmark history cleared."
