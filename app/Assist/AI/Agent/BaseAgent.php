@@ -4,42 +4,100 @@ declare(strict_types=1);
 
 namespace App\Assist\AI\Agent;
 
-use NeuronAI\Agent\Agent;
+use App\Assist\AI\Neuron\ChatHistory;
+use App\Assist\AI\Neuron\McpContextProvider;
+use NeuronAI\Agent\SystemPrompt;
 use NeuronAI\Chat\History\ChatHistoryInterface;
-use NeuronAI\Chat\History\FileChatHistory;
 use NeuronAI\MCP\McpConnector;
 use NeuronAI\Providers\AIProviderInterface;
+use NeuronAI\RAG\Embeddings\EmbeddingsProviderInterface;
+use NeuronAI\RAG\RAG;
+use NeuronAI\RAG\VectorStore\FileVectorStore;
+use NeuronAI\RAG\VectorStore\VectorStoreInterface;
 use NeuronAI\Tools\ToolInterface;
+use NeuronAI\Tools\Toolkits\Calculator\CalculatorToolkit;
+use NeuronAI\Tools\Toolkits\Calendar\CalendarToolkit;
+use NeuronAI\Tools\Toolkits\FileSystem\FileSystemToolkit;
+use Sakoo\Framework\Core\FileSystem\Disk;
+use Sakoo\Framework\Core\FileSystem\File;
 use System\Path\Path;
 
-abstract class BaseAgent extends Agent
+abstract class BaseAgent extends RAG
 {
+	private ?McpContextProvider $contextProvider = null;
+
+	abstract protected function getName(): string;
+
+	abstract protected function agentInstructions(): string;
+
+	/** @return string[] */
+	abstract public function getExcludedTools(): array;
+
+	/** @return string[] */
+	abstract public function getExcludedContexts(): array;
+
+	final public function withMcpContext(McpContextProvider $provider): static
+	{
+		$this->contextProvider = $provider;
+
+		return $this;
+	}
+
+	final protected function instructions(): string
+	{
+		$base = $this->agentInstructions();
+		$extra = $this->contextProvider?->resolve() ?? [];
+
+		return (string) new SystemPrompt(
+			background: array_merge([$base], $extra),
+		);
+	}
+
+	final protected function tools(): array
+	{
+		$all = $this->availableTools();
+		$excluded = array_flip($this->getExcludedTools());
+
+		return array_values(
+			array_filter($all, fn (ToolInterface $tool) => !isset($excluded[$tool->getName()])),
+		);
+	}
+
 	protected function provider(): AIProviderInterface
 	{
 		return resolve(AIProviderInterface::class);
 	}
 
+	protected function embeddings(): EmbeddingsProviderInterface
+	{
+		return resolve(EmbeddingsProviderInterface::class);
+	}
+
+	protected function vectorStore(): VectorStoreInterface
+	{
+		$file = File::open(Disk::Local, Path::getStorageDir() . '/ai/embeddings/' . $this->getName() . '.store');
+		$file->create();
+
+		return new FileVectorStore(directory: $file->parentDir(), name: $this->getName());
+	}
+
 	protected function chatHistory(): ChatHistoryInterface
 	{
-		return new FileChatHistory(
+		return new ChatHistory(
 			directory: Path::getStorageDir() . '/ai/chat-history',
-			key: date('YmdHis'),
-			contextWindow: 8000,
+			key: $this->getName(),
+			contextWindow: 50000,
 		);
 	}
 
 	/** @return ToolInterface[] */
-	protected function mcpTools(): array
+	protected function availableTools(): array
 	{
-		return McpConnector::make([
-			'command' => 'php',
-			'args' => ['assist', 'mcp:run'],
-		])->tools();
-	}
-
-	/** @return ToolInterface[] */
-	protected function tools(): array
-	{
-		return [];
+		return [
+			...FileSystemToolkit::make()->tools(),
+			...CalculatorToolkit::make()->tools(),
+			...CalendarToolkit::make()->tools(),
+			...McpConnector::make(['command' => 'php', 'args' => ['assist', 'mcp:run']])->tools(),
+		];
 	}
 }

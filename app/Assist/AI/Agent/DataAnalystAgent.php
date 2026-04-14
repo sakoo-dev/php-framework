@@ -4,32 +4,36 @@ declare(strict_types=1);
 
 namespace App\Assist\AI\Agent;
 
-use NeuronAI\Agent\SystemPrompt;
-use NeuronAI\Tools\ToolInterface;
-
 class DataAnalystAgent extends BaseAgent
 {
-	private const TOOL_ALLOWLIST = [
-		'read_log_entries',
-		'search_docs',
-		'browser_logs',
-		'get_absolute_url',
-		'count_prompt_tokens',
-	];
-
-	public function instructions(): string
+	protected function agentInstructions(): string
 	{
-		return (string) new SystemPrompt(
-			background: [
-				file_get_contents(__DIR__ . '/../Prompt/Skill/data-analyst.md'),
-			],
-		);
+		return (string) file_get_contents(__DIR__ . '/../Prompt/Skill/data-analyst.md');
 	}
 
-	protected function tools(): array
+	protected function getName(): string
 	{
-		return array_values(
-			array_filter($this->mcpTools(), fn (ToolInterface $tool) => in_array($tool->getName(), self::TOOL_ALLOWLIST))
-		);
+		return 'dataanalyst';
+	}
+
+	public function getExcludedTools(): array
+	{
+		return ['write_file', 'remove_file'];
+	}
+
+	public function getExcludedContexts(): array
+	{
+		return [
+			'resource:file://list',
+			'resource:prompt://system',
+			'resource:project://makefile',
+			'resource:project://commands',
+			'resource:reference://architecture',
+			'resource:reference://conventions',
+			'resource:reference://prompt-engineering',
+			'resource:reference://quality-assurance',
+			'prompt:dev_task',
+			'prompt:review_file',
+		];
 	}
 }
