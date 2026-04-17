@@ -102,7 +102,7 @@ final class RegexTest extends TestCase
 		$this->assertEquals($char, (new Regex())->add($char));
 	}
 
-	public function specialCharProvider(): \Generator
+	public static function specialCharProvider(): \Generator
 	{
 		yield ['.'];
 		yield ['^'];

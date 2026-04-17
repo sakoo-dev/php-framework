@@ -4,7 +4,7 @@ if [ -f ./.env ]; then
   source ./.env
 fi
 
-output=$(docker run -v $PWD:/var/www/html/ $DOCKER_IMAGE composer test)
+output=$(docker run --rm -v $PWD:/var/www/html/ $DOCKER_IMAGE composer test)
 coverage=$(echo "$output" | grep -Eo -m 1 'Lines:\s+[0-9.]+%' | awk '{print $2}' | sed 's/%//')
 
 if [[ ! $coverage =~ ^-?[0-9.]+$ ]]; then

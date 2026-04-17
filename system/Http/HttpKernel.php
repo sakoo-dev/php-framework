@@ -30,7 +30,9 @@ final class HttpKernel
 		} catch (RouteNotFoundException $exception) {
 			return HttpResponse::text($exception->getMessage(), 404)->toPsrResponse();
 		} catch (\Throwable $exception) {
-			return HttpResponse::text($exception->getMessage(), 500)->toPsrResponse();
+			$message = kernel()->isInDebugEnv() ? $exception->getMessage() : 'Internal Server Error';
+
+			return HttpResponse::text($message, 500)->toPsrResponse();
 		}
 	}
 }

@@ -101,7 +101,7 @@ final class StrTest extends TestCase
 		$this->assertEquals($slug, $string->kebabCase());
 	}
 
-	public function slugTexts(): \Generator
+	public static function slugTexts(): \Generator
 	{
 		yield ['HELLO WORLD', 'hello-world'];
 		yield ['hello world', 'hello-world'];
@@ -123,7 +123,7 @@ final class StrTest extends TestCase
 		$this->assertEquals($camelCase, $string->camelCase());
 	}
 
-	public function camelCaseTexts(): \Generator
+	public static function camelCaseTexts(): \Generator
 	{
 		yield ['HELLO WORLD', 'helloWorld'];
 		yield ['hello world', 'helloWorld'];
@@ -145,7 +145,7 @@ final class StrTest extends TestCase
 		$this->assertEquals($slug, $string->snakeCase());
 	}
 
-	public function snakeTexts(): \Generator
+	public static function snakeTexts(): \Generator
 	{
 		yield ['HELLO WORLD', 'hello_world'];
 		yield ['hello world', 'hello_world'];

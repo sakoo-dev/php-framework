@@ -55,14 +55,15 @@ final class RadioButtonTest extends TestCase
 	}
 
 	#[Test]
-	public function is_interactive_returns_true_in_cli_mode(): void
+	public function is_interactive_reflects_tty_state(): void
 	{
 		$radio = new RadioButton('Test', ['A', 'B']);
 		$reflection = new \ReflectionClass($radio);
 		$method = $reflection->getMethod('isInteractive');
 		$method->setAccessible(true);
 
-		$this->assertTrue($method->invoke($radio));
+		$expected = 'cli' === php_sapi_name() && (function_exists('posix_isatty') ? @posix_isatty(STDIN) : true);
+		$this->assertSame($expected, $method->invoke($radio));
 	}
 
 	#[Test]

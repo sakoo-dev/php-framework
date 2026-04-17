@@ -208,28 +208,18 @@ class Router implements RequestHandlerInterface
 
 	/**
 	 * Resolves a Route into a RequestHandlerInterface. For Controller subclasses
-	 * with a named action, wraps the dispatch via callAction(). For plain
-	 * RequestHandlerInterface classes or single-action Controllers, delegates
-	 * to handle() directly.
+	 * with a named action, wraps the dispatch in a ControllerActionHandler.
+	 * For plain RequestHandlerInterface classes or single-action Controllers,
+	 * delegates to handle() directly.
+	 *
+	 * @throws \RuntimeException
 	 */
 	private function resolveHandler(Route $route): RequestHandlerInterface
 	{
 		$controller = resolve($route->handler);
 
 		if (null !== $route->action && $controller instanceof Controller) {
-			$action = $route->action;
-
-			return new readonly class($controller, $action) implements RequestHandlerInterface {
-				public function __construct(
-					private Controller $controller,
-					private string $action,
-				) {}
-
-				public function handle(ServerRequestInterface $request): ResponseInterface
-				{
-					return $this->controller->callAction($this->action, $request);
-				}
-			};
+			return new ControllerActionHandler($controller, $route->action);
 		}
 
 		if ($controller instanceof RequestHandlerInterface) {

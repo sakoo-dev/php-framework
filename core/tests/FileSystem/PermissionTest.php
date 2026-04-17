@@ -14,12 +14,12 @@ final class PermissionTest extends FileSystemTestCase
 	#[Test]
 	#[DataProvider('permissionProvider')]
 	#[DataProvider('permissionBatchProvider')]
-	public function it_returns_correct_permissions($actual, $method)
+	public function it_returns_correct_permissions($actual, $method): void
 	{
 		$this->assertEqualsCanonicalizing($actual, Permission::$method());
 	}
 
-	public function permissionProvider()
+	public static function permissionProvider(): \Generator
 	{
 		yield 'all_nothing' => ['0000', 'allNothing'];
 		yield 'all_execute' => ['0111', 'allExecute'];
@@ -31,7 +31,7 @@ final class PermissionTest extends FileSystemTestCase
 		yield 'all_execute_write_read' => ['0777', 'allExecuteWriteRead'];
 	}
 
-	public function permissionBatchProvider()
+	public static function permissionBatchProvider(): \Generator
 	{
 		yield 'executables' => [['0111', '0333', '0555', '0777'], 'getExecutables'];
 		yield 'not_executables' => [['0000', '0222', '0444', '0666'], 'getNotExecutables'];
@@ -43,13 +43,13 @@ final class PermissionTest extends FileSystemTestCase
 
 	#[Test]
 	#[DataProvider('permissionCodeProvider')]
-	public function it_returns_correct_permission_codes($actual, $const)
+	public function it_returns_correct_permission_codes($actual, $const): void
 	{
 		$reflection = new \ReflectionClass(Permission::class);
 		$this->assertEquals($actual, $reflection->getConstant($const));
 	}
 
-	public function permissionCodeProvider()
+	public static function permissionCodeProvider(): \Generator
 	{
 		yield 'nothing' => ['0', 'NOTHING'];
 		yield 'execute' => ['1', 'EXECUTE'];
@@ -62,14 +62,14 @@ final class PermissionTest extends FileSystemTestCase
 	}
 
 	#[Test]
-	public function it_makes_correct_permissions()
+	public function it_makes_correct_permissions(): void
 	{
 		$this->assertEquals('0123', Permission::make(Permission::EXECUTE, Permission::WRITE, Permission::EXECUTE_WRITE));
 		$this->assertEquals('0765', Permission::make(7, 6, 5));
 	}
 
 	#[Test]
-	public function it_returns_file_directory_default_permissions()
+	public function it_returns_file_directory_default_permissions(): void
 	{
 		$this->assertEquals('0644', Permission::getFileDefault());
 		$this->assertEquals('0755', Permission::getDirectoryDefault());

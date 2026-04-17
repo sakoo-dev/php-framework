@@ -55,7 +55,7 @@ final class ContainerTest extends TestCase
 		$this->assertSame($resolved, $this->container->resolve('class'));
 	}
 
-	public function objects(): \Generator
+	public static function objects(): \Generator
 	{
 		yield 'closure' => [fn () => new TestClass()];
 		yield 'class' => [TestClass::class];

@@ -25,8 +25,6 @@ class MiddlewarePipeline implements RequestHandlerInterface
 	/** @var array<class-string<MiddlewareInterface>> */
 	private readonly array $middleware;
 
-	private int $index = 0;
-
 	/**
 	 * @param RequestHandlerInterface                  $fallbackHandler Invoked after all middleware
 	 * @param array<class-string<MiddlewareInterface>> $middleware
@@ -34,6 +32,7 @@ class MiddlewarePipeline implements RequestHandlerInterface
 	public function __construct(
 		private readonly RequestHandlerInterface $fallbackHandler,
 		array $middleware = [],
+		private readonly int $index = 0,
 	) {
 		$this->middleware = $middleware;
 	}
@@ -63,8 +62,7 @@ class MiddlewarePipeline implements RequestHandlerInterface
 		// @phpstan-ignore argument.type
 		$middleware = resolve($middlewareClass);
 
-		$next = clone $this;
-		$next->index = $this->index + 1;
+		$next = new self($this->fallbackHandler, $this->middleware, $this->index + 1);
 
 		// @var MiddlewareInterface $middleware
 		return $middleware->process($request, $next);

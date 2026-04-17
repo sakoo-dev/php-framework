@@ -3667,7 +3667,7 @@ $markdown->get();
 #### How to use the Class:
 
 ```php
-$middlewarePipeline = new MiddlewarePipeline(RequestHandlerInterface $fallbackHandler, array $middleware);
+$middlewarePipeline = new MiddlewarePipeline(RequestHandlerInterface $fallbackHandler, array $middleware, int $index);
 ```
 
 ### - `pipe` Function
@@ -3700,118 +3700,162 @@ public function handle(ServerRequestInterface $request): ResponseInterface
 $middlewarePipeline->handle($request);
 ```
 
-## 📦 Sakoo\Framework\Core\Http\Transport\Swoole
-
-### 🟢 SwooleResponseEmitter
-
-<sub><sup>Emits a PSR-7 response through a Swoole HTTP response object. </sup></sub>
-
-
-
-<sub><sup>Translates status code, headers, and body from the immutable PSR-7 response into the Swoole response API. The Swoole response object is provided per-request by the Swoole HTTP server event loop. </sup></sub>
-
-
-
-#### How to use the Class:
-
-```php
-$swooleResponseEmitter = new SwooleResponseEmitter(Response $swooleResponse);
-```
-
-### - `emit` Function
-
-```php
-// --- Contract
-public function emit(ResponseInterface $response): void
-// --- Usage
-$swooleResponseEmitter->emit($response);
-```
-
-### 🟢 SwooleTransportRequest
-
-<sub><sup>Swoole transport request adapter. </sup></sub>
-
-
-
-<sub><sup>Converts a Swoole\Http\Request into a PSR-7 ServerRequest. </sup></sub>
-
-
-
-#### How to use the Class:
-
-```php
-$swooleTransportRequest = new SwooleTransportRequest(Request $swooleRequest);
-```
-
-### - `toPsrRequest` Function
-
-```php
-// --- Contract
-public function toPsrRequest(): ServerRequestInterface
-// --- Usage
-$swooleTransportRequest->toPsrRequest();
-```
-
-## 📦 Sakoo\Framework\Core\Http\Transport\Fpm
-
-### 🟢 FpmResponseEmitter
-
-<sub><sup>Emits a PSR-7 response via PHP-FPM&#039;s header() and output stream. </sup></sub>
-
-
-
-<sub><sup>Sends the status line, all headers, and the body content using standard PHP output functions. This emitter must only be used in FPM/CGI contexts where header() is available. </sup></sub>
-
-
-
-### - `emit` Function
-
-```php
-// --- Contract
-public function emit(ResponseInterface $response): void
-// --- Usage
-$fpmResponseEmitter->emit($response);
-```
-
-### 🟢 FpmTransportRequest
-
-<sub><sup>FPM transport request adapter. </sup></sub>
-
-
-
-<sub><sup>Reads PHP superglobals and php://input to assemble a PSR-7 ServerRequest. This is the only place in the framework that touches superglobals directly. </sup></sub>
-
-
-
-#### How to use the Class:
-
-```php
-$fpmTransportRequest = new FpmTransportRequest(array $server, array $get, array $post, array $cookies, array $files, string $body);
-```
-
-### - `fromGlobals` Function
-
-<sub><sup>Factory that captures the current PHP superglobal state. </sup></sub>
-
-
-
-```php
-// --- Contract
-public static function fromGlobals(): self
-// --- Usage
-FpmTransportRequest::fromGlobals();
-```
-
-### - `toPsrRequest` Function
-
-```php
-// --- Contract
-public function toPsrRequest(): ServerRequestInterface
-// --- Usage
-$fpmTransportRequest->toPsrRequest();
-```
-
 ## 📦 Sakoo\Framework\Core\Http
+
+### 🟢 StringStream
+
+<sub><sup>Read-only in-memory stream backed by a plain PHP string. </sup></sub>
+
+
+
+<sub><sup>Unlike Stream (which opens a php://temp resource for every body), StringStream performs zero syscalls and zero file-descriptor allocation. It is the preferred body carrier for all response objects whose content is already fully materialised as a string. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$stringStream = new StringStream(string $content);
+```
+
+### - `of` Function
+
+```php
+// --- Contract
+public static function of(string $content): self
+// --- Usage
+StringStream::of($content);
+```
+
+### - `close` Function
+
+```php
+// --- Contract
+public function close(): void
+// --- Usage
+$stringStream->close();
+```
+
+### - `detach` Function
+
+```php
+// --- Contract
+public function detach(): mixed
+// --- Usage
+$stringStream->detach();
+```
+
+### - `getSize` Function
+
+```php
+// --- Contract
+public function getSize(): int
+// --- Usage
+$stringStream->getSize();
+```
+
+### - `tell` Function
+
+```php
+// --- Contract
+public function tell(): int
+// --- Usage
+$stringStream->tell();
+```
+
+### - `eof` Function
+
+```php
+// --- Contract
+public function eof(): bool
+// --- Usage
+$stringStream->eof();
+```
+
+### - `isSeekable` Function
+
+```php
+// --- Contract
+public function isSeekable(): bool
+// --- Usage
+$stringStream->isSeekable();
+```
+
+### - `seek` Function
+
+> @throws \RuntimeException
+
+```php
+// --- Contract
+public function seek(int $offset, int $whence): void
+// --- Usage
+$stringStream->seek($offset, $whence);
+```
+
+### - `rewind` Function
+
+```php
+// --- Contract
+public function rewind(): void
+// --- Usage
+$stringStream->rewind();
+```
+
+### - `isWritable` Function
+
+```php
+// --- Contract
+public function isWritable(): bool
+// --- Usage
+$stringStream->isWritable();
+```
+
+### - `write` Function
+
+> @throws \RuntimeException
+
+```php
+// --- Contract
+public function write(string $string): int
+// --- Usage
+$stringStream->write($string);
+```
+
+### - `isReadable` Function
+
+```php
+// --- Contract
+public function isReadable(): bool
+// --- Usage
+$stringStream->isReadable();
+```
+
+### - `read` Function
+
+```php
+// --- Contract
+public function read(int $length): string
+// --- Usage
+$stringStream->read($length);
+```
+
+### - `getContents` Function
+
+```php
+// --- Contract
+public function getContents(): string
+// --- Usage
+$stringStream->getContents();
+```
+
+### - `getMetadata` Function
+
+```php
+// --- Contract
+public function getMetadata(string $key): mixed
+// --- Usage
+$stringStream->getMetadata($key);
+```
 
 ### 🟢 HttpRequest
 
@@ -4703,7 +4747,7 @@ $httpResponse->withoutHeader($name);
 
 ### - `withBody` Function
 
-<sub><sup>Sets the response body from a string. </sup></sub>
+<sub><sup>Sets the response body from a string using a zero-syscall StringStream. </sup></sub>
 
 
 
@@ -5960,46 +6004,143 @@ protected function getHeaderBag(): HeaderBag
 $serverRequest->getHeaderBag();
 ```
 
-## 📦 Sakoo\Framework\Core\Http\Router\Exceptions
+## 📦 Sakoo\Framework\Core\Http\Transport\Swoole
 
-### 🟥 RouteNotFoundException
+### 🟢 SwooleResponseEmitter
 
-<sub><sup>Thrown when no route matches the requested URI path (HTTP 404). </sup></sub>
+<sub><sup>Emits a PSR-7 response through a Swoole HTTP response object. </sup></sub>
 
 
 
-#### How to use the Class:
-
-```php
-$routeNotFoundException = new RouteNotFoundException(string $path);
-```
-
-### 🟥 MethodNotAllowedException
-
-<sub><sup>Thrown when a route exists for the path but not for the requested HTTP method (HTTP 405). Carries the list of methods that are allowed so the caller can populate the Allow response header. </sup></sub>
+<sub><sup>Translates status code, headers, and body from the immutable PSR-7 response into the Swoole response API. The Swoole response object is provided per-request by the Swoole HTTP server event loop. </sup></sub>
 
 
 
 #### How to use the Class:
 
 ```php
-$methodNotAllowedException = new MethodNotAllowedException(array $allowedMethods);
+$swooleResponseEmitter = new SwooleResponseEmitter(Response $swooleResponse);
 ```
 
-### - `getAllowedMethods` Function
+### - `emit` Function
 
-<sub><sup>@return HttpMethod[] </sup></sub>
+```php
+// --- Contract
+public function emit(ResponseInterface $response): void
+// --- Usage
+$swooleResponseEmitter->emit($response);
+```
+
+### 🟢 SwooleTransportRequest
+
+<sub><sup>Swoole transport request adapter. </sup></sub>
+
+
+
+<sub><sup>Converts a Swoole\Http\Request into a PSR-7 ServerRequest. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$swooleTransportRequest = new SwooleTransportRequest(Request $swooleRequest);
+```
+
+### - `toPsrRequest` Function
+
+```php
+// --- Contract
+public function toPsrRequest(): ServerRequestInterface
+// --- Usage
+$swooleTransportRequest->toPsrRequest();
+```
+
+## 📦 Sakoo\Framework\Core\Http\Transport\Fpm
+
+### 🟢 FpmResponseEmitter
+
+<sub><sup>Emits a PSR-7 response via PHP-FPM&#039;s header() and output stream. </sup></sub>
+
+
+
+<sub><sup>Sends the status line, all headers, and the body content using standard PHP output functions. This emitter must only be used in FPM/CGI contexts where header() is available. </sup></sub>
+
+
+
+### - `emit` Function
+
+```php
+// --- Contract
+public function emit(ResponseInterface $response): void
+// --- Usage
+$fpmResponseEmitter->emit($response);
+```
+
+### 🟢 FpmTransportRequest
+
+<sub><sup>FPM transport request adapter. </sup></sub>
+
+
+
+<sub><sup>Reads PHP superglobals and php://input to assemble a PSR-7 ServerRequest. This is the only place in the framework that touches superglobals directly. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$fpmTransportRequest = new FpmTransportRequest(array $server, array $get, array $post, array $cookies, array $files, string $body);
+```
+
+### - `fromGlobals` Function
+
+<sub><sup>Factory that captures the current PHP superglobal state. </sup></sub>
 
 
 
 ```php
 // --- Contract
-public function getAllowedMethods(): array
+public static function fromGlobals(): self
 // --- Usage
-$methodNotAllowedException->getAllowedMethods();
+FpmTransportRequest::fromGlobals();
+```
+
+### - `toPsrRequest` Function
+
+```php
+// --- Contract
+public function toPsrRequest(): ServerRequestInterface
+// --- Usage
+$fpmTransportRequest->toPsrRequest();
 ```
 
 ## 📦 Sakoo\Framework\Core\Http\Router
+
+### 🟢 ControllerActionHandler
+
+<sub><sup>Bridges a multi-action Controller method into a RequestHandlerInterface. </sup></sub>
+
+
+
+<sub><sup>The Router creates one instance per matched route dispatch and delegates to Controller::callAction(), keeping the anonymous-class allocation out of the hot path. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$controllerActionHandler = new ControllerActionHandler(Controller $controller, string $action);
+```
+
+### - `handle` Function
+
+```php
+// --- Contract
+public function handle(ServerRequestInterface $request): ResponseInterface
+// --- Usage
+$controllerActionHandler->handle($request);
+```
 
 ### 🟢 Route
 
@@ -6238,6 +6379,45 @@ $httpMethod = HttpMethod::from(string|int $value);
 
 ```php
 $httpMethod = HttpMethod::tryFrom(string|int $value);
+```
+
+## 📦 Sakoo\Framework\Core\Http\Router\Exceptions
+
+### 🟥 RouteNotFoundException
+
+<sub><sup>Thrown when no route matches the requested URI path (HTTP 404). </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$routeNotFoundException = new RouteNotFoundException(string $path);
+```
+
+### 🟥 MethodNotAllowedException
+
+<sub><sup>Thrown when a route exists for the path but not for the requested HTTP method (HTTP 405). Carries the list of methods that are allowed so the caller can populate the Allow response header. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$methodNotAllowedException = new MethodNotAllowedException(array $allowedMethods);
+```
+
+### - `getAllowedMethods` Function
+
+<sub><sup>@return HttpMethod[] </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getAllowedMethods(): array
+// --- Usage
+$methodNotAllowedException->getAllowedMethods();
 ```
 
 ## 📦 Sakoo\Framework\Core\Finder

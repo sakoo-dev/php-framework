@@ -17,24 +17,26 @@ use Sakoo\Framework\Core\Regex\Regex;
  * The pattern supports named placeholders in the form {name} which are
  * captured as request attributes during matching.
  */
-final readonly class Route
+final class Route
 {
 	private const string PLACEHOLDER_OPEN = '{';
 	private const string PLACEHOLDER_CLOSE = '}';
 	private const string SEGMENT_SEPARATOR = '/';
 
 	/** @var array<class-string<MiddlewareInterface>> */
-	public array $middleware;
+	public readonly array $middleware;
+
+	private ?Regex $cachedPattern = null;
 
 	/**
 	 * @param class-string                             $handler
 	 * @param array<class-string<MiddlewareInterface>> $middleware
 	 */
 	public function __construct(
-		public HttpMethod $method,
-		public string $pattern,
-		public string $handler,
-		public ?string $action = null,
+		public readonly HttpMethod $method,
+		public readonly string $pattern,
+		public readonly string $handler,
+		public readonly ?string $action = null,
 		array $middleware = [],
 	) {
 		$this->middleware = $middleware;
@@ -48,7 +50,7 @@ final readonly class Route
 	 */
 	public function match(string $path): ?array
 	{
-		$regex = $this->buildPattern();
+		$regex = $this->cachedPattern ??= $this->buildPattern();
 
 		if (!$regex->test($path)) {
 			return null;
@@ -70,7 +72,7 @@ final readonly class Route
 	 * Converts a route pattern like /users/{id}/posts/{postId} into a
 	 * Regex with named capture groups.
 	 *
-	 * {name} placeholders become (?P<name>[^/]+) capture groups.
+	 * {name} placeholders become (?P<n>[^/]+) capture groups.
 	 * Literal segments are escaped via safeAdd() so slashes and other
 	 * PCRE metacharacters don't conflict with the / delimiter.
 	 */

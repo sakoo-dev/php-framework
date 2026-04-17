@@ -190,11 +190,11 @@ final class HttpResponse
 	}
 
 	/**
-	 * Sets the response body from a string.
+	 * Sets the response body from a string using a zero-syscall StringStream.
 	 */
 	public function withBody(string $content): self
 	{
-		$this->response = $this->response->withBody(Stream::createFromString($content));
+		$this->response = $this->response->withBody(StringStream::of($content));
 
 		return $this;
 	}

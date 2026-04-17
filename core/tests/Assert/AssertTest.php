@@ -33,7 +33,7 @@ final class AssertTest extends TestCase
 		}
 	}
 
-	public function typeProvider(): \Generator
+	public static function typeProvider(): \Generator
 	{
 		yield 'true' => [
 			'function' => 'true',
@@ -284,7 +284,7 @@ final class AssertTest extends TestCase
 		}
 	}
 
-	public function complexProvider(): \Generator
+	public static function complexProvider(): \Generator
 	{
 		yield 'instanceOf' => [
 			'function' => 'instanceOf',
@@ -413,7 +413,7 @@ final class AssertTest extends TestCase
 		$file->remove();
 	}
 
-	public function permissionProvider()
+	public static function permissionProvider(): \Generator
 	{
 		yield 'executableFile' => [
 			'function' => 'executableFile',

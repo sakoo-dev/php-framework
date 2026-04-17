@@ -27,7 +27,7 @@ trait HasPermissions
 		}
 	}
 
-	public function filePermissions()
+	public static function filePermissions(): \Generator
 	{
 		yield [Permission::allNothing(), ['IsNotExecutable', 'IsNotWritable', 'IsNotReadable']];
 		yield [Permission::allExecute(), ['IsExecutable', 'IsNotWritable', 'IsNotReadable']];

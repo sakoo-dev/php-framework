@@ -8,8 +8,25 @@ use Swoole\Http\Request as SwooleRequest;
 use Swoole\Http\Response as SwooleResponse;
 use Swoole\Http\Server;
 use System\Http\HttpKernel;
+use System\Path\Path;
+
+$cpuCount = swoole_cpu_num();
 
 $server = new Server('0.0.0.0', 9501);
+
+$server->set([
+	'worker_num' => $cpuCount,
+	'reactor_num' => $cpuCount,
+	'max_request' => 10_000,
+	'max_request_grace' => 200,
+	'max_conn' => 10_000,
+	'backlog' => 256,
+	'open_tcp_nodelay' => true,
+	'http_compression' => false,
+	'log_level' => kernel()->isInDebugEnv() ? SWOOLE_LOG_DEBUG : SWOOLE_LOG_WARNING,
+	'log_file' => Path::getStorageDir() . '/logs/swoole.log',
+]);
+
 $httpKernel = resolve(HttpKernel::class);
 
 $server->on('request', function (SwooleRequest $swooleRequest, SwooleResponse $swooleResponse) use ($httpKernel): void {
