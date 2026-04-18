@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Assist\Commands;
 
 use App\Assist\AI\Mcp\McpServer;
-use App\Assist\AI\Neuron\AiLogger;
 use Mcp\Server\Transport\StdioTransport;
+use Psr\Log\LoggerInterface;
 use Sakoo\Framework\Core\Console\Command;
 use Sakoo\Framework\Core\Console\Input;
 use Sakoo\Framework\Core\Console\Output;
@@ -30,8 +30,13 @@ class McpServerCommand extends Command
 	public function run(Input $input, Output $output): int
 	{
 		try {
-			/** @var AiLogger $logger */
-			$logger = resolve(AiLogger::class);
+			/**
+			 * @var LoggerInterface $logger
+			 *
+			 * @phpstan-ignore argument.type
+			 */
+			$logger = resolve('logger.ai');
+
 			McpServer::factory()->run(new StdioTransport(logger: $logger));
 		} catch (\Throwable $e) {
 			fwrite(STDERR, '[CRITICAL ERROR] ' . $e->getMessage() . "\n");

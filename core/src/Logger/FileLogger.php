@@ -27,7 +27,10 @@ use Sakoo\Framework\Core\Path\Path;
  */
 class FileLogger extends AbstractLogger
 {
-	public function __construct(private ClockInterface $clock) {}
+	public function __construct(
+		private readonly ClockInterface $clock,
+		private string $path = '',
+	) {}
 
 	/**
 	 * Formats the log entry and appends it to today's rotating log file.
@@ -61,16 +64,8 @@ class FileLogger extends AbstractLogger
 	 */
 	private function writeToFile(string $log): bool
 	{
-		return File::open(Disk::Local, $this->getLogFileName())
-			->append($log . PHP_EOL);
-	}
+		$path = ($this->path ?: Path::getLogsDir()) . '/' . $this->clock->now()->format('Y/m/d') . '.log';
 
-	/**
-	 * Returns the absolute path of today's log file, partitioned by year, month,
-	 * and day under the configured logs directory.
-	 */
-	private function getLogFileName(): string
-	{
-		return Path::getLogsDir() . '/' . $this->clock->now()->format('Y/m/d') . '.log';
+		return File::open(Disk::Local, $path)->append($log . PHP_EOL);
 	}
 }

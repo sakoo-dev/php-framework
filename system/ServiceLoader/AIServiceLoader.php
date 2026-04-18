@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace System\ServiceLoader;
 
+use App\Assist\AI\Logger\AiLogger;
 use App\Assist\AI\Mcp\McpTokenObserver;
-use App\Assist\AI\Neuron\AiLogger;
+use NeuronAI\HttpClient\GuzzleHttpClient;
 use NeuronAI\Providers\AIProviderInterface;
 use NeuronAI\Providers\Anthropic\Anthropic;
 use NeuronAI\Providers\Ollama\Ollama;
@@ -19,6 +20,10 @@ use Sakoo\Framework\Core\ServiceLoader\ServiceLoader;
 
 class AIServiceLoader extends ServiceLoader
 {
+	private const GAPGPT_BASE_URI = 'https://api.gapgpt.app/v1';
+	private const THINKING_PARAMETERS = ['thinking' => ['type' => 'enabled', 'budget_tokens' => 10000]];
+	private const THINKING_HEADERS = ['anthropic-beta' => 'interleaved-thinking-2025-05-14'];
+
 	public function load(Container $container): void
 	{
 		$llmProviders = [
@@ -29,7 +34,7 @@ class AIServiceLoader extends ServiceLoader
 			),
 			// for more information: https://gapgpt.app/platform-v2
 			'gapgpt' => new OpenAILike(
-				baseUri: 'https://api.gapgpt.app/v1',
+				baseUri: self::GAPGPT_BASE_URI,
 				key: Env::get('GAPGPT_API_KEY', ''),
 				model: Env::get('GAPGPT_MODEL', ''),
 			),
@@ -47,7 +52,7 @@ class AIServiceLoader extends ServiceLoader
 			),
 			// for more information: https://gapgpt.app/platform-v2
 			'gapgpt' => new OpenAILikeEmbeddings(
-				baseUri: 'https://api.gapgpt.app/v1',
+				baseUri: self::GAPGPT_BASE_URI,
 				key: Env::get('GAPGPT_EMBEDDING_KEY', ''),
 				model: Env::get('GAPGPT_EMBEDDING_MODEL', ''),
 			),
@@ -56,19 +61,26 @@ class AIServiceLoader extends ServiceLoader
 		$container->bind(AIProviderInterface::class, $llmProviders[Env::get('MODEL_PROVIDER', 'ollama')]);
 		$container->bind(EmbeddingsProviderInterface::class, $embeddingProviders[Env::get('EMBEDDING_MODEL_PROVIDER', 'ollama')]);
 
-		$container->bind('ai.provider.sonnet', new OpenAILike(
-			baseUri: 'https://api.gapgpt.app/v1',
-			key: Env::get('GAPGPT_API_KEY', ''),
-			model: Env::get('CLAUDE_SONNET_MODEL', 'claude-sonnet-4-6'),
-		));
+		$sonnetModel = Env::get('CLAUDE_SONNET_MODEL', 'claude-sonnet-4-6');
+		$opusModel = Env::get('CLAUDE_OPUS_MODEL', 'claude-opus-4-6');
 
-		$container->bind('ai.provider.opus', new OpenAILike(
-			baseUri: 'https://api.gapgpt.app/v1',
-			key: Env::get('GAPGPT_API_KEY', ''),
-			model: Env::get('CLAUDE_OPUS_MODEL', 'claude-opus-4-6'),
-		));
+		$container->bind('ai.provider.sonnet', $this->buildClaudeProvider($sonnetModel, thinking: false));
+		$container->bind('ai.provider.sonnet.thinking', $this->buildClaudeProvider($sonnetModel, thinking: true));
+		$container->bind('ai.provider.opus', $this->buildClaudeProvider($opusModel, thinking: false));
+		$container->bind('ai.provider.opus.thinking', $this->buildClaudeProvider($opusModel, thinking: true));
 
-		$container->singleton(AiLogger::class, AiLogger::class);
 		$container->singleton(McpTokenObserver::class, McpTokenObserver::class);
+		$container->singleton(AiLogger::class, AiLogger::class);
+	}
+
+	private function buildClaudeProvider(string $model, bool $thinking): OpenAILike
+	{
+		return new OpenAILike(
+			baseUri: self::GAPGPT_BASE_URI,
+			key: Env::get('GAPGPT_API_KEY', ''),
+			model: $model,
+			parameters: $thinking ? self::THINKING_PARAMETERS : [],
+			httpClient: $thinking ? new GuzzleHttpClient(self::THINKING_HEADERS) : null,
+		);
 	}
 }

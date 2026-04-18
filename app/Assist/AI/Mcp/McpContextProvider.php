@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Assist\AI\Neuron;
+namespace App\Assist\AI\Mcp;
 
 use Mcp\Capability\Attribute\McpPrompt;
 use Mcp\Capability\Attribute\McpResource;

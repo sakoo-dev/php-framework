@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Assist\AI\Mcp;
 
+use App\Assist\AI\Mcp\Diff\Exception\MalformedDiffException;
+use App\Assist\AI\Mcp\Diff\Exception\PatchWriteException;
+use App\Assist\AI\Mcp\Diff\PatchApplier;
 use Mcp\Capability\Attribute\McpPrompt;
 use Mcp\Capability\Attribute\McpResource;
 use Mcp\Capability\Attribute\McpTool;
@@ -115,6 +118,34 @@ class McpElements
 		$this->observer->log('write_file', compact('path'), "ok:{$path}");
 
 		return $result;
+	}
+
+	#[McpTool(
+		name: 'apply_diff',
+		description: 'Apply a unified diff to a file instead of rewriting it entirely. Pass the path and a standard unified diff (--- / +++ / @@ hunks). Returns ok:{path} on success. Reduces token usage up to 90% vs sakoo_write_file for incremental changes.',
+	)]
+	public function applyDiffTool(string $path, string $diff): CallToolResult
+	{
+		$path = FileFinder::guard($path);
+
+		if (!is_file($path)) {
+			return CallToolResult::error([new TextContent("Not found: {$path}")]);
+		}
+
+		try {
+			(new PatchApplier())->apply($path, $diff);
+		} catch (MalformedDiffException $e) {
+			return CallToolResult::error([new TextContent("Malformed diff for {$path}: {$e->getMessage()}")]);
+		} catch (PatchWriteException $e) {
+			return CallToolResult::error([new TextContent($e->getMessage())]);
+		}
+
+		$this->observer->log('apply_diff', compact('path'), "ok:{$path}");
+
+		return new CallToolResult(
+			[new TextContent("ok:{$path}")],
+			structuredContent: ['path' => $path],
+		);
 	}
 
 	#[McpTool(
@@ -579,7 +610,7 @@ class McpElements
 	 */
 	#[McpResource(
 		uri: 'file://list',
-		name: 'Full Project File List',
+		name: 'Full-Project-File-List',
 		description: 'Complete recursive file listing of the entire project root. Includes app/, core/, system/, and config files. Dot-files and VCS metadata are excluded. Prefer project://structure for a cheaper grouped overview — use this only when a flat full inventory is needed.',
 	)]
 	public function getFilesListResource(): array
@@ -592,7 +623,7 @@ class McpElements
 
 	#[McpResource(
 		uri: 'prompt://system',
-		name: 'Senior Engineer System Prompt',
+		name: 'Senior-Engineer-System-Prompt',
 		description: 'Core identity block for the senior PHP engineer persona: behavioral rules, PHP/PSR standards, and architectural principles. Loaded into the system prompt of all developer-facing agents.',
 		mimeType: 'text/markdown',
 	)]
@@ -606,7 +637,7 @@ class McpElements
 	 */
 	#[McpResource(
 		uri: 'project://structure',
-		name: 'Project Structure',
+		name: 'Project-Structure',
 		description: 'Compact file tree of app/, core/, and system/ grouped by section. Vendor and ignored paths are excluded. Significantly fewer tokens than file://list — prefer this for orientation.',
 	)]
 	public function projectStructureResource(): array
@@ -621,7 +652,7 @@ class McpElements
 	 */
 	#[McpResource(
 		uri: 'project://info',
-		name: 'Application Runtime Info',
+		name: 'Application-Runtime-Info',
 		description: 'Runtime metadata for the current kernel instance: mode, environment, replica ID, and all resolved directory paths (root, storage, logs, vendor, app, system). Use to orient the agent to where the application is running.',
 	)]
 	public function applicationInfoResource(): array
@@ -648,7 +679,7 @@ class McpElements
 	 */
 	#[McpResource(
 		uri: 'project://makefile',
-		name: 'Makefile Targets',
+		name: 'Makefile-Targets',
 		description: 'Structured list of all Makefile targets with names and descriptions. Provides a quick inventory of available developer commands (start, check, test, doc, benchmark, etc.) without requiring the agent to parse the Makefile itself.',
 	)]
 	public function makefileTargetsResource(): array
@@ -667,7 +698,7 @@ class McpElements
 	 */
 	#[McpResource(
 		uri: 'project://commands',
-		name: 'Assist CLI Commands',
+		name: 'Assist-CLI-Commands',
 		description: 'All registered "php assist" commands with their names and descriptions. Bootstrapped from the Assist console application. Use to discover available CLI operations before invoking them via the sakoo_exec tool.',
 	)]
 	public function assistCommandsResource(): array
@@ -686,7 +717,7 @@ class McpElements
 
 	#[McpResource(
 		uri: 'reference://architecture',
-		name: 'Architecture Reference',
+		name: 'Architecture-Reference',
 		description: 'Authoritative Sakoo architecture guide: SOLID principles in practice, DDD layer boundaries, approved patterns (Value Objects, Aggregates, Service Loaders), and hard design rules. Load before proposing or reviewing any architectural decision.',
 		mimeType: 'text/markdown',
 	)]
@@ -697,7 +728,7 @@ class McpElements
 
 	#[McpResource(
 		uri: 'reference://conventions',
-		name: 'Coding Conventions',
+		name: 'Coding-Conventions',
 		description: 'Sakoo style guide: strict-types declaration, PSR-4 namespacing, use-block ordering, full type annotation rules, naming conventions, and PHP-CS-Fixer formatting standards. Load before writing or reviewing any PHP code.',
 		mimeType: 'text/markdown',
 	)]
@@ -708,7 +739,7 @@ class McpElements
 
 	#[McpResource(
 		uri: 'reference://sakoo-identity',
-		name: 'Sakoo Identity',
+		name: 'Sakoo-Identity',
 		description: 'Framework identity and positioning: what Sakoo is, its six value propositions, competitive stance against Laravel/Symfony, and the principles that define it. Use when generating documentation, READMEs, or marketing content.',
 		mimeType: 'text/markdown',
 	)]
@@ -719,7 +750,7 @@ class McpElements
 
 	#[McpResource(
 		uri: 'reference://prompt-engineering',
-		name: 'Prompt Engineering Reference',
+		name: 'Prompt-Engineering-Reference',
 		description: '3-tier prompt architecture (system/task/context), token budget rules per tier, guidelines for writing MCP attribute descriptions, and common prompt anti-patterns to avoid. Load when writing or reviewing system prompts or MCP definitions.',
 		mimeType: 'text/markdown',
 	)]
@@ -730,7 +761,7 @@ class McpElements
 
 	#[McpResource(
 		uri: 'reference://quality-assurance',
-		name: 'Quality Assurance Checklist',
+		name: 'Quality-Assurance-Checklist',
 		description: 'Comprehensive code-review checklist: layer placement, dependency rules, aggregate boundaries, type safety, test coverage expectations, and the definition of done for a Sakoo pull request. Load before submitting or reviewing any change.',
 		mimeType: 'text/markdown',
 	)]
@@ -741,13 +772,24 @@ class McpElements
 
 	#[McpResource(
 		uri: 'reference://file-handling',
-		name: 'File Handling Reference',
+		name: 'File-Handling-Reference',
 		description: 'Decision rules for reading files by size (full read / section sampling / grep), batch navigation patterns using MCP tools, and guidance on avoiding token waste with large files. Load before reading any file larger than 20 KB.',
 		mimeType: 'text/markdown',
 	)]
 	public function fileHandlingResource(): string
 	{
 		return $this->readReferenceFile('Reference/file-handling.md');
+	}
+
+	#[McpResource(
+		uri: 'reference://security-checklist',
+		name: 'Security-Checklist',
+		description: 'Security review checklist covering authentication, authorization, session management, input/output validation, cryptography, availability, error handling, secure design, logging, server configuration, and VPS hardening. Load before reviewing or designing any security-sensitive feature.',
+		mimeType: 'text/markdown',
+	)]
+	public function securityChecklistResource(): string
+	{
+		return $this->readReferenceFile('Reference/security-checklist.md');
 	}
 
 	/**

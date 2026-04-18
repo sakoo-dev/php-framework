@@ -11,22 +11,20 @@ use App\Assist\AI\Agent\Consult\WorkerAgent;
 use App\Assist\AI\Agent\DataAnalystAgent;
 use App\Assist\AI\Agent\DeveloperAgent;
 use App\Assist\AI\Agent\ProductManagerAgent;
+use App\Assist\AI\Mcp\McpContextProvider;
 use App\Assist\AI\Mcp\McpElements;
 use App\Assist\AI\Mcp\McpTokenObserver;
-use App\Assist\AI\Neuron\AiLogger;
-use App\Assist\AI\Neuron\McpContextProvider;
 use NeuronAI\Chat\Messages\UserMessage;
 use NeuronAI\Exceptions\ChatHistoryException;
 use NeuronAI\Observability\LogObserver;
+use Psr\Log\LoggerInterface;
 use Sakoo\Framework\Core\Console\Command;
 use Sakoo\Framework\Core\Console\Input;
 use Sakoo\Framework\Core\Console\Output;
 
 class AgentCommand extends Command
 {
-	/**
-	 * @var string[]
-	 */
+	/** @var string[] */
 	private array $agents = [
 		DataAnalystAgent::class,
 		DeveloperAgent::class,
@@ -59,14 +57,26 @@ class AgentCommand extends Command
 
 		/** @var McpTokenObserver $tokenObserver */
 		$tokenObserver = resolve(McpTokenObserver::class);
-		/** @var AiLogger $logger */
-		$logger = resolve(AiLogger::class);
 
+		/**
+		 * @var LoggerInterface $logger
+		 *
+		 * @phpstan-ignore argument.type
+		 */
+		$logger = resolve('logger.ai');
 		$agent->observe(new LogObserver($logger));
+
+		$output->block([
+			"\t\t=======================",
+			"\t\t=========",
+			' =======================',
+		], Output::COLOR_CYAN);
+
+		$output->block('Welcome to Sakoo ' . strtoupper($agent->getName()) . ' Agent!', Output::COLOR_RED);
 
 		// @phpstan-ignore while.alwaysTrue
 		while (true) {
-			$output->block('Enter Your Prompt:', Output::COLOR_CYAN);
+			$output->block('Enter Your Prompt:', Output::COLOR_YELLOW);
 			$prompt = $input->getUserInput();
 
 			$output->block('Processing...', Output::COLOR_CYAN);

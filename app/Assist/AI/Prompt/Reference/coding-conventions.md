@@ -16,9 +16,14 @@
 - `#[Attribute]` for metadata. Typed collections via `Set<T>` with PHPDoc generics.
 - `never` return type for methods that always throw or exit.
 
+## Comments & Documentation
+- **No inline comments** — zero `//` or `/* */` comments inside method bodies or between statements. Express intent through naming and structure alone.
+- **PHPDoc on classes and methods only** — write a description block based on functionality
+- **Forbidden annotations**: `@param`, `@return`, `@var`, `@property`, `@method` — native type hints make these redundant. but you can use it to make recognizable for PHPStan.
+- **Permitted annotations**: `@throws` (for documented exceptions) and PHPStan-specific annotations (`@phpstan-ignore`, `@phpstan-param`, `@phpstan-return`, `@phpstan-var`, etc.).
+- PHPDoc for generic collections is permitted solely to carry type parameters (e.g. `@return list<Money>`).
+
 ## Code Style
-- Self-documenting code — no comments unless PHPDoc for public API `@throws` or generic collections.
-- No `@return`, `@param` annotations — use native type hints instead.
 - PHPStan max level must pass. PHPCSFixer project config must pass.
 - 120-char soft line limit. 4-space indent (tabs in Sakoo convention).
 - Method length: aim for <20 lines. Class length: aim for <200 lines.

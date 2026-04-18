@@ -1391,12 +1391,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/modelcontextprotocol/php-sdk.git",
-                "reference": "863cfc1e78ecc42d34f1c3d3b7e46cebbf28a91a"
+                "reference": "7af5a345c15d62ab21731b4fb2171740a9152292"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/modelcontextprotocol/php-sdk/zipball/863cfc1e78ecc42d34f1c3d3b7e46cebbf28a91a",
-                "reference": "863cfc1e78ecc42d34f1c3d3b7e46cebbf28a91a",
+                "url": "https://api.github.com/repos/modelcontextprotocol/php-sdk/zipball/7af5a345c15d62ab21731b4fb2171740a9152292",
+                "reference": "7af5a345c15d62ab21731b4fb2171740a9152292",
                 "shasum": ""
             },
             "require": {
@@ -1468,7 +1468,7 @@
                 "issues": "https://github.com/modelcontextprotocol/php-sdk/issues",
                 "source": "https://github.com/modelcontextprotocol/php-sdk/tree/main"
             },
-            "time": "2026-04-11T15:27:27+00:00"
+            "time": "2026-04-14T08:04:35+00:00"
         },
         {
             "name": "myclabs/deep-copy",

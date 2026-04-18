@@ -14,6 +14,12 @@
 - [ ] Backed enums for fixed sets. Union types where appropriate.
 - [ ] Readonly properties for immutability.
 
+### Comments & Documentation
+- [ ] Zero `//` inline comments inside method bodies — none permitted.
+- [ ] No `@param`, `@return`, `@var`, `@property`, or `@method` PHPDoc annotations (except it used for PHPStan).
+- [ ] PHPDoc descriptions present only on classes/methods.
+- [ ] Only `@throws` and PHPStan annotations (`@phpstan-ignore`, `@phpstan-param`, etc.) used.
+
 ### PSR Compliance
 - [ ] PSR-4 autoloading (namespace matches directory).
 - [ ] PSR-7 immutable HTTP objects (no mutation of request/response).

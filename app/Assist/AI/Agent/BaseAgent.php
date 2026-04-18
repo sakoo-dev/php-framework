@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Assist\AI\Agent;
 
+use App\Assist\AI\Mcp\McpContextProvider;
 use App\Assist\AI\Mcp\McpElements;
 use App\Assist\AI\Mcp\McpPromptFetchTool;
 use App\Assist\AI\Mcp\McpResourceFetchTool;
 use App\Assist\AI\Neuron\ChatHistory;
-use App\Assist\AI\Neuron\McpContextProvider;
 use NeuronAI\Agent\SystemPrompt;
 use NeuronAI\Chat\History\ChatHistoryInterface;
 use NeuronAI\MCP\McpConnector;
@@ -38,6 +38,17 @@ abstract class BaseAgent extends RAG
 
 	/** @return string[] */
 	abstract public function getExcludedContexts(): array;
+
+	/**
+	 * Declares whether this agent benefits from Claude's extended-thinking feature.
+	 * Agents that perform deep reasoning (architecture, design, hard debugging) should
+	 * override this to return true. General-purpose agents stay at the default false
+	 * to avoid the per-request thinking overhead for trivial turns.
+	 */
+	protected function supportsThinking(): bool
+	{
+		return false;
+	}
 
 	final public function withMcpContext(McpContextProvider $provider): static
 	{
@@ -109,9 +120,7 @@ abstract class BaseAgent extends RAG
 		];
 	}
 
-	/**
-	 * @return string[]
-	 */
+	/** @return string[] */
 	protected function neuronToolkitNames(): array
 	{
 		$toolkits = [
@@ -120,13 +129,6 @@ abstract class BaseAgent extends RAG
 			...CalendarToolkit::make()->tools(),
 		];
 
-		$result = [];
-
-		foreach ($toolkits as $toolkit) {
-			// @var ToolInterface $toolkit
-			$result[] = $toolkit->getName();
-		}
-
-		return $result;
+		return array_map(fn (ToolInterface $t): string => $t->getName(), $toolkits);
 	}
 }

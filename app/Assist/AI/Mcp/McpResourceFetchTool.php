@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Assist\AI\Mcp;
 
-use App\Assist\AI\Neuron\McpContextProvider;
 use Mcp\Capability\Attribute\McpResource;
 use Mcp\Capability\Formatter\ResourceResultFormatter;
 use NeuronAI\Tools\PropertyType;

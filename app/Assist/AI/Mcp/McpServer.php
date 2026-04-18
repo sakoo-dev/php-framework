@@ -7,6 +7,7 @@ namespace App\Assist\AI\Mcp;
 use Mcp\Schema\Icon;
 use Mcp\Server;
 use Mcp\Server\Session\FileSessionStore;
+use Psr\Log\LoggerInterface;
 use System\Path\Path;
 
 class McpServer
@@ -16,6 +17,12 @@ class McpServer
 		$discoverPath = Path::getAppDir() ?: __DIR__;
 		$sessionPath = Path::getStorageDir() . '/ai/mcp-sessions';
 		$icon = 'data:image/png;base64,' . base64_encode(file_get_contents(Path::getRootDir() . '/.github/static/logo-dark.png') ?: '');
+		/**
+		 * @var LoggerInterface $logger
+		 *
+		 * @phpstan-ignore argument.type
+		 */
+		$logger = resolve('logger.ai');
 
 		return Server::builder()
 			->setServerInfo(
@@ -26,6 +33,7 @@ class McpServer
 				icons: [new Icon($icon, 'image/png', ['96x96'])],
 			)
 			->setSession(new FileSessionStore($sessionPath))
+			->setLogger($logger)
 			->setDiscovery($discoverPath)
 			->build();
 	}

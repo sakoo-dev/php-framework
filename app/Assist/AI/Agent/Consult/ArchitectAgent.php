@@ -14,7 +14,12 @@ final class ArchitectAgent extends BaseAgent
 	protected function provider(): AIProviderInterface
 	{
 		// @phpstan-ignore-next-line
-		return resolve('ai.provider.opus');
+		return resolve($this->supportsThinking() ? 'ai.provider.opus.thinking' : 'ai.provider.opus');
+	}
+
+	protected function supportsThinking(): bool
+	{
+		return true;
 	}
 
 	protected function agentInstructions(): string

@@ -30,7 +30,8 @@ project/
 Use Sakoo core components (`Str`, `Assert`, `FileFinder`, `Set`) — zero third-party deps.
 
 ## Quality Gates
-- Self-documenting code. PHPDoc only for `@throws` and generic collections.
+- **No inline code comments** — zero `//` comments inside method bodies or between statements. Code must be self-documenting through naming and structure.
+- **PHPDoc on classes and methods only** — write a description block based on functionality. Never use `@param`, `@return`, or `@var` annotations (native types cover these, only use when is effective on PHPStan). Only `@throws` and PHPStan-specific annotations (e.g. `@phpstan-ignore`, `@phpstan-param`) are permitted.
 - Domain exceptions — never catch `\Throwable` except at app boundary.
 - Immutable VOs with `with*()`. Prefer empty VOs (`Money::zero()`) over null.
 - Tests: pure unit for domain, integration for handlers/infra. `#[Test]` + snake_case names + AAA.

@@ -23,7 +23,7 @@
 #### How to use the Class:
 
 ```php
-$fileLogger = new FileLogger(ClockInterface $clock);
+$fileLogger = new FileLogger(ClockInterface $clock, string $path);
 ```
 
 ### - `log` Function
