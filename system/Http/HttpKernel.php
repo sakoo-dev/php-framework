@@ -24,12 +24,23 @@ use System\ServiceLoader\HttpServiceLoader;
  */
 final class HttpKernel
 {
-	/** @param array<class-string> $globalMiddlewares */
+	/**
+	 * Stores the router and global middleware stack, then loads all application
+	 * routes into the router via HttpServiceLoader.
+	 *
+	 * @phpstan-param array<class-string> $globalMiddlewares
+	 */
 	public function __construct(private readonly Router $router, private readonly array $globalMiddlewares)
 	{
 		HttpServiceLoader::loadRoutes($this->router);
 	}
 
+	/**
+	 * Runs the request through the global middleware pipeline and returns a PSR-7
+	 * response. Catches routing exceptions (404, 405) and any other Throwable (500),
+	 * returning appropriate text responses. In debug mode the raw exception message
+	 * is forwarded; in production a generic message is used.
+	 */
 	public function handle(ServerRequestInterface $request): ResponseInterface
 	{
 		try {

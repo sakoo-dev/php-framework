@@ -14,10 +14,8 @@ use Sakoo\Framework\Core\Container\Exceptions\UnresolvableParameterException;
  *
  * When the parameter carries a non-built-in type hint, the container is asked to
  * resolve that type. When a default value is declared on the parameter, that default
- * is returned as-is. When neither condition holds, a safe zero-value is synthesised
- * from the parameter's type (empty string, 0, false, empty array, etc.), preventing
- * reflection errors on optional infrastructure parameters that have no registered
- * binding.
+ * is returned as-is. When neither condition holds, an UnresolvableParameterException
+ * is thrown — callers must either provide a binding or give the parameter a default.
  */
 readonly class Parameter
 {
@@ -29,12 +27,13 @@ readonly class Parameter
 	 * Resolution priority:
 	 * 1. Non-built-in typed parameters are resolved through the container.
 	 * 2. Parameters with a declared default value return that default.
-	 * 3. All other parameters receive a synthesised zero-value based on their type.
+	 * 3. All other parameters throw UnresolvableParameterException.
 	 *
 	 * @throws \Throwable
 	 * @throws \ReflectionException
 	 * @throws ClassNotInstantiableException
 	 * @throws ClassNotFoundException
+	 * @throws UnresolvableParameterException
 	 */
 	public function resolve(\ReflectionParameter $parameter): mixed
 	{

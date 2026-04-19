@@ -15,7 +15,7 @@ use Sakoo\Framework\Core\Assert\Assert;
  * - Lines starting with '!' negate a previous match (un-ignore).
  * - Lines starting with '/' are rooted to the repository root.
  * - Trailing '/' denotes a directory pattern.
- * - Wildcards '*' and '?' are translated to their PCRE equivalents (.*  and .).
+ * - Wildcards '*' and '?' are translated to their PCRE equivalents (.* and .).
  * - All other metacharacters are quoted via preg_quote.
  *
  * Rules are evaluated in order; the last matching rule wins, mirroring real
@@ -67,6 +67,11 @@ readonly class GitIgnore
 		return $ignored;
 	}
 
+	/**
+	 * Converts an absolute or project-relative path to a path relative to the
+	 * repository root. Paths already under the root are used directly; others
+	 * are resolved via realpath() first.
+	 */
 	private function toRelativePath(string $file): string
 	{
 		$absolute = str_starts_with($file, $this->root) ? $file : (realpath($file) ?: $file);
@@ -97,6 +102,9 @@ readonly class GitIgnore
 	}
 
 	/**
+	 * Parses a single .gitignore line into a rule record, or returns null when
+	 * the line should be skipped (blank or comment).
+	 *
 	 * @return null|array<string, bool|string>
 	 */
 	private function parseLine(string $line): ?array
@@ -117,12 +125,18 @@ readonly class GitIgnore
 		];
 	}
 
+	/**
+	 * Returns true when $line is empty or starts with '#' (a comment).
+	 */
 	private function isBlankOrComment(string $line): bool
 	{
 		return '' === $line || str_starts_with($line, '#');
 	}
 
 	/**
+	 * Strips a leading '!' from $line and returns the cleaned line with a flag
+	 * indicating whether the rule is a negation pattern.
+	 *
 	 * @return array{string, bool}
 	 */
 	private function extractNegation(string $line): array
@@ -135,6 +149,9 @@ readonly class GitIgnore
 	}
 
 	/**
+	 * Strips a leading '/' from $line and returns the cleaned line with a flag
+	 * indicating whether the pattern is anchored to the repository root.
+	 *
 	 * @return array{string, bool}
 	 */
 	private function extractRootAnchor(string $line): array
@@ -146,6 +163,11 @@ readonly class GitIgnore
 		return [$line, false];
 	}
 
+	/**
+	 * Builds a PCRE regex string from a parsed gitignore pattern segment.
+	 * Rooted patterns are anchored to the start of the relative path; unrooted
+	 * patterns may match any path component.
+	 */
 	private function buildRegex(string $pattern, bool $isRooted): string
 	{
 		$escaped = $this->toRegexSegment($pattern);
@@ -153,6 +175,10 @@ readonly class GitIgnore
 		return $isRooted ? '/^' . $escaped . '(\/.*)?$/i' : '/(^|\/)' . $escaped . '(\/.*)?$/i';
 	}
 
+	/**
+	 * Escapes a pattern string for use in a PCRE regex, translating gitignore
+	 * wildcards ('*' → '.*', '?' → '.') after quoting all other metacharacters.
+	 */
 	private function toRegexSegment(string $pattern): string
 	{
 		$escaped = preg_quote($pattern, '/');

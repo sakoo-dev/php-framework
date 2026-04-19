@@ -14,15 +14,15 @@ use System\Path\Path;
  * FileFinder walks a directory tree and collects files whose names match a glob
  * pattern. Filtering options can be combined freely via a fluent builder API:
  *
- * - pattern()         — restricts results to filenames matching a glob (default: '*').
- * - ignoreVCS()       — skips directories used by common VCS systems (.git, .svn, .hg, .bzr).
- * - ignoreVCSIgnored()— skips files that would be excluded by the nearest .gitignore.
- * - ignoreDotFiles()  — skips any file or directory whose name begins with '.'.
- * - limit()           — caps the number of returned results.
+ * - pattern()          — restricts results to filenames matching a glob (default: '*').
+ * - ignoreVCS()        — skips directories used by common VCS systems (.git, .svn, .hg, .bzr).
+ * - ignoreVCSIgnored() — skips files that would be excluded by the nearest .gitignore.
+ * - ignoreDotFiles()   — skips any file or directory whose name begins with '.'.
+ * - limit()            — caps the number of returned results.
  *
- * Static path-guarding methods ({@see guard()}, {@see guardMany()}) validate and
- * resolve filesystem paths to ensure they stay inside the project root, preventing
- * path-traversal attacks (e.g. `../../etc/passwd`).
+ * Static path-guarding methods (guard(), guardMany()) validate and resolve filesystem
+ * paths to ensure they stay inside the project root, preventing path-traversal attacks
+ * (e.g. `../../etc/passwd`).
  *
  * getFiles() returns an array of SplFileObject instances ready for further inspection,
  * while find() returns raw pathname strings for callers that need the paths only.
@@ -41,6 +41,9 @@ final class FileFinder
 
 	private const VCS_SYSTEMS = ['.git', '.svn', '.hg', '.bzr'];
 
+	/**
+	 * Constructs a FileFinder rooted at $path.
+	 */
 	public function __construct(private readonly string $path) {}
 
 	/**
@@ -53,8 +56,6 @@ final class FileFinder
 	 *      realpath() to catch symlink escapes before appending missing segments.
 	 *   4. Manual normalisation strips `.` and `..` segments when no parent exists.
 	 *   5. The resolved absolute path must start with the project root prefix.
-	 *
-	 * @param string $path relative or absolute filesystem path
 	 *
 	 * @return string the resolved absolute path guaranteed to be within the project
 	 *
@@ -154,8 +155,8 @@ final class FileFinder
 	}
 
 	/**
-	 * Returns whether the result set was truncated by the configured limit.
-	 * Only meaningful after calling find() or getFiles().
+	 * Returns whether a result limit is active (i.e. limit() was called with a
+	 * positive value). Does not indicate whether the limit was actually reached.
 	 */
 	public function isLimited(): bool
 	{
@@ -163,8 +164,8 @@ final class FileFinder
 	}
 
 	/**
-	 * Returns whether the last find() call was truncated by the configured limit.
-	 * Only meaningful after calling find() or getFiles().
+	 * Returns true when the last find() or getFiles() call was cut short because
+	 * the result count reached the configured limit.
 	 */
 	public function wasTruncated(): bool
 	{
@@ -223,11 +224,9 @@ final class FileFinder
 	/**
 	 * Resolves `.` and `..` segments in $path.
 	 *
-	 * Uses {@see realpath()} when the target exists on disk (catches symlink
-	 * escapes). Falls back to manual string-based normalisation for files
-	 * that do not yet exist (e.g. write targets).
-	 *
-	 * @param string $path Absolute path with potential `.`/`..` segments.
+	 * Uses realpath() when the target exists on disk to catch symlink escapes.
+	 * Falls back to manual string-based normalisation for paths that do not yet
+	 * exist (e.g. write targets).
 	 *
 	 * @return string normalised absolute path
 	 */
@@ -296,6 +295,10 @@ final class FileFinder
 		return '' === $rebuilt ? '/' : $rebuilt;
 	}
 
+	/**
+	 * Returns true when $file should be excluded from results based on the active
+	 * filters (dot-files, gitignore, and glob pattern).
+	 */
 	private function shouldSkip(\SplFileInfo $file): bool
 	{
 		$name = $file->getFilename();

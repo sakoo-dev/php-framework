@@ -1129,7 +1129,7 @@ File::open($storage, $path);
 
 
 
-<sub><sup>Returned by {@see Storage::readTail()} to replace the former unstructured array. Lines are in reverse-chronological order (newest first). </sup></sub>
+<sub><sup>Returned by Storage::readTail() to replace the former unstructured array. Lines are in reverse-chronological order (newest first). </sup></sub>
 
 
 
@@ -3339,7 +3339,7 @@ $parameterSet->resolve($parameters);
 
 
 
-<sub><sup>When the parameter carries a non-built-in type hint, the container is asked to resolve that type. When a default value is declared on the parameter, that default is returned as-is. When neither condition holds, a safe zero-value is synthesised from the parameter&#039;s type (empty string, 0, false, empty array, etc.), preventing reflection errors on optional infrastructure parameters that have no registered binding. </sup></sub>
+<sub><sup>When the parameter carries a non-built-in type hint, the container is asked to resolve that type. When a default value is declared on the parameter, that default is returned as-is. When neither condition holds, an UnresolvableParameterException is thrown — callers must either provide a binding or give the parameter a default. </sup></sub>
 
 
 
@@ -3355,7 +3355,7 @@ $parameter = new Parameter(Container $container);
 
 
 
-<sub><sup>Resolution priority: 1. Non-built-in typed parameters are resolved through the container. 2. Parameters with a declared default value return that default. 3. All other parameters receive a synthesised zero-value based on their type. </sup></sub>
+<sub><sup>Resolution priority: 1. Non-built-in typed parameters are resolved through the container. 2. Parameters with a declared default value return that default. 3. All other parameters throw UnresolvableParameterException. </sup></sub>
 
 
 
@@ -3366,6 +3366,8 @@ $parameter = new Parameter(Container $container);
 > @throws ClassNotInstantiableException
 
 > @throws ClassNotFoundException
+
+> @throws UnresolvableParameterException
 
 ```php
 // --- Contract
@@ -6693,11 +6695,11 @@ $methodNotAllowedException->getAllowedMethods();
 
 
 
-<sub><sup>- pattern()         — restricts results to filenames matching a glob (default: &#039;*&#039;). - ignoreVCS()       — skips directories used by common VCS systems (.git, .svn, .hg, .bzr). - ignoreVCSIgnored()— skips files that would be excluded by the nearest .gitignore. - ignoreDotFiles()  — skips any file or directory whose name begins with &#039;.&#039;. - limit()           — caps the number of returned results. </sup></sub>
+<sub><sup>- pattern()          — restricts results to filenames matching a glob (default: &#039;*&#039;). - ignoreVCS()        — skips directories used by common VCS systems (.git, .svn, .hg, .bzr). - ignoreVCSIgnored() — skips files that would be excluded by the nearest .gitignore. - ignoreDotFiles()   — skips any file or directory whose name begins with &#039;.&#039;. - limit()            — caps the number of returned results. </sup></sub>
 
 
 
-<sub><sup>Static path-guarding methods ({@see guard()}, {@see guardMany()}) validate and resolve filesystem paths to ensure they stay inside the project root, preventing path-traversal attacks (e.g. `../../etc/passwd`). </sup></sub>
+<sub><sup>Static path-guarding methods (guard(), guardMany()) validate and resolve filesystem paths to ensure they stay inside the project root, preventing path-traversal attacks (e.g. `../../etc/passwd`). </sup></sub>
 
 
 
@@ -6722,10 +6724,6 @@ $fileFinder = new FileFinder(string $path);
 
 
 <sub><sup>Resolution strategy: 1. Relative paths are prefixed with the project root. 2. realpath() is used when the target exists (catches symlink escapes). 3. For non-existent targets, the nearest existing parent is resolved with realpath() to catch symlink escapes before appending missing segments. 4. Manual normalisation strips `.` and `..` segments when no parent exists. 5. The resolved absolute path must start with the project root prefix. </sup></sub>
-
-
-
-<sub><sup>@param string $path relative or absolute filesystem path </sup></sub>
 
 
 
@@ -6832,7 +6830,7 @@ $fileFinder->limit($limit);
 
 ### - `isLimited` Function
 
-<sub><sup>Returns whether the result set was truncated by the configured limit. Only meaningful after calling find() or getFiles(). </sup></sub>
+<sub><sup>Returns whether a result limit is active (i.e. limit() was called with a positive value). Does not indicate whether the limit was actually reached. </sup></sub>
 
 
 
@@ -6845,7 +6843,7 @@ $fileFinder->isLimited();
 
 ### - `wasTruncated` Function
 
-<sub><sup>Returns whether the last find() call was truncated by the configured limit. Only meaningful after calling find() or getFiles(). </sup></sub>
+<sub><sup>Returns true when the last find() or getFiles() call was cut short because the result count reached the configured limit. </sup></sub>
 
 
 
@@ -6952,7 +6950,7 @@ $splFileObject->getNamespace();
 
 
 
-<sub><sup>- Lines starting with &#039;!&#039; negate a previous match (un-ignore). - Lines starting with &#039;/&#039; are rooted to the repository root. - Trailing &#039;/&#039; denotes a directory pattern. - Wildcards &#039;*&#039; and &#039;?&#039; are translated to their PCRE equivalents (.*  and .). - All other metacharacters are quoted via preg_quote. </sup></sub>
+<sub><sup>- Lines starting with &#039;!&#039; negate a previous match (un-ignore). - Lines starting with &#039;/&#039; are rooted to the repository root. - Trailing &#039;/&#039; denotes a directory pattern. - Wildcards &#039;*&#039; and &#039;?&#039; are translated to their PCRE equivalents (.* and .). - All other metacharacters are quoted via preg_quote. </sup></sub>
 
 
 
@@ -6985,6 +6983,14 @@ $gitIgnore->isIgnored($file);
 
 ### 🟢 Makefile
 
+<sub><sup>Parses a Makefile and exposes its targets with their recipe lines. </sup></sub>
+
+
+
+<sub><sup>Reads the file at construction time and builds a map of target name → recipe lines. Each line is a tab-indented shell command; leading tabs and @ prefixes are stripped so the strings contain the bare command text. </sup></sub>
+
+
+
 #### How to use the Class:
 
 ```php
@@ -6993,7 +6999,17 @@ $makefile = new Makefile(string $path);
 
 ### - `getTargets` Function
 
-<sub><sup>@return array&lt;string, string[]&gt;</sup></sub>
+<sub><sup>Returns all Makefile targets as a map of target name → recipe lines. </sup></sub>
+
+
+
+<sub><sup>Targets are discovered by scanning for lines matching `name:` at the start. Recipe lines (tab-indented) are collected until the next target definition. </sup></sub>
+
+
+
+<sub><sup>@return array&lt;string, string[]&gt; </sup></sub>
+
+
 
 ```php
 // --- Contract
