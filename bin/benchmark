@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Sakoo HTTP Benchmark Runner
-# Runs Apache Benchmark and stores results as JSONL for the /metrics/benchmark dashboard.
+# Runs Apache Benchmark and stores results as JSONL
 #
 # Usage:
 #   ./bin/benchmark [concurrency] [requests] [path]

@@ -6115,6 +6115,267 @@ public function toPsrRequest(): ServerRequestInterface
 $fpmTransportRequest->toPsrRequest();
 ```
 
+## 📦 Sakoo\Framework\Core\Http\Client
+
+### 🟢 SwooleHttpDriver
+
+<sub><sup>HttpDriverInterface adapter backed by Swoole\Coroutine\Http\Client. </sup></sub>
+
+
+
+<sub><sup>Wraps (does not subclass) the Swoole coroutine HTTP client. Parses the PSR-7 request URI to extract host, port, and path, forwards all headers, executes the request inside the running coroutine, and builds a PSR-7 Response via HttpFactory. </sup></sub>
+
+
+
+<sub><sup>Only used when PHP_SAPI === &#039;cli&#039; (Swoole server context). Never import this class in FPM-only code paths — always depend on HttpDriverInterface. </sup></sub>
+
+
+
+> @throws HttpClientException when the Swoole client returns statusCode -1
+
+<sub><sup>(connection refused or DNS failure) </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$swooleHttpDriver = new SwooleHttpDriver(HttpFactory $factory, float $timeout, array $defaultHeaders);
+```
+
+### - `send` Function
+
+<sub><sup>Sends the PSR-7 request through a Swoole coroutine HTTP client and returns a PSR-7 response. </sup></sub>
+
+
+
+> @throws HttpClientException
+
+```php
+// --- Contract
+public function send(RequestInterface $request): ResponseInterface
+// --- Usage
+$swooleHttpDriver->send($request);
+```
+
+### 🟢 HttpClient
+
+<sub><sup>PSR-compliant outbound HTTP client with an immutable fluent API. </sup></sub>
+
+
+
+<sub><sup>Delegates transport to the injected HttpDriverInterface so the same facade works under Swoole (SwooleHttpDriver) and PHP-FPM (StreamHttpDriver) without any change to call sites. </sup></sub>
+
+
+
+<sub><sup>Convenience methods (get, post, put, patch, delete) build a PSR-7 Request via HttpFactory and forward it to the driver. withTimeout() and withHeader() return new instances — this class is immutable. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$httpClient = new HttpClient(HttpDriverInterface $driver, HttpFactory $factory, float $timeout, array $headers);
+```
+
+### - `send` Function
+
+<sub><sup>Sends the given PSR-7 request and returns the PSR-7 response. </sup></sub>
+
+
+
+> @throws HttpClientException
+
+```php
+// --- Contract
+public function send(RequestInterface $request): ResponseInterface
+// --- Usage
+$httpClient->send($request);
+```
+
+### - `get` Function
+
+<sub><sup>Sends a GET request to $uri with optional extra headers. </sup></sub>
+
+
+
+<sub><sup>@param array&lt;string, string&gt; $headers </sup></sub>
+
+
+
+> @throws HttpClientException
+
+```php
+// --- Contract
+public function get(string $uri, array $headers): ResponseInterface
+// --- Usage
+$httpClient->get($uri, $headers);
+```
+
+### - `post` Function
+
+<sub><sup>Sends a POST request with $body to $uri. </sup></sub>
+
+
+
+<sub><sup>@param array&lt;string, string&gt; $headers </sup></sub>
+
+
+
+> @throws HttpClientException
+
+```php
+// --- Contract
+public function post(string $uri, string $body, array $headers): ResponseInterface
+// --- Usage
+$httpClient->post($uri, $body, $headers);
+```
+
+### - `put` Function
+
+<sub><sup>Sends a PUT request with $body to $uri. </sup></sub>
+
+
+
+<sub><sup>@param array&lt;string, string&gt; $headers </sup></sub>
+
+
+
+> @throws HttpClientException
+
+```php
+// --- Contract
+public function put(string $uri, string $body, array $headers): ResponseInterface
+// --- Usage
+$httpClient->put($uri, $body, $headers);
+```
+
+### - `patch` Function
+
+<sub><sup>Sends a PATCH request with $body to $uri. </sup></sub>
+
+
+
+<sub><sup>@param array&lt;string, string&gt; $headers </sup></sub>
+
+
+
+> @throws HttpClientException
+
+```php
+// --- Contract
+public function patch(string $uri, string $body, array $headers): ResponseInterface
+// --- Usage
+$httpClient->patch($uri, $body, $headers);
+```
+
+### - `delete` Function
+
+<sub><sup>Sends a DELETE request to $uri with optional extra headers. </sup></sub>
+
+
+
+<sub><sup>@param array&lt;string, string&gt; $headers </sup></sub>
+
+
+
+> @throws HttpClientException
+
+```php
+// --- Contract
+public function delete(string $uri, array $headers): ResponseInterface
+// --- Usage
+$httpClient->delete($uri, $headers);
+```
+
+### - `withTimeout` Function
+
+<sub><sup>Returns a new instance with the given timeout in seconds. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withTimeout(float $seconds): static
+// --- Usage
+$httpClient->withTimeout($seconds);
+```
+
+### - `withHeader` Function
+
+<sub><sup>Returns a new instance with $name: $value added to the default headers. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function withHeader(string $name, string $value): static
+// --- Usage
+$httpClient->withHeader($name, $value);
+```
+
+### 🟥 HttpClientException
+
+<sub><sup>Thrown when an outbound HTTP request fails at the transport layer. </sup></sub>
+
+
+
+<sub><sup>Carries the originating request so callers can inspect the URI, method, and headers when logging or retrying without re-constructing the context. </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$httpClientException = new HttpClientException(string $message, RequestInterface $request, int $code, Throwable $previous);
+```
+
+### - `getRequest` Function
+
+<sub><sup>Returns the PSR-7 request that caused the failure. </sup></sub>
+
+
+
+```php
+// --- Contract
+public function getRequest(): RequestInterface
+// --- Usage
+$httpClientException->getRequest();
+```
+
+### 🟢 StreamHttpDriver
+
+<sub><sup>HttpDriverInterface adapter backed by stream_context_create + file_get_contents. </sup></sub>
+
+
+
+<sub><sup>Used under PHP-FPM where Swoole coroutines are unavailable. Supports all HTTP methods via the stream context &#039;method&#039; option. Parses the HTTP status line from $http_response_header after a successful file_get_contents call and builds a PSR-7 Response via HttpFactory. </sup></sub>
+
+
+
+> @throws HttpClientException when file_get_contents returns false
+
+#### How to use the Class:
+
+```php
+$streamHttpDriver = new StreamHttpDriver(HttpFactory $factory, float $timeout, array $defaultHeaders);
+```
+
+### - `send` Function
+
+<sub><sup>Sends the PSR-7 request using PHP stream contexts and returns a PSR-7 response. </sup></sub>
+
+
+
+> @throws HttpClientException
+
+```php
+// --- Contract
+public function send(RequestInterface $request): ResponseInterface
+// --- Usage
+$streamHttpDriver->send($request);
+```
+
 ## 📦 Sakoo\Framework\Core\Http\Router
 
 ### 🟢 ControllerActionHandler
@@ -9767,13 +10028,13 @@ $watcherLoader->load($container);
 
 
 
-<sub><sup>Wires the PSR-17 factory interfaces to HttpFactory and registers the Router as a singleton. After bindings are registered, discovers and loads route files from all app modules by scanning app/{Module}/routes.php. </sup></sub>
+<sub><sup>Wires the PSR-17 factory interfaces to HttpFactory, registers the Router as a singleton, and binds the HttpClient with the correct driver based on SAPI: SwooleHttpDriver under CLI (Swoole server) and StreamHttpDriver under FPM. </sup></sub>
 
 
 
 ### - `load` Function
 
-<sub><sup>Registers HTTP factory, router, and transport bindings, then loads route definitions from all app modules. </sup></sub>
+<sub><sup>Registers HTTP factory, router, transport, and outbound client bindings. </sup></sub>
 
 
 

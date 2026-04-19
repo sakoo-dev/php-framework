@@ -11,12 +11,21 @@ use Sakoo\Framework\Core\Http\Middleware\MiddlewarePipeline;
 use Sakoo\Framework\Core\Http\Router\Exceptions\MethodNotAllowedException;
 use Sakoo\Framework\Core\Http\Router\Exceptions\RouteNotFoundException;
 use Sakoo\Framework\Core\Http\Router\Router;
-use Sakoo\Framework\Core\ServiceLoader\HttpServiceLoader;
+use System\ServiceLoader\HttpServiceLoader;
 
+/**
+ * HTTP kernel that dispatches PSR-7 server requests through the global
+ * middleware pipeline and into the Router.
+ *
+ * Route registration is the responsibility of the service loader. The kernel
+ * receives a fully populated Router and does not load routes itself, allowing
+ * the loader to apply caching strategies (e.g. RouterCache) before handing
+ * the router over.
+ */
 final class HttpKernel
 {
 	/** @param array<class-string> $globalMiddlewares */
-	public function __construct(private Router $router, private array $globalMiddlewares)
+	public function __construct(private readonly Router $router, private readonly array $globalMiddlewares)
 	{
 		HttpServiceLoader::loadRoutes($this->router);
 	}

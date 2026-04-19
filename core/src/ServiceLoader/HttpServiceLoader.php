@@ -11,6 +11,11 @@ use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Message\UploadedFileFactoryInterface;
 use Psr\Http\Message\UriFactoryInterface;
 use Sakoo\Framework\Core\Container\Container;
+use Sakoo\Framework\Core\Http\Client\HttpClient;
+use Sakoo\Framework\Core\Http\Client\HttpClientInterface;
+use Sakoo\Framework\Core\Http\Client\HttpDriverInterface;
+use Sakoo\Framework\Core\Http\Client\StreamHttpDriver;
+use Sakoo\Framework\Core\Http\Client\SwooleHttpDriver;
 use Sakoo\Framework\Core\Http\HttpFactory;
 use Sakoo\Framework\Core\Http\Router\Router;
 use System\Path\Path;
@@ -18,15 +23,14 @@ use System\Path\Path;
 /**
  * Registers all HTTP module bindings into the container.
  *
- * Wires the PSR-17 factory interfaces to HttpFactory and registers the Router
- * as a singleton. After bindings are registered, discovers and loads route
- * files from all app modules by scanning app/{Module}/routes.php.
+ * Wires the PSR-17 factory interfaces to HttpFactory, registers the Router as
+ * a singleton, and binds the HttpClient with the correct driver based on SAPI:
+ * SwooleHttpDriver under CLI (Swoole server) and StreamHttpDriver under FPM.
  */
 class HttpServiceLoader extends ServiceLoader
 {
 	/**
-	 * Registers HTTP factory, router, and transport bindings, then loads
-	 * route definitions from all app modules.
+	 * Registers HTTP factory, router, transport, and outbound client bindings.
 	 */
 	public function load(Container $container): void
 	{
@@ -40,6 +44,14 @@ class HttpServiceLoader extends ServiceLoader
 		$container->bind(UriFactoryInterface::class, fn () => resolve(HttpFactory::class));
 
 		$container->singleton(Router::class, Router::class);
+
+		$container->bind(HttpDriverInterface::class, function (): HttpDriverInterface {
+			$httpFactory = resolve(HttpFactory::class);
+
+			return PHP_SAPI === 'cli' ? new SwooleHttpDriver($httpFactory) : new StreamHttpDriver($httpFactory);
+		});
+
+		$container->bind(HttpClientInterface::class, HttpClient::class);
 	}
 
 	/**

@@ -23,7 +23,7 @@ class HttpServiceLoader extends CoreHttpServiceLoader
 		$container->singleton(RequestIdMiddleware::class, RequestIdMiddleware::class);
 		$container->singleton(XssProtectionMiddleware::class, XssProtectionMiddleware::class);
 
-		$container->singleton(HttpKernel::class, function () {
+		$container->singleton(HttpKernel::class, function (): HttpKernel {
 			$globalMiddleware = require Path::getSystemDir() . '/Middleware/Middlewares.php';
 
 			return new HttpKernel(resolve(Router::class), $globalMiddleware);

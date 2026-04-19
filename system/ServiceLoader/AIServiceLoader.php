@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace System\ServiceLoader;
 
-use App\Assist\AI\Logger\AiLogger;
 use App\Assist\AI\Mcp\McpTokenObserver;
 use NeuronAI\HttpClient\GuzzleHttpClient;
 use NeuronAI\Providers\AIProviderInterface;
@@ -14,9 +13,12 @@ use NeuronAI\Providers\OpenAILike;
 use NeuronAI\RAG\Embeddings\EmbeddingsProviderInterface;
 use NeuronAI\RAG\Embeddings\OllamaEmbeddingsProvider;
 use NeuronAI\RAG\Embeddings\OpenAILikeEmbeddings;
+use Psr\Clock\ClockInterface;
 use Sakoo\Framework\Core\Container\Container;
 use Sakoo\Framework\Core\Env\Env;
+use Sakoo\Framework\Core\Logger\FileLogger;
 use Sakoo\Framework\Core\ServiceLoader\ServiceLoader;
+use System\Path\Path;
 
 class AIServiceLoader extends ServiceLoader
 {
@@ -70,7 +72,7 @@ class AIServiceLoader extends ServiceLoader
 		$container->bind('ai.provider.opus.thinking', $this->buildClaudeProvider($opusModel, thinking: true));
 
 		$container->singleton(McpTokenObserver::class, McpTokenObserver::class);
-		$container->singleton(AiLogger::class, AiLogger::class);
+		$container->singleton('logger.ai', new FileLogger(resolve(ClockInterface::class), Path::getStorageDir() . '/ai/logs'));
 	}
 
 	private function buildClaudeProvider(string $model, bool $thinking): OpenAILike

@@ -20,6 +20,7 @@
 * [Http](#-sakooframeworkcorehttp)
 * [Http\Transport\Swoole](#-sakooframeworkcorehttptransportswoole)
 * [Http\Transport\Fpm](#-sakooframeworkcorehttptransportfpm)
+* [Http\Client](#-sakooframeworkcorehttpclient)
 * [Http\Router](#-sakooframeworkcorehttprouter)
 * [Http\Router\Exceptions](#-sakooframeworkcorehttprouterexceptions)
 * [Finder](#-sakooframeworkcorefinder)
