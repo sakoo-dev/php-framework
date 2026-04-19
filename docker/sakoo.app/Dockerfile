@@ -1,4 +1,4 @@
-FROM php:8.4.17-cli-alpine
+FROM php:8.5.4-cli-alpine
 LABEL MAINTAINER="Pouya Asgharnejad Tehran | https://sakoo.dev"
 
 RUN apk add --no-cache git curl zip unzip nodejs npm linux-headers $PHPIZE_DEPS brotli-dev openssl-dev
