@@ -40,7 +40,7 @@ jobs:
 
       - name: Cache composer packages
         id: composer-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -51,7 +51,7 @@ jobs:
 
       - name: Cache docker image
         id: docker-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/sakoo-app.tar.gz
           key: ${{ runner.os }}-docker-${{ hashFiles('**/docker/sakoo.app/Dockerfile') }}
@@ -91,7 +91,7 @@ jobs:
         run: git config --global --add safe.directory /var/www/html
 
       - name: Retrieve docker image
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/sakoo-app.tar.gz
           key: ${{ runner.os }}-docker-${{ hashFiles('**/docker/sakoo.app/Dockerfile') }}
@@ -100,7 +100,7 @@ jobs:
         run: docker load --input /tmp/sakoo-app.tar.gz
 
       - name: Retrieve composer packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -124,7 +124,7 @@ jobs:
         run: git config --global --add safe.directory /var/www/html
 
       - name: Retrieve docker image
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/sakoo-app.tar.gz
           key: ${{ runner.os }}-docker-${{ hashFiles('**/docker/sakoo.app/Dockerfile') }}
@@ -133,7 +133,7 @@ jobs:
         run: docker load --input /tmp/sakoo-app.tar.gz
 
       - name: Retrieve composer packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
