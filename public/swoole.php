@@ -22,7 +22,7 @@ $logFile->create();
 $server->set([
 	'worker_num' => $cpuCount * 2,
 	'reactor_num' => $cpuCount * 2,
-	'task_worker_num' => $cpuCount,
+	//	'task_worker_num' => $cpuCount,
 	'max_request' => 10_000,
 	'max_request_grace' => 200,
 	'max_conn' => 4_096,

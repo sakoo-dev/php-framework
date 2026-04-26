@@ -567,6 +567,25 @@ class McpElements
 	}
 
 	#[McpTool(
+		name: 'phpstan_analyse',
+		description: 'Run PHPStan static analysis and return the FULL raw error list as text. Unlike check_code, this surfaces every error line directly in the response so the LLM can read and fix them without needing structuredContent access. isError is set when analysis fails.',
+	)]
+	public function phpstanAnalyseTool(): CallToolResult
+	{
+		$result = $this->shell->phpstan();
+		$output = $result['output'];
+		$ok = 0 === $result['exitCode'] && McpShell::parsePhpstanOutput($output);
+
+		$this->observer->log('phpstan_analyse', [], $output);
+
+		return new CallToolResult(
+			[new TextContent($output ?: 'No PHPStan output.')],
+			isError: !$ok,
+			structuredContent: ['ok' => $ok, 'exitCode' => $result['exitCode']],
+		);
+	}
+
+	#[McpTool(
 		name: 'token_usage',
 		description: "Return today's aggregated MCP tool and agent chat token usage from storage/ai/mcp-token-usage.jsonl. Use this to monitor spend during long sessions and decide when to compact context.",
 	)]
