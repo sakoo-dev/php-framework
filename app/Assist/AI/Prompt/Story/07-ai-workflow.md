@@ -96,6 +96,13 @@ It's not final Data Structure. you can make it complete or better based on your 
 
 Tip: You can use NeuronAI's built-in middleware hooks (`WorkflowMiddleware::before/after`) for cross-cutting logging.
 
+### Implementation Notes
+- `McpTokenObserver` uses `McpTokenStorageInterface` (port) + `JsonlMcpTokenStorage` (adapter) — same pattern as `MetricStorageInterface`.
+- `AgentCommand::resolveModelName()` reads the protected `$model` property via `ReflectionObject` so it works for all NeuronAI providers without requiring a `getModel()` interface method.
+- `AgentMetricObserver` absorbs `LogObserver` fully — it logs every NeuronAI event through PSR-3 **and** records metrics. Only one observer is registered per agent.
+- USD cost is calculated by `ModelPricing::forModel(string $model)` — a readonly VO with named constructors per model and `calculateCostUsd(int, int): float`. Add a new named constructor when a new model is introduced.
+- `McpElements::tokenUsageTool()` shows MCP-only summary. A dedicated agent-metric query tool belongs to the dashboard UI work and is outside this task's scope.
+
 ## Task 2: Availability
 There are some Strategies in Computer Science to make Distributed System High Available.
 I've listed some of them below. but I don't know which of them are Best Practice to implementation in an AI Agent Engine system.

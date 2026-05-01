@@ -586,21 +586,6 @@ class McpElements
 	}
 
 	#[McpTool(
-		name: 'token_usage',
-		description: "Return today's aggregated MCP tool and agent chat token usage from storage/ai/mcp-token-usage.jsonl. Use this to monitor spend during long sessions and decide when to compact context.",
-	)]
-	public function tokenUsageTool(): CallToolResult
-	{
-		$mcpSummary = $this->observer->todayMcpSummary();
-		$agentSummary = $this->observer->todayAgentSummary();
-
-		return new CallToolResult(
-			[new TextContent($mcpSummary), new TextContent($agentSummary)],
-			structuredContent: ['summary' => ['mcp_summary' => $mcpSummary, 'agent_summary' => $agentSummary]],
-		);
-	}
-
-	#[McpTool(
 		name: 'sakoo_exec',
 		description: 'Execute a ./sakoo sub-command and return its output with exit code. Allowed prefixes: assist, composer, npm — all others are rejected by the shell guard. The result is marked isError on non-zero exit so the LLM can react without an extra tool call.',
 	)]

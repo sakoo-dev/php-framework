@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace App\Assist\AI\Mcp;
 
-use Sakoo\Framework\Core\FileSystem\Disk;
-use Sakoo\Framework\Core\FileSystem\File;
-use System\Path\Path;
-
+/**
+ * Records token usage for every MCP tool call and exposes a daily summary.
+ *
+ * Storage is fully decoupled through McpTokenStorageInterface — swap the
+ * adapter in AIServiceLoader to change the persistence backend without touching
+ * this class.
+ */
 final class McpTokenObserver
 {
-	private const MCP_LOG_FILE = '/ai/mcp-token-usage.jsonl';
-	private const AGENT_LOG_FILE = '/ai/agent-token-usage.jsonl';
-
 	public function __construct(
 		private readonly McpTokenCalculator $calculator,
+		private readonly McpTokenStorageInterface $storage,
 	) {}
 
 	/**
@@ -29,104 +30,13 @@ final class McpTokenObserver
 		$inTokens = $this->calculator->countText($inputStr);
 		$outTokens = $this->calculator->countText($outputStr);
 
-		$this->appendJsonl(self::MCP_LOG_FILE, [
-			'ts' => date('c'),
-			'tool' => $tool,
-			'in_chars' => mb_strlen($inputStr),
-			'out_chars' => mb_strlen($outputStr),
-			'in_tokens' => $inTokens,
-			'out_tokens' => $outTokens,
-			'total' => $inTokens + $outTokens,
-		]);
-	}
-
-	public function logAgent(string $agent, int|string $inTokens, int|string $outTokens, int|string $total): void
-	{
-		$this->appendJsonl(self::AGENT_LOG_FILE, [
-			'ts' => date('c'),
-			'agent' => $agent,
-			'in_tokens' => $inTokens,
-			'out_tokens' => $outTokens,
-			'total' => $total,
-		]);
-	}
-
-	/** @return array{date: string, calls: int, in_tokens: int, out_tokens: int, total_tokens: int} */
-	public function todayMcpSummary(): array
-	{
-		return $this->buildDailySummary(Path::getStorageDir() . self::MCP_LOG_FILE);
-	}
-
-	/** @return array{date: string, calls: int, in_tokens: int, out_tokens: int, total_tokens: int} */
-	public function todayAgentSummary(): array
-	{
-		return $this->buildDailySummary(Path::getStorageDir() . self::AGENT_LOG_FILE);
-	}
-
-	/** @return array{date: string, calls: int, in_tokens: int, out_tokens: int, total_tokens: int} */
-	private function buildDailySummary(string $logFile): array
-	{
-		$today = date('Y-m-d');
-		$calls = 0;
-		$inTotal = 0;
-		$outTotal = 0;
-
-		if (!is_file($logFile)) {
-			return ['date' => $today, 'calls' => 0, 'in_tokens' => 0, 'out_tokens' => 0, 'total_tokens' => 0];
-		}
-
-		$handle = fopen($logFile, 'r');
-
-		if (false === $handle) {
-			return ['date' => $today, 'calls' => 0, 'in_tokens' => 0, 'out_tokens' => 0, 'total_tokens' => 0];
-		}
-
-		while (false !== ($line = fgets($handle))) {
-			$line = trim($line);
-
-			if ('' === $line) {
-				continue;
-			}
-
-			/** @var null|array{ts?: string, in_tokens?: null|int, out_tokens?: null|int} $entry */
-			$entry = json_decode($line, true);
-
-			if (!is_array($entry) || !isset($entry['ts'])) {
-				continue;
-			}
-
-			if (str_starts_with($entry['ts'], $today)) {
-				++$calls;
-				$inTotal += $entry['in_tokens'] ?? 0;
-				$outTotal += $entry['out_tokens'] ?? 0;
-			}
-		}
-
-		fclose($handle);
-
-		return [
-			'date' => $today,
-			'calls' => $calls,
-			'in_tokens' => $inTotal,
-			'out_tokens' => $outTotal,
-			'total_tokens' => $inTotal + $outTotal,
-		];
-	}
-
-	/**
-	 * @param array<string, mixed> $entry log entry to serialise and append
-	 */
-	private function appendJsonl(string $relativePath, array $entry): void
-	{
-		$logDir = Path::getStorageDir() . '/ai';
-		$logFile = Path::getStorageDir() . $relativePath;
-
-		if (!is_dir($logDir)) {
-			mkdir($logDir, 0755, true);
-		}
-
-		File::open(Disk::Local, $logFile)->append(
-			json_encode($entry, JSON_UNESCAPED_SLASHES) . "\n"
-		);
+		$this->storage->store(new McpTokenEntry(
+			timestamp: date('c'),
+			tool: $tool,
+			inChars: mb_strlen($inputStr),
+			outChars: mb_strlen($outputStr),
+			inTokens: $inTokens,
+			outTokens: $outTokens,
+		));
 	}
 }

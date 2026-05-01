@@ -4,7 +4,14 @@ declare(strict_types=1);
 
 namespace System\ServiceLoader;
 
+use App\Assist\AI\Mcp\McpTokenCalculator;
 use App\Assist\AI\Mcp\McpTokenObserver;
+use App\Assist\AI\Mcp\McpTokenStorageInterface;
+use App\Assist\AI\Mcp\Storage\JsonlMcpTokenStorage;
+use App\Assist\AI\Metric\MetricStorageInterface;
+use App\Assist\AI\Metric\NullQualityEvaluator;
+use App\Assist\AI\Metric\QualityEvaluatorInterface;
+use App\Assist\AI\Metric\Storage\JsonlMetricStorage;
 use NeuronAI\HttpClient\GuzzleHttpClient;
 use NeuronAI\Providers\AIProviderInterface;
 use NeuronAI\Providers\Anthropic\Anthropic;
@@ -71,8 +78,17 @@ class AIServiceLoader extends ServiceLoader
 		$container->bind('ai.provider.opus', $this->buildClaudeProvider($opusModel, thinking: false));
 		$container->bind('ai.provider.opus.thinking', $this->buildClaudeProvider($opusModel, thinking: true));
 
-		$container->singleton(McpTokenObserver::class, McpTokenObserver::class);
 		$container->singleton('logger.ai', new FileLogger(resolve(ClockInterface::class), Path::getStorageDir() . '/ai/logs'));
+
+		$container->singleton(MetricStorageInterface::class, new JsonlMetricStorage());
+		$container->singleton(QualityEvaluatorInterface::class, new NullQualityEvaluator());
+
+		$mcpStorage = new JsonlMcpTokenStorage();
+		$container->singleton(McpTokenStorageInterface::class, $mcpStorage);
+		$container->singleton(McpTokenObserver::class, new McpTokenObserver(
+			calculator: resolve(McpTokenCalculator::class),
+			storage: $mcpStorage,
+		));
 	}
 
 	private function buildClaudeProvider(string $model, bool $thinking): OpenAILike

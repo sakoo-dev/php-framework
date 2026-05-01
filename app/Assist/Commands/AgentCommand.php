@@ -13,13 +13,17 @@ use App\Assist\AI\Agent\DeveloperAgent;
 use App\Assist\AI\Agent\ProductManagerAgent;
 use App\Assist\AI\Mcp\McpContextProvider;
 use App\Assist\AI\Mcp\McpElements;
-use App\Assist\AI\Mcp\McpTokenObserver;
+use App\Assist\AI\Metric\AgentMetricObserver;
+use App\Assist\AI\Metric\MetricSource;
+use App\Assist\AI\Metric\MetricStorageInterface;
+use App\Assist\AI\Metric\QualityEvaluatorInterface;
 use App\Assist\AI\Neuron\Session\ChatSession;
 use App\Assist\AI\Neuron\Session\ChatSessionRepository;
 use App\Assist\AI\Neuron\Session\SessionId;
 use NeuronAI\Chat\Messages\UserMessage;
 use NeuronAI\Exceptions\ChatHistoryException;
 use NeuronAI\Observability\LogObserver;
+use NeuronAI\Providers\AIProviderInterface;
 use Psr\Log\LoggerInterface;
 use Sakoo\Framework\Core\Console\Command;
 use Sakoo\Framework\Core\Console\Input;
@@ -62,16 +66,23 @@ class AgentCommand extends Command
 		$mcpContextProvider = $mcpContextProvider->exclude($agent->getExcludedContexts());
 		$agent->withMcpContext($mcpContextProvider);
 
-		/** @var McpTokenObserver $tokenObserver */
-		$tokenObserver = resolve(McpTokenObserver::class);
+		/** @var AIProviderInterface $provider */
+		$provider = resolve(AIProviderInterface::class);
 
-		/**
-		 * @var LoggerInterface $logger
-		 *
-		 * @phpstan-ignore argument.type
-		 */
+		/** @var LoggerInterface $logger */
+		// @phpstan-ignore argument.type
 		$logger = resolve('logger.ai');
 		$agent->observe(new LogObserver($logger));
+
+		$agent->observe(new AgentMetricObserver(
+			storage: resolve(MetricStorageInterface::class),
+			qualityEvaluator: resolve(QualityEvaluatorInterface::class),
+			sessionId: $session->sessionId,
+			agentName: $agent->getName(),
+			modelName: $this->resolveModelName($provider),
+			providerName: $provider::class,
+			source: MetricSource::Live,
+		));
 
 		$output->block([
 			"\t\t=======================",
@@ -108,15 +119,9 @@ class AgentCommand extends Command
 			// @phpstan-ignore variable.undefined
 			$output->block($agentMessage->getContent() ?? '', Output::COLOR_GREEN);
 
-			$inTokens = $agentUsage->inputTokens ?? 'N/A';
-			$outTokens = $agentUsage->outputTokens ?? 'N/A';
-			$total = $agentUsage?->getTotal() ?? 'N/A';
-
-			$output->block("Input Tokens: $inTokens", Output::COLOR_MAGENTA);
-			$output->block("Output Tokens: $outTokens", Output::COLOR_MAGENTA);
-			$output->block("Total Tokens: $total", Output::COLOR_MAGENTA);
-
-			$tokenObserver->logAgent($agent->getName(), $inTokens, $outTokens, $total);
+			$output->block('Input Tokens: ' . ($agentUsage->inputTokens ?? 'N/A'), Output::COLOR_MAGENTA);
+			$output->block('Output Tokens: ' . ($agentUsage->outputTokens ?? 'N/A'), Output::COLOR_MAGENTA);
+			$output->block('Total Tokens: ' . ($agentUsage?->getTotal() ?? 'N/A'), Output::COLOR_MAGENTA);
 		}
 
 		// @phpstan-ignore deadCode.unreachable
@@ -154,6 +159,31 @@ class AgentCommand extends Command
 		$output->block('Resuming session: ' . $sessionId->value, Output::COLOR_CYAN);
 
 		return $session;
+	}
+
+	/**
+	 * Reads the protected $model property from the provider via reflection.
+	 *
+	 * All NeuronAI providers (OpenAI, OpenAILike, Anthropic, Ollama, …) declare
+	 * a protected string $model constructor-promoted property. Reflection gives
+	 * us the actual runtime value without requiring a getModel() contract on the
+	 * interface, keeping this decoupled from vendor internals.
+	 */
+	private function resolveModelName(AIProviderInterface $provider): string
+	{
+		$reflection = new \ReflectionObject($provider);
+
+		if ($reflection->hasProperty('model')) {
+			$property = $reflection->getProperty('model');
+			$property->setAccessible(true);
+			$value = $property->getValue($provider);
+
+			if (is_string($value) && '' !== $value) {
+				return $value;
+			}
+		}
+
+		return $provider::class;
 	}
 
 	/**

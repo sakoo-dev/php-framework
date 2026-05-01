@@ -5,7 +5,7 @@
 .fleet/
 
 /vendor/
-storage/
+/storage/
 .env
 .env.testing
 sakoo
