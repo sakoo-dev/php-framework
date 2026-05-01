@@ -8,7 +8,9 @@ use App\Assist\AI\Mcp\McpContextProvider;
 use App\Assist\AI\Mcp\McpElements;
 use App\Assist\AI\Mcp\McpPromptFetchTool;
 use App\Assist\AI\Mcp\McpResourceFetchTool;
-use App\Assist\AI\Neuron\ChatHistory;
+use App\Assist\AI\Neuron\Session\ChatHistory;
+use App\Assist\AI\Neuron\Session\ChatSession;
+use App\Assist\AI\Neuron\Session\SessionId;
 use NeuronAI\Agent\SystemPrompt;
 use NeuronAI\Chat\History\ChatHistoryInterface;
 use NeuronAI\MCP\McpConnector;
@@ -29,6 +31,8 @@ abstract class BaseAgent extends RAG
 {
 	private ?McpContextProvider $contextProvider = null;
 
+	private ?ChatSession $session = null;
+
 	abstract public function getName(): string;
 
 	abstract protected function agentInstructions(): string;
@@ -48,6 +52,17 @@ abstract class BaseAgent extends RAG
 	protected function supportsThinking(): bool
 	{
 		return false;
+	}
+
+	/**
+	 * Binds a ChatSession to this agent so that chatHistory() uses the correct
+	 * session-scoped file. Call this before the first chat() invocation.
+	 */
+	final public function withSession(ChatSession $session): static
+	{
+		$this->session = $session;
+
+		return $this;
 	}
 
 	final public function withMcpContext(McpContextProvider $provider): static
@@ -95,14 +110,21 @@ abstract class BaseAgent extends RAG
 		return new FileVectorStore(directory: $file->parentDir(), name: $this->getName());
 	}
 
+	/**
+	 * Returns a ChatHistory scoped to the active session. If no session was bound
+	 * via withSession(), a one-off anonymous session is generated — this path exists
+	 * only for programmatic / test usage where session management is not required.
+	 */
 	protected function chatHistory(): ChatHistoryInterface
 	{
-		$file = File::open(Disk::Local, Path::getStorageDir() . '/ai/chat-history/neuron_' . $this->getName() . '.chat');
-		$file->create();
+		$resolved = $this->session ?? new ChatSession(SessionId::generate(), $this->getName());
+
+		$historyFile = File::open(Disk::Local, $resolved->filePath(Path::getStorageDir()));
+		$historyFile->create();
 
 		return new ChatHistory(
 			directory: Path::getStorageDir() . '/ai/chat-history',
-			key: $this->getName(),
+			key: $resolved->historyKey(),
 			contextWindow: 50000,
 		);
 	}
