@@ -22,6 +22,9 @@ use Sakoo\Framework\Core\Path\Path;
  * The current environment (Debug/Production) and mode (Test/Console/HTTP) are
  * embedded in every entry for contextual filtering.
  *
+ * Context arrays are serialised as JSON and appended to the log line so that
+ * structured data (e.g. error messages, HTTP status codes) is always visible.
+ *
  * If the filesystem write fails, an Exception is thrown rather than silently
  * swallowing the failure, ensuring observability issues surface immediately.
  */
@@ -36,12 +39,13 @@ class FileLogger extends AbstractLogger
 	 * Formats the log entry and appends it to today's rotating log file.
 	 *
 	 * @param string $level PSR-3 log level string (e.g. 'debug', 'error')
+	 * @param array<string, mixed> $context Structured key-value data appended as JSON
 	 *
 	 * @throws \Exception|\Throwable when the log file cannot be written
 	 */
 	public function log($level, string|\Stringable $message, array $context = []): void
 	{
-		$log = $this->getFormattedLog($level, $message);
+		$log = $this->getFormattedLog($level, $message, $context);
 		$isWritten = $this->writeToFile($log);
 		throwUnless($isWritten, new Exception('Failed to write log file.'));
 	}
@@ -49,13 +53,15 @@ class FileLogger extends AbstractLogger
 	/**
 	 * Builds the formatted log line by delegating to LogFormatter, injecting the
 	 * current environment and mode values from the kernel.
+	 *
+	 * @param array<string, mixed> $context
 	 */
-	private function getFormattedLog(string $level, string|\Stringable $message): string
+	private function getFormattedLog(string $level, string|\Stringable $message, array $context = []): string
 	{
 		$env = kernel()->getEnvironment()->value;
 		$mode = kernel()->getMode()->value;
 
-		return (string) new LogFormatter($level, $message, $mode, $env);
+		return (string) new LogFormatter($level, $message, $mode, $env, $context);
 	}
 
 	/**

@@ -64,6 +64,9 @@ class McpElements
 	private McpShell $shell;
 	private McpTokenObserver $observer;
 
+	/** @var null|array<array{name: string, desc: string}> */
+	private ?array $cachedCommands = null;
+
 	public function __construct()
 	{
 		$this->shell = resolve(McpShell::class);
@@ -426,7 +429,7 @@ class McpElements
 	)]
 	public function gitLogTool(int $limit = 20, string $path = ''): CallToolResult
 	{
-		$this->guardOptionalPath($path);
+		$path = $this->guardOptionalPath($path);
 
 		$parsed = $this->shell->gitLogParsed($limit, $path);
 
@@ -447,7 +450,7 @@ class McpElements
 	)]
 	public function gitDiffTool(string $ref = '', string $path = '', int $maxLines = 200): CallToolResult
 	{
-		$this->guardOptionalPath($path);
+		$path = $this->guardOptionalPath($path);
 
 		$parsed = $this->shell->gitDiffParsed($ref, $path, $maxLines);
 
@@ -468,7 +471,7 @@ class McpElements
 	)]
 	public function gitStatusTool(string $path = ''): CallToolResult
 	{
-		$this->guardOptionalPath($path);
+		$path = $this->guardOptionalPath($path);
 
 		$parsed = $this->shell->gitStatusParsed($path);
 
@@ -707,6 +710,10 @@ class McpElements
 	)]
 	public function assistCommandsResource(): array
 	{
+		if ($this->cachedCommands) {
+			return ['commands' => $this->cachedCommands];
+		}
+
 		/** @var Application $application */
 		$application = require Path::getAppDir() . '/Assist/Bootstrap.php';
 
@@ -716,7 +723,9 @@ class McpElements
 			$application->getCommands(),
 		);
 
-		return ['commands' => array_values($list)];
+		$this->cachedCommands = array_values($list);
+
+		return ['commands' => $this->cachedCommands];
 	}
 
 	#[McpResource(
@@ -812,7 +821,7 @@ class McpElements
 		$userPrompt = File::open(Disk::Local, $userPromptPath)->readLines();
 
 		return [
-			new PromptMessage(Role::User, new TextContent(["[System context]\n" . implode(PHP_EOL, $systemPrompt)])),
+			new PromptMessage(Role::Assistant, new TextContent("[System context]\n" . implode(PHP_EOL, $systemPrompt))),
 			new PromptMessage(Role::User, new TextContent($userPrompt)),
 		];
 	}
@@ -844,13 +853,18 @@ class McpElements
 	}
 
 	/**
-	 * Guards an optional path when provided.
+	 * Guards an optional path parameter and returns the sanitised value.
+	 *
+	 * Returning the guarded path ensures callers pass the normalised,
+	 * traversal-safe string to downstream methods rather than the raw input.
 	 */
-	private function guardOptionalPath(string $path): void
+	private function guardOptionalPath(string $path): string
 	{
-		if ('' !== $path) {
-			FileFinder::guard($path);
+		if ('' === $path) {
+			return '';
 		}
+
+		return FileFinder::guard($path);
 	}
 
 	/**

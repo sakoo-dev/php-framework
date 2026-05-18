@@ -11,12 +11,16 @@ use NeuronAI\Tools\ToolInterface;
 use NeuronAI\Tools\ToolProperty;
 
 /**
- * NeuronAI tool that fetches a zero-argument MCP Prompt by name on demand.
+ * NeuronAI tool that delegates a blocking architectural decision to the ArchitectAgent.
  *
- * Only zero-arg prompts can be fetched lazily — they act as static reference
- * content (system context blocks, guidelines, etc.).
- * Parameterised prompts (e.g. dev_task, review_file) require runtime arguments
- * and remain invoked directly via their MCP tool calls.
+ * When a worker agent reaches a decision point it cannot resolve itself — a
+ * design trade-off, a pattern choice, a structural ambiguity — it invokes this
+ * tool with full context. The ArchitectAgent returns a structured directive
+ * (decision, complexity, guidance, or a BLOCKED signal) that the worker uses
+ * to continue or halt its task.
+ *
+ * @see ArchitectAgent  The agent that processes the consult request.
+ * @see McpConsultTool  Prompt reference loaded from Reference/consult.md.
  */
 final class McpConsultTool
 {

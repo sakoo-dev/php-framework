@@ -28,7 +28,7 @@ namespace App\Assist\AI\Mcp\Diff;
 final readonly class DiffHunk
 {
 	/**
-	 * @param string[] $originalLines    context + removed, in hunk order
+	 * @param string[] $originalLines context + removed, in hunk order
 	 * @param string[] $replacementLines context + added, in hunk order
 	 */
 	public function __construct(

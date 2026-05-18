@@ -29,7 +29,7 @@ final class Route
 	private ?Regex $cachedPattern = null;
 
 	/**
-	 * @param class-string                             $handler
+	 * @param class-string $handler
 	 * @param array<class-string<MiddlewareInterface>> $middleware
 	 */
 	public function __construct(

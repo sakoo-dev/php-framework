@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Sakoo\Framework\Core\Tests\Doc\Stubs;
 
 /**
- * @method static self   make(string $name, int $count = 0) Creates a stub
- * @method        string render(bool $verbose)              Renders the stub
- * @method static string compute()                          @internal hidden method
+ * @method static self make(string $name, int $count = 0) Creates a stub
+ * @method string render(bool $verbose) Renders the stub
+ * @method static string compute() @internal hidden method
  */
 class DocStubClass
 {

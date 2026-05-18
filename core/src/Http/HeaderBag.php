@@ -16,7 +16,7 @@ final readonly class HeaderBag
 {
 	/**
 	 * @param array<string, string[]> $headers Original-case name → values
-	 * @param array<string, string>   $nameMap Lowercase name → original-case name
+	 * @param array<string, string> $nameMap Lowercase name → original-case name
 	 */
 	public function __construct(
 		private array $headers = [],

@@ -6,6 +6,8 @@ namespace App\Assist\AI\Mcp\Storage;
 
 use App\Assist\AI\Mcp\McpTokenEntry;
 use App\Assist\AI\Mcp\McpTokenStorageInterface;
+use Sakoo\Framework\Core\FileSystem\Disk;
+use Sakoo\Framework\Core\FileSystem\File;
 use System\Path\Path;
 
 /**
@@ -16,21 +18,10 @@ use System\Path\Path;
  */
 final class JsonlMcpTokenStorage implements McpTokenStorageInterface
 {
-	private const RELATIVE_PATH = '/ai/mcp-token-usage.jsonl';
-
 	public function store(McpTokenEntry $entry): void
 	{
-		$dir = Path::getStorageDir() . '/ai';
-		$file = Path::getStorageDir() . self::RELATIVE_PATH;
-
-		if (!is_dir($dir)) {
-			mkdir($dir, 0755, true);
-		}
-
-		file_put_contents(
-			$file,
-			json_encode($entry->toArray(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n",
-			FILE_APPEND | LOCK_EX,
-		);
+		$path = Path::getStorageDir() . '/ai/mcp-token-usage.jsonl';
+		$file = File::open(Disk::Local, $path);
+		$file->append(json_encode($entry->toArray(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 	}
 }

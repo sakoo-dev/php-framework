@@ -8,18 +8,26 @@ use App\Assist\AI\Mcp\McpTokenCalculator;
 use App\Assist\AI\Mcp\McpTokenObserver;
 use App\Assist\AI\Mcp\McpTokenStorageInterface;
 use App\Assist\AI\Mcp\Storage\JsonlMcpTokenStorage;
+use App\Assist\AI\Metric\JsonlMetricStorage;
 use App\Assist\AI\Metric\MetricStorageInterface;
 use App\Assist\AI\Metric\NullQualityEvaluator;
 use App\Assist\AI\Metric\QualityEvaluatorInterface;
-use App\Assist\AI\Metric\Storage\JsonlMetricStorage;
-use NeuronAI\HttpClient\GuzzleHttpClient;
+use App\Assist\AI\Neuron\Cache\CacheStorageInterface;
+use App\Assist\AI\Neuron\Cache\FileCacheStorage;
+use App\Assist\AI\Neuron\CircuitBreaker\CircuitBreakerStorageInterface;
+use App\Assist\AI\Neuron\CircuitBreaker\FileCircuitBreakerStorage;
+use App\Assist\AI\Neuron\HighAvailableProviderBuilder;
+use App\Assist\AI\Neuron\Http\LoggingHttpClient;
+use App\Assist\AI\Neuron\Model\Anthropic\Claude;
+use App\Assist\AI\Neuron\Provider\GapGpt;
+use App\Assist\AI\Neuron\Provider\GapGptEmbedding;
+use App\Assist\AI\Neuron\Retry\RetryPolicy;
+use App\Assist\AI\Neuron\Throttle\FileThrottleStorage;
+use App\Assist\AI\Neuron\Throttle\ThrottleStorageInterface;
 use NeuronAI\Providers\AIProviderInterface;
-use NeuronAI\Providers\Anthropic\Anthropic;
 use NeuronAI\Providers\Ollama\Ollama;
-use NeuronAI\Providers\OpenAILike;
 use NeuronAI\RAG\Embeddings\EmbeddingsProviderInterface;
 use NeuronAI\RAG\Embeddings\OllamaEmbeddingsProvider;
-use NeuronAI\RAG\Embeddings\OpenAILikeEmbeddings;
 use Psr\Clock\ClockInterface;
 use Sakoo\Framework\Core\Container\Container;
 use Sakoo\Framework\Core\Env\Env;
@@ -29,76 +37,92 @@ use System\Path\Path;
 
 class AIServiceLoader extends ServiceLoader
 {
-	private const GAPGPT_BASE_URI = 'https://api.gapgpt.app/v1';
-	private const THINKING_PARAMETERS = ['thinking' => ['type' => 'enabled', 'budget_tokens' => 10000]];
-	private const THINKING_HEADERS = ['anthropic-beta' => 'interleaved-thinking-2025-05-14'];
-
 	public function load(Container $container): void
 	{
-		$llmProviders = [
-			'ollama' => new Ollama(
-				url: 'host.docker.internal:11434/api',
-				model: Env::get('OLLAMA_MODEL', ''),
-				parameters: ['num_ctx' => 64 * 1024],
-			),
-			// for more information: https://gapgpt.app/platform-v2
-			'gapgpt' => new OpenAILike(
-				baseUri: self::GAPGPT_BASE_URI,
-				key: Env::get('GAPGPT_API_KEY', ''),
-				model: Env::get('GAPGPT_MODEL', ''),
-			),
-			'claude' => new Anthropic(
-				key: Env::get('CLAUDE_API_KEY', ''),
-				model: Env::get('CLAUDE_MODEL', ''),
-				max_tokens: 1024,
-			),
-		];
-
-		$embeddingProviders = [
-			'ollama' => new OllamaEmbeddingsProvider(
-				url: 'host.docker.internal:11434/api',
-				model: Env::get('OLLAMA_EMBEDDING_MODEL', ''),
-			),
-			// for more information: https://gapgpt.app/platform-v2
-			'gapgpt' => new OpenAILikeEmbeddings(
-				baseUri: self::GAPGPT_BASE_URI,
-				key: Env::get('GAPGPT_EMBEDDING_KEY', ''),
-				model: Env::get('GAPGPT_EMBEDDING_MODEL', ''),
-			),
-		];
-
-		$container->bind(AIProviderInterface::class, $llmProviders[Env::get('MODEL_PROVIDER', 'ollama')]);
-		$container->bind(EmbeddingsProviderInterface::class, $embeddingProviders[Env::get('EMBEDDING_MODEL_PROVIDER', 'ollama')]);
-
-		$sonnetModel = Env::get('CLAUDE_SONNET_MODEL', 'claude-sonnet-4-6');
-		$opusModel = Env::get('CLAUDE_OPUS_MODEL', 'claude-opus-4-6');
-
-		$container->bind('ai.provider.sonnet', $this->buildClaudeProvider($sonnetModel, thinking: false));
-		$container->bind('ai.provider.sonnet.thinking', $this->buildClaudeProvider($sonnetModel, thinking: true));
-		$container->bind('ai.provider.opus', $this->buildClaudeProvider($opusModel, thinking: false));
-		$container->bind('ai.provider.opus.thinking', $this->buildClaudeProvider($opusModel, thinking: true));
-
-		$container->singleton('logger.ai', new FileLogger(resolve(ClockInterface::class), Path::getStorageDir() . '/ai/logs'));
-
-		$container->singleton(MetricStorageInterface::class, new JsonlMetricStorage());
-		$container->singleton(QualityEvaluatorInterface::class, new NullQualityEvaluator());
-
-		$mcpStorage = new JsonlMcpTokenStorage();
-		$container->singleton(McpTokenStorageInterface::class, $mcpStorage);
-		$container->singleton(McpTokenObserver::class, new McpTokenObserver(
-			calculator: resolve(McpTokenCalculator::class),
-			storage: $mcpStorage,
-		));
+		$this->registerAvailability($container);
+		$this->registerMetrics($container);
+		$this->registerProviders($container);
+		$this->registerEmbeddings($container);
+		$this->registerMcp($container);
 	}
 
-	private function buildClaudeProvider(string $model, bool $thinking): OpenAILike
+	private function registerAvailability(Container $container): void
 	{
-		return new OpenAILike(
-			baseUri: self::GAPGPT_BASE_URI,
-			key: Env::get('GAPGPT_API_KEY', ''),
-			model: $model,
-			parameters: $thinking ? self::THINKING_PARAMETERS : [],
-			httpClient: $thinking ? new GuzzleHttpClient(self::THINKING_HEADERS) : null,
+		$container->singleton(CircuitBreakerStorageInterface::class, new FileCircuitBreakerStorage(failureThreshold: 5, openWindowSeconds: 60));
+		$container->singleton(CacheStorageInterface::class, new FileCacheStorage());
+		$container->singleton(ThrottleStorageInterface::class, new FileThrottleStorage());
+	}
+
+	private function registerProviders(Container $container): void
+	{
+		$httpClient = new LoggingHttpClient($container->resolve('logger.ai'));
+
+		$container->bind('ai.gapgpt.claude.haiku', GapGpt::withAIModelObject(
+			new Claude(modelName: Claude::HAIKU_3_5, httpClient: $httpClient)
+		));
+
+		$container->bind('ai.gapgpt.claude.sonnet', GapGpt::withAIModelObject(
+			new Claude(modelName: Claude::SONNET_4_6, httpClient: $httpClient)
+		));
+
+		$container->bind('ai.gapgpt.claude.sonnet.thinking', GapGpt::withAIModelObject(
+			new Claude(modelName: Claude::SONNET_4_6, extendedThinking: true, httpClient: $httpClient)
+		));
+
+		$container->bind('ai.gapgpt.claude.opus', GapGpt::withAIModelObject(
+			new Claude(modelName: Claude::OPUS_4_7, httpClient: $httpClient)
+		));
+
+		$container->bind('ai.gapgpt.claude.opus.thinking', GapGpt::withAIModelObject(
+			new Claude(modelName: Claude::OPUS_4_7, extendedThinking: true, httpClient: $httpClient)
+		));
+
+		$container->bind('ai.ollama.qwen3.4b', new Ollama(
+			url: 'host.docker.internal:11434/api',
+			model: 'qwen3-vl:4b',
+			parameters: ['num_ctx' => 64 * 1024],
+		));
+
+		$primaryProviderKey = Env::get('PRIMARY_AI_PROVIDER', 'ai.gapgpt.claude.sonnet');
+		$primaryProvider = $container->resolve($primaryProviderKey);
+		$container->bind(AIProviderInterface::class, $primaryProvider);
+
+		$container->bind(
+			AIProviderInterface::class,
+			HighAvailableProviderBuilder::wrap($primaryProvider)
+				->withRetry(new RetryPolicy(maxAttempts: 3, baseDelayMs: 200, multiplier: 2.0))
+				->withCircuitBreaker($container->resolve(CircuitBreakerStorageInterface::class), $primaryProviderKey)
+				->withCache($container->resolve(CacheStorageInterface::class), $primaryProviderKey)
+				->build()
 		);
+	}
+
+	private function registerEmbeddings(Container $container): void
+	{
+		$container->bind('ai.gapgpt.qwen3-5.embedding', new GapGptEmbedding(
+			model: 'gapgpt-qwen-3.5',
+		));
+
+		$container->bind('ai.ollama.qwen3.8b.embedding', new OllamaEmbeddingsProvider(
+			url: 'host.docker.internal:11434/api',
+			model: 'qwen3-embedding:8b',
+		));
+
+		$embeddingProviderKey = Env::get('EMBEDDING_AI_PROVIDER', 'ai.gapgpt.qwen3-5.embedding');
+		$container->bind(EmbeddingsProviderInterface::class, $container->resolve($embeddingProviderKey));
+	}
+
+	private function registerMetrics(Container $container): void
+	{
+		$container->singleton('logger.ai', new FileLogger($container->resolve(ClockInterface::class), Path::getStorageDir() . '/ai/logs'));
+		$container->singleton(MetricStorageInterface::class, new JsonlMetricStorage());
+		$container->singleton(QualityEvaluatorInterface::class, new NullQualityEvaluator());
+	}
+
+	private function registerMcp(Container $container): void
+	{
+		$mcpStorage = new JsonlMcpTokenStorage();
+		$container->singleton(McpTokenStorageInterface::class, $mcpStorage);
+		$container->singleton(McpTokenObserver::class, new McpTokenObserver(calculator: $container->resolve(McpTokenCalculator::class), storage: $mcpStorage));
 	}
 }

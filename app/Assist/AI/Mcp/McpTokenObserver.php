@@ -19,7 +19,7 @@ final class McpTokenObserver
 	) {}
 
 	/**
-	 * @param array<mixed>|string $input  raw input parameters or serialised string
+	 * @param array<mixed>|string $input raw input parameters or serialised string
 	 * @param array<mixed>|string $output raw tool output (text or serialisable array)
 	 */
 	public function log(string $tool, array|string $input, array|string $output): void

@@ -18,12 +18,12 @@ use Psr\Http\Message\UriInterface;
 final class ServerRequest extends Request implements ServerRequestInterface
 {
 	/**
-	 * @param array<string, mixed>     $serverParams
-	 * @param array<string, string>    $cookieParams
-	 * @param array<string, mixed>     $queryParams
-	 * @param array<mixed>             $uploadedFiles
+	 * @param array<string, mixed> $serverParams
+	 * @param array<string, string> $cookieParams
+	 * @param array<string, mixed> $queryParams
+	 * @param array<mixed> $uploadedFiles
 	 * @param null|array<mixed>|object $parsedBody
-	 * @param array<string, mixed>     $attributes
+	 * @param array<string, mixed> $attributes
 	 */
 	public function __construct(
 		string $method,
@@ -166,10 +166,10 @@ final class ServerRequest extends Request implements ServerRequestInterface
 
 	/**
 	 * @param null|array<string, string> $cookieParams
-	 * @param null|array<string, mixed>  $queryParams
-	 * @param null|array<mixed>          $uploadedFiles
-	 * @param null|array<mixed>|object   $parsedBody
-	 * @param null|array<string, mixed>  $attributes
+	 * @param null|array<string, mixed> $queryParams
+	 * @param null|array<mixed> $uploadedFiles
+	 * @param null|array<mixed>|object $parsedBody
+	 * @param null|array<string, mixed> $attributes
 	 */
 	private function rebuild(
 		?array $cookieParams = null,

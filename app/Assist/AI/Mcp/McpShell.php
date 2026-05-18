@@ -89,8 +89,8 @@ final class McpShell
 	/**
 	 * Returns parsed git log commits.
 	 *
-	 * @param int    $limit maximum commits (hard max: 200)
-	 * @param string $path  optional file path filter (already guarded by caller)
+	 * @param int $limit maximum commits (hard max: 200)
+	 * @param string $path optional file path filter (already guarded by caller)
 	 *
 	 * @return array{commits: array<array{hash: string, msg: string}>}
 	 */
@@ -120,9 +120,9 @@ final class McpShell
 	/**
 	 * Returns parsed git diff with truncation control.
 	 *
-	 * @param string $ref      git ref to diff against (empty = unstaged)
-	 * @param string $path     optional file path filter (already guarded by caller)
-	 * @param int    $maxLines maximum lines (hard max: 1000)
+	 * @param string $ref git ref to diff against (empty = unstaged)
+	 * @param string $path optional file path filter (already guarded by caller)
+	 * @param int $maxLines maximum lines (hard max: 1000)
 	 *
 	 * @return array{diff: string, total: int, truncated: bool}
 	 */
@@ -376,7 +376,7 @@ final class McpShell
 	/**
 	 * Runs a git command with argument-level shell escaping.
 	 *
-	 * @param string   $verb git sub-command verb
+	 * @param string $verb git sub-command verb
 	 * @param string[] $args git arguments
 	 *
 	 * @return array{output: string, exitCode: int}
@@ -572,7 +572,7 @@ final class McpShell
 	 * prevent runaway child processes from exhausting the container's memory.
 	 *
 	 * @param string $command fully constructed shell command
-	 * @param bool   $throw   when true, throws RuntimeException on non-zero exit
+	 * @param bool $throw when true, throws RuntimeException on non-zero exit
 	 *
 	 * @return array{output: string, exitCode: int}
 	 *

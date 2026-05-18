@@ -61,7 +61,8 @@ final class McpPromptFetchTool
 					continue;
 				}
 
-				$result = $method->invoke($reflectionClass->newInstance());
+				$instance = resolve($sourceClass);
+				$result = $method->invoke($instance);
 				$formatter = new PromptResultFormatter();
 				$output = '';
 

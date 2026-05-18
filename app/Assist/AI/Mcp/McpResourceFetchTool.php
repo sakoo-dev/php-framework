@@ -55,7 +55,8 @@ final class McpResourceFetchTool
 					continue;
 				}
 
-				$result = $method->invoke($reflectionClass->newInstance());
+				$instance = resolve($sourceClass);
+				$result = $method->invoke($instance);
 				$formatter = new ResourceResultFormatter();
 				$output = '';
 

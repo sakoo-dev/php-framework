@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Assist\AI\Agent\Consult;
 
 use App\Assist\AI\Agent\BaseAgent;
-use App\Assist\AI\Neuron\ArchitectDirective;
+use App\Assist\AI\Neuron\Schema\ArchitectDirective;
 use NeuronAI\Chat\Messages\UserMessage;
 use NeuronAI\Providers\AIProviderInterface;
 

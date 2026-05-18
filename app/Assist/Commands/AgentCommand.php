@@ -20,10 +20,14 @@ use App\Assist\AI\Metric\QualityEvaluatorInterface;
 use App\Assist\AI\Neuron\Session\ChatSession;
 use App\Assist\AI\Neuron\Session\ChatSessionRepository;
 use App\Assist\AI\Neuron\Session\SessionId;
+use App\Assist\Commands\Formatter\CliAgentStreamFormatter;
+use NeuronAI\Chat\Messages\Stream\Chunks\StreamChunk;
 use NeuronAI\Chat\Messages\UserMessage;
 use NeuronAI\Exceptions\ChatHistoryException;
+use NeuronAI\Exceptions\WorkflowException;
 use NeuronAI\Observability\LogObserver;
 use NeuronAI\Providers\AIProviderInterface;
+use NeuronAI\Workflow\Interrupt\WorkflowInterrupt;
 use Psr\Log\LoggerInterface;
 use Sakoo\Framework\Core\Console\Command;
 use Sakoo\Framework\Core\Console\Input;
@@ -79,7 +83,7 @@ class AgentCommand extends Command
 			qualityEvaluator: resolve(QualityEvaluatorInterface::class),
 			sessionId: $session->sessionId,
 			agentName: $agent->getName(),
-			modelName: $this->resolveModelName($provider),
+			modelName: $agent->getModelName(),
 			providerName: $provider::class,
 			source: MetricSource::Live,
 		));
@@ -93,6 +97,8 @@ class AgentCommand extends Command
 		$output->block('Welcome to Sakoo ' . strtoupper($agent->getName()) . ' Agent!', Output::COLOR_RED);
 		$output->block('Session: ' . $session->sessionId->value, Output::COLOR_MAGENTA);
 
+		$formatter = new CliAgentStreamFormatter($output);
+
 		// @phpstan-ignore while.alwaysTrue
 		while (true) {
 			$output->block('Enter Your Prompt:', Output::COLOR_YELLOW);
@@ -101,24 +107,43 @@ class AgentCommand extends Command
 			$output->block('Processing...', Output::COLOR_CYAN);
 
 			try {
-				$agentMessage = $agent->chat(new UserMessage($prompt))->getMessage();
+				$agentStream = $agent->stream(new UserMessage($prompt));
+
+				/** @var ?StreamChunk $previousChunk */
+				$previousChunk = null;
+
+				/** @var StreamChunk $chunk */
+				foreach ($agentStream->events() as $chunk) {
+					$formatter->format($chunk, $previousChunk);
+					$previousChunk = $chunk;
+				}
 			} catch (ChatHistoryException $e) {
 				if (str_contains($e->getMessage(), 'Invalid message sequence at position')) {
 					// @phpstan-ignore method.notFound
 					$agent->getChatHistory()->removeLastLog();
 					$output->block('Chat History Error Fixing ...', Output::COLOR_RED);
-
-					continue;
+				} else {
+					$output->block('Chat History Exception', Output::COLOR_RED);
 				}
+
+				continue;
+			} catch (WorkflowInterrupt $e) {
+				$output->block('Workflow Interrupt: ' . $e->getMessage(), Output::COLOR_RED);
+
+				continue;
+			} catch (WorkflowException $e) {
+				$output->block('Workflow Exception: ' . $e->getMessage(), Output::COLOR_RED);
+
+				continue;
+			} catch (\Throwable $e) {
+				$output->block('Unknown Exception: ' . $e->getMessage(), Output::COLOR_RED);
+
+				continue;
 			}
 
+			$output->newLine();
 			/** @phpstan-ignore variable.undefined */
-			$agentUsage = $agentMessage->getUsage();
-			// @phpstan-ignore variable.undefined
-			$output->block('Reasoning: ' . ($agentMessage->getReasoning()?->getContent() ?? 'N/A'), Output::COLOR_YELLOW);
-			// @phpstan-ignore variable.undefined
-			$output->block($agentMessage->getContent() ?? '', Output::COLOR_GREEN);
-
+			$agentUsage = $agentStream->getMessage()->getUsage();
 			$output->block('Input Tokens: ' . ($agentUsage->inputTokens ?? 'N/A'), Output::COLOR_MAGENTA);
 			$output->block('Output Tokens: ' . ($agentUsage->outputTokens ?? 'N/A'), Output::COLOR_MAGENTA);
 			$output->block('Total Tokens: ' . ($agentUsage?->getTotal() ?? 'N/A'), Output::COLOR_MAGENTA);
@@ -129,9 +154,8 @@ class AgentCommand extends Command
 	}
 
 	/**
-	 * Asks whether to resume an existing session or start fresh, then returns the
-	 * resolved ChatSession. Existing sessions are discovered by ChatSessionRepository
-	 * and presented as a radio-button choice via the console input.
+	 * Asks whether to resume an existing session or start fresh. Existing sessions
+	 * are discovered by ChatSessionRepository and presented via the console radio.
 	 */
 	private function resolveSession(string $agentName, Input $input, Output $output): ChatSession
 	{
@@ -161,29 +185,11 @@ class AgentCommand extends Command
 		return $session;
 	}
 
-	/**
-	 * Reads the protected $model property from the provider via reflection.
-	 *
-	 * All NeuronAI providers (OpenAI, OpenAILike, Anthropic, Ollama, …) declare
-	 * a protected string $model constructor-promoted property. Reflection gives
-	 * us the actual runtime value without requiring a getModel() contract on the
-	 * interface, keeping this decoupled from vendor internals.
-	 */
-	private function resolveModelName(AIProviderInterface $provider): string
+	private function startNewSession(Output $output, string $agentName): ChatSession
 	{
-		$reflection = new \ReflectionObject($provider);
+		$output->block('Starting new session.', Output::COLOR_CYAN);
 
-		if ($reflection->hasProperty('model')) {
-			$property = $reflection->getProperty('model');
-			$property->setAccessible(true);
-			$value = $property->getValue($provider);
-
-			if (is_string($value) && '' !== $value) {
-				return $value;
-			}
-		}
-
-		return $provider::class;
+		return new ChatSession(SessionId::generate(), $agentName);
 	}
 
 	/**
@@ -196,12 +202,5 @@ class AgentCommand extends Command
 		}
 
 		return $class::make();
-	}
-
-	private function startNewSession(Output $output, string $agentName): ChatSession
-	{
-		$output->block('Starting new session.', Output::COLOR_CYAN);
-
-		return new ChatSession(SessionId::generate(), $agentName);
 	}
 }

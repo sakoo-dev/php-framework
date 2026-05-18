@@ -18,8 +18,8 @@ final readonly class ChatSession
 	private const FILE_EXT = '.chat';
 
 	public function __construct(
-		public readonly SessionId $sessionId,
-		public readonly string $agentName,
+		public SessionId $sessionId,
+		public string $agentName,
 	) {}
 
 	public function filePath(string $storageDir): string

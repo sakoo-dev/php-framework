@@ -67,7 +67,7 @@ final class SwooleTransportRequest implements TransportRequest
 	}
 
 	/**
-	 * @param array<string, mixed>  $server
+	 * @param array<string, mixed> $server
 	 * @param array<string, string> $headerArray
 	 */
 	private function buildUri(array $server, array $headerArray): Uri

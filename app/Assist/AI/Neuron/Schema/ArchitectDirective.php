@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Assist\AI\Neuron;
+namespace App\Assist\AI\Neuron\Schema;
 
 use NeuronAI\StructuredOutput\SchemaProperty;
 

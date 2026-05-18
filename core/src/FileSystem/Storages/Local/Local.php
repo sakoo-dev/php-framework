@@ -206,8 +206,8 @@ class Local implements Storage
 	 * Returns a FileChunk DTO with the sliced content string, total line count,
 	 * resolved from/to boundaries, and whether the result was truncated by $maxChars.
 	 *
-	 * @param int $from     1-based start line (default: 1)
-	 * @param int $to       inclusive end line; 0 = EOF (default: 0)
+	 * @param int $from 1-based start line (default: 1)
+	 * @param int $to inclusive end line; 0 = EOF (default: 0)
 	 * @param int $maxChars character cap; 0 = unlimited (default: 0)
 	 *
 	 * @throws InvalidArgumentException
@@ -257,8 +257,8 @@ class Local implements Storage
 	 * Convenience wrapper around readChunk() that returns just the text content.
 	 * Appends a truncation notice when the result was capped by $maxChars.
 	 *
-	 * @param int $from     1-based start line number (default: 1)
-	 * @param int $to       inclusive end line; 0 = EOF (default: 0)
+	 * @param int $from 1-based start line number (default: 1)
+	 * @param int $to inclusive end line; 0 = EOF (default: 0)
 	 * @param int $maxChars character cap; 0 = unlimited (default: 0)
 	 *
 	 * @throws InvalidArgumentException

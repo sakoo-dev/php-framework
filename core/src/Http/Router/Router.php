@@ -37,7 +37,7 @@ use Sakoo\Framework\Core\Http\Router\Exceptions\RouteNotFoundException;
  * The Router itself implements RequestHandlerInterface so it can serve as the
  * terminal handler in a middleware pipeline.
  *
- * @throws RouteNotFoundException    when no route matches the request path (404)
+ * @throws RouteNotFoundException when no route matches the request path (404)
  * @throws MethodNotAllowedException when a route matches the path but not the method (405)
  */
 class Router implements RequestHandlerInterface
@@ -50,7 +50,7 @@ class Router implements RequestHandlerInterface
 
 	/**
 	 * @param array{0: class-string, 1: string}|class-string $handler
-	 * @param array<class-string<MiddlewareInterface>>       $middleware
+	 * @param array<class-string<MiddlewareInterface>> $middleware
 	 */
 	public function get(string $pattern, array|string $handler, array $middleware = []): void
 	{
@@ -59,7 +59,7 @@ class Router implements RequestHandlerInterface
 
 	/**
 	 * @param array{0: class-string, 1: string}|class-string $handler
-	 * @param array<class-string<MiddlewareInterface>>       $middleware
+	 * @param array<class-string<MiddlewareInterface>> $middleware
 	 */
 	public function post(string $pattern, array|string $handler, array $middleware = []): void
 	{
@@ -68,7 +68,7 @@ class Router implements RequestHandlerInterface
 
 	/**
 	 * @param array{0: class-string, 1: string}|class-string $handler
-	 * @param array<class-string<MiddlewareInterface>>       $middleware
+	 * @param array<class-string<MiddlewareInterface>> $middleware
 	 */
 	public function put(string $pattern, array|string $handler, array $middleware = []): void
 	{
@@ -77,7 +77,7 @@ class Router implements RequestHandlerInterface
 
 	/**
 	 * @param array{0: class-string, 1: string}|class-string $handler
-	 * @param array<class-string<MiddlewareInterface>>       $middleware
+	 * @param array<class-string<MiddlewareInterface>> $middleware
 	 */
 	public function patch(string $pattern, array|string $handler, array $middleware = []): void
 	{
@@ -86,7 +86,7 @@ class Router implements RequestHandlerInterface
 
 	/**
 	 * @param array{0: class-string, 1: string}|class-string $handler
-	 * @param array<class-string<MiddlewareInterface>>       $middleware
+	 * @param array<class-string<MiddlewareInterface>> $middleware
 	 */
 	public function delete(string $pattern, array|string $handler, array $middleware = []): void
 	{
@@ -97,7 +97,7 @@ class Router implements RequestHandlerInterface
 	 * Registers a route for the given method, pattern, and handler.
 	 *
 	 * @param array{0: class-string, 1: string}|class-string $handler
-	 * @param array<class-string<MiddlewareInterface>>       $middleware
+	 * @param array<class-string<MiddlewareInterface>> $middleware
 	 */
 	public function addRoute(HttpMethod $method, string $pattern, array|string $handler, array $middleware = []): void
 	{

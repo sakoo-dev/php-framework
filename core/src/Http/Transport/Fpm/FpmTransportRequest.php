@@ -21,11 +21,11 @@ use Sakoo\Framework\Core\Http\Uri;
 final class FpmTransportRequest implements TransportRequest
 {
 	/**
-	 * @param array<string, mixed>  $server
+	 * @param array<string, mixed> $server
 	 * @param array<string, string> $get
-	 * @param array<string, mixed>  $post
+	 * @param array<string, mixed> $post
 	 * @param array<string, string> $cookies
-	 * @param array<string, mixed>  $files
+	 * @param array<string, mixed> $files
 	 */
 	public function __construct(
 		private readonly array $server,

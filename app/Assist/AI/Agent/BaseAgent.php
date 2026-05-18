@@ -8,6 +8,7 @@ use App\Assist\AI\Mcp\McpContextProvider;
 use App\Assist\AI\Mcp\McpElements;
 use App\Assist\AI\Mcp\McpPromptFetchTool;
 use App\Assist\AI\Mcp\McpResourceFetchTool;
+use App\Assist\AI\Neuron\Model\ModelNameResolver;
 use App\Assist\AI\Neuron\Session\ChatHistory;
 use App\Assist\AI\Neuron\Session\ChatSession;
 use App\Assist\AI\Neuron\Session\SessionId;
@@ -152,5 +153,10 @@ abstract class BaseAgent extends RAG
 		];
 
 		return array_map(fn (ToolInterface $t): string => $t->getName(), $toolkits);
+	}
+
+	public function getModelName(): string
+	{
+		return ModelNameResolver::resolve($this->provider());
 	}
 }

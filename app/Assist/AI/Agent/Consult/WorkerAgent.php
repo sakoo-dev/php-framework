@@ -19,7 +19,7 @@ final class WorkerAgent extends BaseAgent
 	protected function provider(): AIProviderInterface
 	{
 		// @phpstan-ignore-next-line
-		return resolve($this->supportsThinking() ? 'ai.provider.sonnet.thinking' : 'ai.provider.sonnet');
+		return resolve($this->supportsThinking() ? 'ai.gapgpt.claude.sonnet.thinking' : 'ai.gapgpt.claude.sonnet');
 	}
 
 	protected function agentInstructions(): string

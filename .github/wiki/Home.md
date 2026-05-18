@@ -16,6 +16,10 @@
 
 
 
+<sub><sup>Context arrays are serialised as JSON and appended to the log line so that structured data (e.g. error messages, HTTP status codes) is always visible. </sup></sub>
+
+
+
 <sub><sup>If the filesystem write fails, an Exception is thrown rather than silently swallowing the failure, ensuring observability issues surface immediately. </sup></sub>
 
 
@@ -32,7 +36,7 @@ $fileLogger = new FileLogger(ClockInterface $clock, string $path);
 
 
 
-<sub><sup>@param string $level PSR-3 log level string (e.g. &#039;debug&#039;, &#039;error&#039;) </sup></sub>
+<sub><sup>@param string $level PSR-3 log level string (e.g. &#039;debug&#039;, &#039;error&#039;) @param array&lt;string, mixed&gt; $context Structured key-value data appended as JSON </sup></sub>
 
 
 
@@ -51,11 +55,11 @@ $fileLogger->log($level, $message, $context);
 
 
 
-<sub><sup>The rendered format is: [{ISO-8601 datetime}] [{LEVEL}] [{Mode} {Environment}] - {message} </sup></sub>
+<sub><sup>The rendered format is: [{ISO-8601 datetime}] [{LEVEL}] [{Mode} {Environment}] - {message} {context} </sup></sub>
 
 
 
-<sub><sup>For example: [2024-06-01T12:00:00+00:00] [ERROR] [HTTP Production] - Payment gateway timeout </sup></sub>
+<sub><sup>For example: [2024-06-01T12:00:00+00:00] [ERROR] [HTTP Production] - Payment gateway timeout {&quot;error&quot;:&quot;...&quot;} </sup></sub>
 
 
 
@@ -70,7 +74,7 @@ $fileLogger->log($level, $message, $context);
 #### How to use the Class:
 
 ```php
-$logFormatter = new LogFormatter(string $level, Stringable|string $message, string $mode, string $env);
+$logFormatter = new LogFormatter(string $level, Stringable|string $message, string $mode, string $env, array $context);
 ```
 
 ## 📦 Sakoo\Framework\Core\VarDump\Cli
@@ -996,7 +1000,7 @@ $local->readLines();
 
 
 
-<sub><sup>@param int $from     1-based start line (default: 1) @param int $to       inclusive end line; 0 = EOF (default: 0) @param int $maxChars character cap; 0 = unlimited (default: 0) </sup></sub>
+<sub><sup>@param int $from 1-based start line (default: 1) @param int $to inclusive end line; 0 = EOF (default: 0) @param int $maxChars character cap; 0 = unlimited (default: 0) </sup></sub>
 
 
 
@@ -1015,7 +1019,7 @@ $local->readChunk($from, $to, $maxChars);
 
 
 
-<sub><sup>@param int $from     1-based start line number (default: 1) @param int $to       inclusive end line; 0 = EOF (default: 0) @param int $maxChars character cap; 0 = unlimited (default: 0) </sup></sub>
+<sub><sup>@param int $from 1-based start line number (default: 1) @param int $to inclusive end line; 0 = EOF (default: 0) @param int $maxChars character cap; 0 = unlimited (default: 0) </sup></sub>
 
 
 
@@ -5224,7 +5228,7 @@ $httpFactory->createResponse($code, $reasonPhrase);
 
 ### - `createServerRequest` Function
 
-<sub><sup>@param string|UriInterface  $uri @param array&lt;string, mixed&gt; $serverParams </sup></sub>
+<sub><sup>@param string|UriInterface $uri @param array&lt;string, mixed&gt; $serverParams </sup></sub>
 
 
 
@@ -6472,13 +6476,13 @@ $route->match($path);
 
 
 
-> @throws RouteNotFoundException    when no route matches the request path (404)
+> @throws RouteNotFoundException when no route matches the request path (404)
 
 > @throws MethodNotAllowedException when a route matches the path but not the method (405)
 
 ### - `get` Function
 
-<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt;       $middleware </sup></sub>
+<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt; $middleware </sup></sub>
 
 
 
@@ -6491,7 +6495,7 @@ $router->get($pattern, $handler, $middleware);
 
 ### - `post` Function
 
-<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt;       $middleware </sup></sub>
+<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt; $middleware </sup></sub>
 
 
 
@@ -6504,7 +6508,7 @@ $router->post($pattern, $handler, $middleware);
 
 ### - `put` Function
 
-<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt;       $middleware </sup></sub>
+<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt; $middleware </sup></sub>
 
 
 
@@ -6517,7 +6521,7 @@ $router->put($pattern, $handler, $middleware);
 
 ### - `patch` Function
 
-<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt;       $middleware </sup></sub>
+<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt; $middleware </sup></sub>
 
 
 
@@ -6530,7 +6534,7 @@ $router->patch($pattern, $handler, $middleware);
 
 ### - `delete` Function
 
-<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt;       $middleware </sup></sub>
+<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt; $middleware </sup></sub>
 
 
 
@@ -6547,7 +6551,7 @@ $router->delete($pattern, $handler, $middleware);
 
 
 
-<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt;       $middleware </sup></sub>
+<sub><sup>@param array{0: class-string, 1: string}|class-string $handler @param array&lt;class-string&lt;MiddlewareInterface&gt;&gt; $middleware </sup></sub>
 
 
 

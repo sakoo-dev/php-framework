@@ -172,7 +172,3 @@ Parallel Sub-Agents
 Runs tasks concurrently via `Swoole` (inject `ConcurrencyDriverInterface` — no hardcoded driver).
 Collects `SubAgentResult[]` into `WorkflowState` keyed by task name.
 Isolates failures: one sub-agent failure must not abort others; collect into `SubAgentResult::$error`.
-
-## Task 6: R&D
-- Which PHP Libraries can Complete this Ecosystem? Deep Research on it.
-- Which LLMs Support MCP?

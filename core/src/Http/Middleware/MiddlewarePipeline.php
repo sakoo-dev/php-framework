@@ -26,7 +26,7 @@ class MiddlewarePipeline implements RequestHandlerInterface
 	private readonly array $middleware;
 
 	/**
-	 * @param RequestHandlerInterface                  $fallbackHandler Invoked after all middleware
+	 * @param RequestHandlerInterface $fallbackHandler Invoked after all middleware
 	 * @param array<class-string<MiddlewareInterface>> $middleware
 	 */
 	public function __construct(

@@ -17,6 +17,7 @@ $rules = [
 	'php_unit_method_casing' => ['case' => 'snake_case'],
 	'explicit_string_variable' => false,
 	'phpdoc_add_missing_param_annotation' => false,
+	'phpdoc_align' => ['align' => 'left'],
 	'blank_line_before_statement' => [
 		'statements' => [
 			'break',

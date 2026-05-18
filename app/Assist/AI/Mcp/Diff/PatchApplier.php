@@ -35,7 +35,7 @@ final class PatchApplier
 	 * @throws MalformedDiffException when the diff is unparseable, contains no
 	 *                                hunks, or does not match the file at the
 	 *                                claimed offsets
-	 * @throws PatchWriteException    when the final write to disk fails
+	 * @throws PatchWriteException when the final write to disk fails
 	 */
 	public function apply(string $path, string $diff): void
 	{

@@ -47,7 +47,7 @@ class HttpFactory implements RequestFactoryInterface, ResponseFactoryInterface, 
 	}
 
 	/**
-	 * @param string|UriInterface  $uri
+	 * @param string|UriInterface $uri
 	 * @param array<string, mixed> $serverParams
 	 */
 	public function createServerRequest(string $method, $uri, array $serverParams = []): ServerRequestInterface
