@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Assist\Commands;
 
-use App\Assist\AI\Mcp\McpServer;
+use App\AI\Mcp\McpServer;
 use Mcp\Server\Transport\StdioTransport;
 use Psr\Log\LoggerInterface;
 use Sakoo\Framework\Core\Console\Command;

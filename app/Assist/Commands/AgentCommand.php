@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace App\Assist\Commands;
 
-use App\Assist\AI\Agent\BaseAgent;
-use App\Assist\AI\Agent\ChatBotAgent;
-use App\Assist\AI\Agent\Consult\ArchitectAgent;
-use App\Assist\AI\Agent\Consult\WorkerAgent;
-use App\Assist\AI\Agent\DataAnalystAgent;
-use App\Assist\AI\Agent\DeveloperAgent;
-use App\Assist\AI\Agent\ProductManagerAgent;
-use App\Assist\AI\Mcp\McpContextProvider;
-use App\Assist\AI\Mcp\McpElements;
-use App\Assist\AI\Metric\AgentMetricObserver;
-use App\Assist\AI\Metric\MetricSource;
-use App\Assist\AI\Metric\MetricStorageInterface;
-use App\Assist\AI\Metric\QualityEvaluatorInterface;
-use App\Assist\AI\Neuron\Session\ChatSession;
-use App\Assist\AI\Neuron\Session\ChatSessionRepository;
-use App\Assist\AI\Neuron\Session\SessionId;
+use App\AI\Agent\Agent;
+use App\AI\Agent\ChatBotAgent;
+use App\AI\Agent\Consult\ArchitectAgent;
+use App\AI\Agent\Consult\WorkerAgent;
+use App\AI\Agent\DataAnalystAgent;
+use App\AI\Agent\DeveloperAgent;
+use App\AI\Agent\ProductManagerAgent;
+use App\AI\Mcp\McpContextProvider;
+use App\AI\Mcp\McpElements;
+use App\AI\Metric\AgentMetricObserver;
+use App\AI\Metric\MetricSource;
+use App\AI\Metric\MetricStorageInterface;
+use App\AI\Metric\QualityEvaluatorInterface;
+use App\AI\Neuron\Session\ChatSession;
+use App\AI\Neuron\Session\ChatSessionRepository;
+use App\AI\Neuron\Session\SessionId;
 use App\Assist\Commands\Formatter\CliAgentStreamFormatter;
 use NeuronAI\Chat\Messages\Stream\Chunks\StreamChunk;
 use NeuronAI\Chat\Messages\UserMessage;
@@ -57,10 +57,10 @@ class AgentCommand extends Command
 
 	public function run(Input $input, Output $output): int
 	{
-		/** @var class-string<BaseAgent> $selectedClass */
+		/** @var class-string<Agent> $selectedClass */
 		$selectedClass = $input->radio($this->agents, 'Select an Agent to Talk with:');
 
-		/** @var BaseAgent $agent */
+		/** @var Agent $agent */
 		$agent = $this->buildAgent($selectedClass);
 
 		$session = $this->resolveSession($agent->getName(), $input, $output);
@@ -193,9 +193,9 @@ class AgentCommand extends Command
 	}
 
 	/**
-	 * @param class-string<BaseAgent> $class
+	 * @param class-string<Agent> $class
 	 */
-	private function buildAgent(string $class): BaseAgent
+	private function buildAgent(string $class): Agent
 	{
 		if (WorkerAgent::class === $class) {
 			return new WorkerAgent(ArchitectAgent::make());

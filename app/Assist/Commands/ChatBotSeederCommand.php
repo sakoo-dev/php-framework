@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Assist\Commands;
 
-use App\Assist\AI\Agent\ChatBotAgent;
+use App\AI\Agent\ChatBotAgent;
 use NeuronAI\RAG\DataLoader\FileDataLoader;
 use Sakoo\Framework\Core\Console\Command;
 use Sakoo\Framework\Core\Console\Input;
