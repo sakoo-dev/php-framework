@@ -20,6 +20,6 @@ final class JsonlMcpTokenStorage implements McpTokenStorageInterface
 	{
 		$path = Path::getStorageDir() . '/ai/mcp-token-usage.jsonl';
 		$file = File::open(Disk::Local, $path);
-		$file->append(json_encode($entry->toArray(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '');
+		$file->append((json_encode($entry->toArray(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '') . PHP_EOL);
 	}
 }

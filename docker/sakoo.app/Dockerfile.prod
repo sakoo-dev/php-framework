@@ -6,6 +6,8 @@ RUN apk add --no-cache git curl zip unzip linux-headers $PHPIZE_DEPS brotli-dev 
 RUN pecl install swoole && docker-php-ext-enable swoole \
 && docker-php-ext-install pdo_mysql mysqli pcntl
 
+RUN apk add poppler-utils
+
 COPY ./docker/sakoo.app/conf /tmp/conf
 RUN cat /tmp/conf/php.ini >> /usr/local/etc/php/php.ini \
     && cat /tmp/conf/php.jit.ini >> /usr/local/etc/php/php.ini \

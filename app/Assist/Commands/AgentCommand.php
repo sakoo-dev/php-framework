@@ -11,12 +11,18 @@ use App\AI\Agent\Consult\WorkerAgent;
 use App\AI\Agent\DataAnalystAgent;
 use App\AI\Agent\DeveloperAgent;
 use App\AI\Agent\ProductManagerAgent;
+use App\AI\Agent\PsychologistAgent;
 use App\AI\Mcp\McpContextProvider;
 use App\AI\Mcp\McpElements;
-use App\AI\Metric\AgentMetricObserver;
-use App\AI\Metric\MetricSource;
-use App\AI\Metric\MetricStorageInterface;
-use App\AI\Metric\QualityEvaluatorInterface;
+use App\AI\Neuron\Guard\AuditStorageInterface;
+use App\AI\Neuron\Guard\Exception\GuardViolationException;
+use App\AI\Neuron\Guard\GuardrailObserver;
+use App\AI\Neuron\Guard\GuardrailPipeline;
+use App\AI\Neuron\Inspector\RagObserver;
+use App\AI\Neuron\Metric\AgentMetricObserver;
+use App\AI\Neuron\Metric\MetricSource;
+use App\AI\Neuron\Metric\MetricStorageInterface;
+use App\AI\Neuron\Metric\QualityEvaluatorInterface;
 use App\AI\Neuron\Session\ChatSession;
 use App\AI\Neuron\Session\ChatSessionRepository;
 use App\AI\Neuron\Session\SessionId;
@@ -43,6 +49,7 @@ class AgentCommand extends Command
 		ProductManagerAgent::class,
 		ChatBotAgent::class,
 		WorkerAgent::class,
+		PsychologistAgent::class,
 	];
 
 	public static function getName(): string
@@ -64,11 +71,9 @@ class AgentCommand extends Command
 		$agent = $this->buildAgent($selectedClass);
 
 		$session = $this->resolveSession($agent->getName(), $input, $output);
-		$agent->withSession($session);
 
 		$mcpContextProvider = new McpContextProvider(McpElements::class);
 		$mcpContextProvider = $mcpContextProvider->exclude($agent->getExcludedContexts());
-		$agent->withMcpContext($mcpContextProvider);
 
 		/** @var AIProviderInterface $provider */
 		$provider = resolve(AIProviderInterface::class);
@@ -76,9 +81,9 @@ class AgentCommand extends Command
 		/** @var LoggerInterface $logger */
 		// @phpstan-ignore argument.type
 		$logger = resolve('logger.ai');
-		$agent->observe(new LogObserver($logger));
+		$logObserver = new LogObserver($logger);
 
-		$agent->observe(new AgentMetricObserver(
+		$metricObserver = new AgentMetricObserver(
 			storage: resolve(MetricStorageInterface::class),
 			qualityEvaluator: resolve(QualityEvaluatorInterface::class),
 			sessionId: $session->sessionId,
@@ -86,7 +91,16 @@ class AgentCommand extends Command
 			modelName: $agent->getModelName(),
 			providerName: $provider::class,
 			source: MetricSource::Live,
-		));
+		);
+
+		$guardrailObserver = new GuardrailObserver(
+			pipeline: resolve(GuardrailPipeline::class),
+			auditStorage: resolve(AuditStorageInterface::class),
+			sessionId: $session->sessionId,
+			agentName: $agent->getName(),
+		);
+
+		$ragObserver = new RagObserver($output);
 
 		$output->block([
 			"\t\t=======================",
@@ -99,15 +113,32 @@ class AgentCommand extends Command
 
 		$formatter = new CliAgentStreamFormatter($output);
 
+		$previousPrompt = null;
+
 		// @phpstan-ignore while.alwaysTrue
 		while (true) {
-			$output->block('Enter Your Prompt:', Output::COLOR_YELLOW);
-			$prompt = $input->getUserInput();
+			/** @var Agent $agent */
+			$agent = $this->buildAgent($selectedClass);
+
+			$agent->observe($logObserver);
+			$agent->observe($metricObserver);
+			$agent->observe($guardrailObserver);
+			$agent->observe($ragObserver);
+
+			$agent->withSession($session);
+			$agent->withMcpContext($mcpContextProvider);
+
+			if (!$previousPrompt) {
+				$output->block('Enter Your Prompt:', Output::COLOR_YELLOW);
+			}
+
+			$prompt = $previousPrompt ?? $input->getUserInput();
 
 			$output->block('Processing...', Output::COLOR_CYAN);
 
 			try {
 				$agentStream = $agent->stream(new UserMessage($prompt));
+				$previousPrompt = null;
 
 				/** @var ?StreamChunk $previousChunk */
 				$previousChunk = null;
@@ -117,11 +148,19 @@ class AgentCommand extends Command
 					$formatter->format($chunk, $previousChunk);
 					$previousChunk = $chunk;
 				}
+
+				$guardrailObserver->guardText($agentStream->getMessage()->getContent() ?? '', GuardrailObserver::RESPONSE);
+			} catch (GuardViolationException $e) {
+				$output->newLine();
+				$output->block('⚠ ' . $e->classification->value . ': ' . $e->reason, Output::COLOR_RED);
+
+				continue;
 			} catch (ChatHistoryException $e) {
 				if (str_contains($e->getMessage(), 'Invalid message sequence at position')) {
 					// @phpstan-ignore method.notFound
 					$agent->getChatHistory()->removeLastLog();
 					$output->block('Chat History Error Fixing ...', Output::COLOR_RED);
+					$previousPrompt = $prompt;
 				} else {
 					$output->block('Chat History Exception', Output::COLOR_RED);
 				}
@@ -136,7 +175,7 @@ class AgentCommand extends Command
 
 				continue;
 			} catch (\Throwable $e) {
-				$output->block('Unknown Exception: ' . $e->getMessage(), Output::COLOR_RED);
+				$output->block(get_class($e) . ': ' . $e->getMessage(), Output::COLOR_RED);
 
 				continue;
 			}

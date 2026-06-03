@@ -6,6 +6,7 @@ use App\Assist\Commands\AgentCommand;
 use App\Assist\Commands\ChatBotSeederCommand;
 use App\Assist\Commands\ExampleCommand;
 use App\Assist\Commands\McpServerCommand;
+use App\Assist\Commands\PsychologistSeederCommand;
 use Sakoo\Framework\Core\Commands\ContainerCacheCommand;
 use Sakoo\Framework\Core\Commands\DevCommand;
 use Sakoo\Framework\Core\Commands\DocGenCommand;
@@ -22,6 +23,7 @@ $commands = [
 	resolve(ExampleCommand::class),
 	resolve(AgentCommand::class),
 	resolve(ChatBotSeederCommand::class),
+	resolve(PsychologistSeederCommand::class),
 	resolve(ZenCommand::class),
 	resolve(WatchCommand::class),
 	resolve(DevCommand::class),

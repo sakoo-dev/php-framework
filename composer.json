@@ -41,7 +41,8 @@
   "scripts": {
     "lint": "./vendor/bin/php-cs-fixer check . --using-cache=no",
     "test": "./vendor/bin/phpunit --do-not-cache-result --coverage-text --colors=never",
-    "analyse": "./vendor/bin/phpstan analyse --memory-limit 1G"
+    "analyse": "./vendor/bin/phpstan analyse --memory-limit 1G",
+    "eval": "./vendor/bin/neuron evaluation --path=app/AI/Neuron/Evals"
   },
   "repositories": [
     {

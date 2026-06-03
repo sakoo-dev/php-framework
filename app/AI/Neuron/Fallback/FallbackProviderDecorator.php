@@ -10,6 +10,7 @@ use NeuronAI\HttpClient\HttpClientInterface;
 use NeuronAI\Providers\AIProviderInterface;
 use NeuronAI\Providers\MessageMapperInterface;
 use NeuronAI\Providers\ToolMapperInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Provider decorator that tries each provider in order, falling back to the
@@ -21,11 +22,16 @@ use NeuronAI\Providers\ToolMapperInterface;
  */
 final class FallbackProviderDecorator implements AIProviderInterface
 {
+	private LoggerInterface $logger;
+
 	/**
 	 * @param AIProviderInterface[] $providers ordered list; first is primary
 	 */
 	public function __construct(private readonly array $providers)
 	{
+		// @phpstan-ignore-next-line
+		$this->logger = resolve('logger.ai');
+
 		if (!$providers) {
 			throw new \InvalidArgumentException('FallbackProviderDecorator requires at least one provider.');
 		}
@@ -48,13 +54,11 @@ final class FallbackProviderDecorator implements AIProviderInterface
 				return yield from $provider->stream(...$messages);
 			} catch (\Throwable $e) {
 				$lastException = $e;
+				$this->logger->warning('Provider ' . get_class($provider) . ' Failed due to:' . $e->getMessage());
 			}
 		}
 
-		throw new AllProvidersFailedException(
-			'All providers failed: ' . $lastException?->getMessage(),
-			previous: $lastException,
-		);
+		throw new AllProvidersFailedException('All providers failed: ' . $lastException?->getMessage(), previous: $lastException);
 	}
 
 	public function structured(array|Message $messages, string $class, array $response_schema): Message
@@ -117,12 +121,10 @@ final class FallbackProviderDecorator implements AIProviderInterface
 				return $call($provider);
 			} catch (\Throwable $e) {
 				$lastException = $e;
+				$this->logger->warning('Provider ' . get_class($provider) . ' Failed due to:' . $e->getMessage());
 			}
 		}
 
-		throw new AllProvidersFailedException(
-			'All providers failed: ' . $lastException?->getMessage(),
-			previous: $lastException,
-		);
+		throw new AllProvidersFailedException('All providers failed: ' . $lastException?->getMessage(), previous: $lastException);
 	}
 }

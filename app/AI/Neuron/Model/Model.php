@@ -8,11 +8,32 @@ use NeuronAI\HttpClient\HttpClientInterface;
 
 abstract class Model
 {
-	protected string $name = '';
+	private string $name = '';
 	/** @var array<string,mixed> */
-	protected array $parameters = [];
-	protected bool $strictResponse = false;
-	protected ?HttpClientInterface $httpClient = null;
+	private array $parameters = [];
+	private bool $strictResponse = false;
+	private ?HttpClientInterface $httpClient = null;
+
+	public function setName(string $name): void
+	{
+		$this->name = $name;
+	}
+
+	/**  @param array<string,mixed> $parameters */
+	public function setParameters(array $parameters): void
+	{
+		$this->parameters = $parameters;
+	}
+
+	public function setStrictResponse(bool $strictResponse): void
+	{
+		$this->strictResponse = $strictResponse;
+	}
+
+	public function setHttpClient(?HttpClientInterface $httpClient): void
+	{
+		$this->httpClient = $httpClient;
+	}
 
 	public function getName(): string
 	{

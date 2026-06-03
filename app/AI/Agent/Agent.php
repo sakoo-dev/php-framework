@@ -6,12 +6,17 @@ namespace App\AI\Agent;
 
 use App\AI\Mcp\McpContextProvider;
 use App\AI\Mcp\McpElements;
-use App\AI\Mcp\McpPromptFetchTool;
-use App\AI\Mcp\McpResourceFetchTool;
 use App\AI\Neuron\Model\ModelNameResolver;
 use App\AI\Neuron\Session\ChatHistory;
 use App\AI\Neuron\Session\ChatSession;
 use App\AI\Neuron\Session\SessionId;
+use App\AI\Neuron\Tool\PromptFetchTool;
+use App\AI\Neuron\Tool\ResourceFetchTool;
+use App\AI\Neuron\Tool\RetrievalTool;
+use Mcp\Capability\Attribute\McpPrompt;
+use Mcp\Capability\Attribute\McpResource;
+use NeuronAI\Agent\Events\AgentStartEvent;
+use NeuronAI\Agent\Events\AIInferenceEvent;
 use NeuronAI\Agent\SystemPrompt;
 use NeuronAI\Chat\History\ChatHistoryInterface;
 use NeuronAI\MCP\McpConnector;
@@ -31,6 +36,8 @@ use System\Path\Path;
 abstract class Agent extends RAG
 {
 	private ?McpContextProvider $contextProvider = null;
+
+	private static ?McpConnector $connector = null;
 
 	private ?ChatSession $session = null;
 
@@ -133,14 +140,66 @@ abstract class Agent extends RAG
 	/** @return ToolInterface[] */
 	protected function availableTools(): array
 	{
+		self::$connector ??= McpConnector::make(['command' => 'php', 'args' => ['assist', 'mcp:run']]);
+
 		return [
 			...FileSystemToolkit::make()->tools(),
 			...CalculatorToolkit::make()->tools(),
 			...CalendarToolkit::make()->tools(),
-			...McpConnector::make(['command' => 'php', 'args' => ['assist', 'mcp:run']])->tools(),
-			McpResourceFetchTool::make(McpElements::class),
-			McpPromptFetchTool::make(McpElements::class),
+			...self::$connector->tools(),
+			ResourceFetchTool::make(McpElements::class),
+			PromptFetchTool::make(McpElements::class),
+			new RetrievalTool($this),
 		];
+	}
+
+	protected function ragNodes(): array
+	{
+		return [];
+	}
+
+	protected function startEvent(): AgentStartEvent
+	{
+		$tools = $this->bootstrapTools();
+		$instructions = $this->resolveInstructions();
+
+		return new AIInferenceEvent($instructions, $tools);
+	}
+
+	/** @return string[] */
+	protected function availableContexts(): array
+	{
+		$contexts = [];
+
+		$reflection = new \ReflectionClass(McpElements::class);
+		$methods = $reflection->getMethods();
+
+		/** @var array<\ReflectionAttribute<object>> */
+		$attributes = [];
+
+		foreach ($methods as $method) {
+			$attributes = $attributes + $method->getAttributes(McpResource::class);
+			$attributes = $attributes + $method->getAttributes(McpPrompt::class);
+		}
+
+		/** @var \ReflectionAttribute<object> $context */
+		foreach ($attributes as $context) {
+			$instance = $context->newInstance();
+
+			if ($instance instanceof McpResource) {
+				$contexts[] = $instance->uri;
+
+				continue;
+			}
+
+			if ($instance instanceof McpPrompt) {
+				if (null !== $instance->name) {
+					$contexts[] = $instance->name;
+				}
+			}
+		}
+
+		return $contexts;
 	}
 
 	/** @return string[] */

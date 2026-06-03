@@ -138,23 +138,14 @@ Caches LLM responses keyed on deterministic hash of `(model, systemPrompt, userM
 On hit: set `MetricSource::Cache` in `WorkflowState` before continuing pipeline.
 On miss: set `MetricSource::Live`, run pipeline, store result.
 
-## Task 3: Planning
-- **Planner / Dry Run:**
-  explicit planning enables cost forecasting, dry-run gating, and risk-aware execution.
-  Show to user all your steps if they neeeds.
-  Dry run Reads `Plan` from `WorkflowState`.
-  Simulates execution: resolves tool calls and sub-agent tasks without hitting real providers.
-  Returns `DryRunReport` DTO: `estimatedTokens`, `estimatedCostUsd`, `wouldTriggerThrottle`, `risks[]`, ...
-  Throws `DryRunException` if simulation detects a blocking risk.
-  Gate: if `WorkflowState::get('dryRun') === true`, stop here with `StopEvent` — never execute live.
-
-## Task 4: Privacy & Security
-Content Regulator Applies to inbound `RequestEvent` and outbound `ResponseEvent`.
-  Writes audit line to `storage/ai/audit/{YYYY-MM-DD}.jsonl` using our audit/observability service in #Task1.
-  Classifies content as one of: `Restricted | Confidential | Internal | Public` (enum `ContentClassification`).
-  Privacy of Users is important to us. suggest any strategy to make it happen.
-  Also any illegal, unethical, abuse, self harm and ... prompt or responses should be filtered.
-  It can fulfill using Separate Planner & Executer Model, Code Analyses using Regex and Patterns, etc.
+## Task 3: Privacy & Security
+Content Regulator (Guardrail) Applies to inbound `RequestEvent` and outbound `ResponseEvent`.
+Writes audit line to `storage/ai/audit/{YYYY-MM-DD}.jsonl` using our audit/observability service in #Task1.
+Classifies content as one of: `Restricted | Confidential | Internal | Public` (enum `ContentClassification`).
+Privacy of Users is important to us. suggest any strategy to make it happen.
+Also any illegal, unethical, abuse, self harm and ... prompt or responses should be filtered.
+It can fulfill using Separate Planner & Executer Model, Code Analyses using Regex and Patterns, etc.
+Feel free to use Content Regulation REST API's like OpenAI to connect to a Compelete dataset of regulation red flags.
 
 ### Detection strategies
 each implements `DetectionStrategyInterface->detect(string $text): DetectionResult`:
@@ -162,13 +153,25 @@ each implements `DetectionStrategyInterface->detect(string $text): DetectionResu
 - `IllegalContentDetector` — patterns: CSAM, illegal weapons/drugs, IP piracy, regulatory violations.
 - `PromptInjectionDetector` — detects attempts to change agent purpose, tone, process, or privacy contract.
 - `PiiMaskingDetector` — masks email, phone, CC (Luhn-validated), SSN/Tax ID via regex; returns masked text.
+- `OpenAiDetector` — check with it's complete dataset of red flags.
 
 Dont limit yourself to above List. Complete them if it's possible.
 
+## Task 4: Planning
+- **Planner / Dry Run:**
+  explicit planning enables cost forecasting, dry-run gating, and risk-aware execution.
+  Show to user all your steps if they neeeds. make it compatible to visualize easyliy.
+  It shouldn't capture logs in real logs data store.
+  Dry run Reads `Plan` from `WorkflowState`.
+  Simulates execution: resolves tool calls and sub-agent tasks without hitting real providers.
+  Returns `DryRunReport` DTO: `estimatedTokens`, `estimatedCostUsd`, `wouldTriggerThrottle`, `risks[]`, ...
+  Throws `DryRunException` if simulation detects a blocking risk.
+  Gate: if `WorkflowState::get('dryRun') === true`, stop here with `StopEvent` — never execute live.
+
 ## Task 5: Scalability
-** Parallel & Isolated Sub Agents (Using NeuronAI Workflow Branching)**
+**Parallel & Isolated Sub Agents (Using NeuronAI Workflow Branching)**
 
 Parallel Sub-Agents
-Runs tasks concurrently via `Swoole` (inject `ConcurrencyDriverInterface` — no hardcoded driver).
+Runs tasks concurrently via `Swoole` or `Fork` (inject `ConcurrencyDriverInterface` — no hardcoded driver).
 Collects `SubAgentResult[]` into `WorkflowState` keyed by task name.
 Isolates failures: one sub-agent failure must not abort others; collect into `SubAgentResult::$error`.

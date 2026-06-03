@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\AI\Agent\Consult;
 
 use App\AI\Agent\Agent;
-use App\AI\Mcp\McpConsultTool;
+use App\AI\Neuron\Tool\ConsultTool;
 use NeuronAI\Providers\AIProviderInterface;
 use NeuronAI\Tools\ToolInterface;
 
@@ -24,7 +24,7 @@ final class WorkerAgent extends Agent
 
 	protected function agentInstructions(): string
 	{
-		return (string) file_get_contents(__DIR__ . '/../../Prompt/Skill/worker.md');
+		return (string) file_get_contents(__DIR__ . '/../../Prompt/Role/worker.md');
 	}
 
 	public function getName(): string
@@ -50,7 +50,7 @@ final class WorkerAgent extends Agent
 	protected function availableTools(): array
 	{
 		$tools = parent::availableTools();
-		$tools[] = McpConsultTool::make($this->architect);
+		$tools[] = ConsultTool::make($this->architect);
 
 		return $tools;
 	}

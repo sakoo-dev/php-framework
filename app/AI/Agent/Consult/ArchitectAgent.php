@@ -14,7 +14,7 @@ final class ArchitectAgent extends Agent
 	protected function provider(): AIProviderInterface
 	{
 		// @phpstan-ignore-next-line
-		return resolve($this->supportsThinking() ? 'ai.provider.opus.thinking' : 'ai.provider.opus');
+		return resolve($this->supportsThinking() ? 'ai.gapgpt.claude.opus.thinking' : 'ai.gapgpt.claude.opus');
 	}
 
 	protected function supportsThinking(): bool
@@ -24,7 +24,7 @@ final class ArchitectAgent extends Agent
 
 	protected function agentInstructions(): string
 	{
-		return (string) file_get_contents(__DIR__ . '/../../Prompt/Skill/architect.md');
+		return (string) file_get_contents(__DIR__ . '/../../Prompt/Role/architect.md');
 	}
 
 	public function getName(): string

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\AI\Neuron\Cache;
 
-use App\AI\Metric\MetricSource;
+use App\AI\Neuron\Metric\MetricSource;
 use NeuronAI\Chat\Messages\AssistantMessage;
 use NeuronAI\Chat\Messages\ContentBlocks\ReasoningContent;
 use NeuronAI\Chat\Messages\ContentBlocks\TextContent;

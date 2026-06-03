@@ -72,11 +72,8 @@ final class HighAvailableProviderBuilder
 		return $this;
 	}
 
-	public function withThrottle(
-		ThrottleStorageInterface $storage,
-		string $compositeKey,
-		ThrottleConfig $config,
-	): self {
+	public function withThrottle(ThrottleStorageInterface $storage, string $compositeKey, ThrottleConfig $config): self
+	{
 		$this->throttleStorage = $storage;
 		$this->throttleKey = $compositeKey;
 		$this->throttleConfig = $config;
@@ -103,7 +100,11 @@ final class HighAvailableProviderBuilder
 
 	public function build(): AIProviderInterface
 	{
-		$provider = !empty($this->fallbacks) ? new FallbackProviderDecorator([$this->primary, ...$this->fallbacks]) : $this->primary;
+		$provider = $this->primary;
+
+		if ($this->fallbacks) {
+			$provider = new FallbackProviderDecorator([$this->primary, ...$this->fallbacks]);
+		}
 
 		if ($this->retryPolicy) {
 			$provider = new RetryProviderDecorator($provider, $this->retryPolicy);

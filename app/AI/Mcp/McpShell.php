@@ -262,6 +262,36 @@ final class McpShell
 	}
 
 	/**
+	 * Runs the NeuronAI evaluations suite via the composer eval script.
+	 *
+	 * Executes `composer eval` (mapped to vendor/bin/neuron evaluation --path=app/AI/Evals)
+	 * and returns raw output, exit code, and parsed pass/fail counts.
+	 *
+	 * @return array{ok: bool, output: string, exitCode: int, passed: int, failed: int, total: int}
+	 */
+	public function evaluationsParsed(): array
+	{
+		$result = $this->run('composer eval --no-interaction 2>&1');
+		$output = $result['output'];
+		$exitCode = $result['exitCode'];
+
+		preg_match('/(\d+)\s+passed/i', $output, $passedMatch);
+		preg_match('/(\d+)\s+failed/i', $output, $failedMatch);
+
+		$passed = (int) ($passedMatch[1] ?? 0);
+		$failed = (int) ($failedMatch[1] ?? 0);
+
+		return [
+			'ok' => 0 === $exitCode,
+			'output' => $output,
+			'exitCode' => $exitCode,
+			'passed' => $passed,
+			'failed' => $failed,
+			'total' => $passed + $failed,
+		];
+	}
+
+	/**
 	 * Runs PHPStan static analysis.
 	 *
 	 * Uses a conservative memory limit to avoid OOM in constrained containers.

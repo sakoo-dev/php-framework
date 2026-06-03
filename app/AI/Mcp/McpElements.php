@@ -534,21 +534,23 @@ class McpElements
 
 	#[McpTool(
 		name: 'check_code',
-		description: 'Run PHPStan, PHPUnit, and PHP-CS-Fixer together as a full quality gate (equivalent to make check). Each tool is reported individually in structuredContent. Set fix=true to let PHP-CS-Fixer auto-correct style violations before evaluating the lint result.',
+		description: 'Run PHPStan, PHPUnit, PHP-CS-Fixer, and AI Evals together as a full quality gate. Each tool is reported individually in structuredContent. Set fix=true to let PHP-CS-Fixer auto-correct style violations before evaluating the lint result.',
 	)]
 	public function checkCodeTool(bool $fix = false): CallToolResult
 	{
 		$phpstan = $this->compactCheckResult($this->shell->phpstanParsed());
 		$phpunit = $this->compactCheckResult($this->shell->phpunitParsed());
 		$lint = $this->compactCheckResult($this->shell->phpCsFixerParsed($fix));
+		$evals = $this->shell->evaluationsParsed();
 
-		$allOk = $phpstan['ok'] && $phpunit['ok'] && $lint['ok'];
+		$allOk = $phpstan['ok'] && $phpunit['ok'] && $lint['ok'] && $evals['ok'];
 		$summaryText = sprintf(
-			'%s | phpstan:%s phpunit:%s lint:%s',
+			'%s | phpstan:%s phpunit:%s lint:%s evals:%s',
 			$allOk ? 'All checks passed' : 'Checks failed',
 			$phpstan['ok'] ? 'ok' : 'fail',
 			$phpunit['ok'] ? 'ok' : 'fail',
 			$lint['ok'] ? 'ok' : 'fail',
+			$evals['ok'] ? sprintf('ok(%d/%d)', $evals['passed'], $evals['total']) : sprintf('fail(%d/%d)', $evals['failed'], $evals['total']),
 		);
 
 		$structured = [
@@ -556,6 +558,13 @@ class McpElements
 			'phpstan' => $phpstan,
 			'phpunit' => $phpunit,
 			'lint' => $lint,
+			'evals' => [
+				'ok' => $evals['ok'],
+				'passed' => $evals['passed'],
+				'failed' => $evals['failed'],
+				'total' => $evals['total'],
+				'output' => $evals['output'],
+			],
 		];
 
 		$result = new CallToolResult(
@@ -564,7 +573,7 @@ class McpElements
 			structuredContent: $structured,
 		);
 
-		$this->observer->log('check_code', ['fix' => $fix], $summaryText);
+		$this->observer->log('check_code', ['fix' => $fix, 'evalsOk' => $evals['ok']], $summaryText);
 
 		return $result;
 	}
@@ -586,6 +595,39 @@ class McpElements
 			isError: !$ok,
 			structuredContent: ['ok' => $ok, 'exitCode' => $result['exitCode']],
 		);
+	}
+
+	#[McpTool(
+		name: 'run_evals',
+		description: 'Run the full AI evaluation suite (@./sakoo composer eval) and return a pass/fail summary with counts. Evals cover all Guard detectors: PII masking, prompt injection, unethical content, and illegal content. isError is set when any eval fails so the LLM is prompted to investigate.',
+	)]
+	public function runEvalsTool(): CallToolResult
+	{
+		$parsed = $this->shell->evaluationsParsed();
+
+		$summaryText = sprintf(
+			'%s | passed:%d failed:%d total:%d',
+			$parsed['ok'] ? 'Evals passed' : 'Evals failed',
+			$parsed['passed'],
+			$parsed['failed'],
+			$parsed['total'],
+		);
+
+		$result = new CallToolResult(
+			[new TextContent($summaryText . "\n\n" . $parsed['output'])],
+			isError: !$parsed['ok'],
+			structuredContent: [
+				'ok' => $parsed['ok'],
+				'passed' => $parsed['passed'],
+				'failed' => $parsed['failed'],
+				'total' => $parsed['total'],
+				'exitCode' => $parsed['exitCode'],
+			],
+		);
+
+		$this->observer->log('run_evals', [], $summaryText);
+
+		return $result;
 	}
 
 	#[McpTool(
@@ -751,7 +793,7 @@ class McpElements
 	}
 
 	#[McpResource(
-		uri: 'Skill://sakoo-identity',
+		uri: 'skill://sakoo-identity',
 		name: 'Sakoo-Identity',
 		description: 'Framework identity and positioning: what Sakoo is, its six value propositions, competitive stance against Laravel/Symfony, and the principles that define it. Use when generating documentation, READMEs, or marketing content.',
 		mimeType: 'text/markdown',
@@ -762,7 +804,7 @@ class McpElements
 	}
 
 	#[McpResource(
-		uri: 'Skill://prompt-engineering',
+		uri: 'skill://prompt-engineering',
 		name: 'Prompt-Engineering-Skill',
 		description: '3-tier prompt architecture (system/task/context), token budget rules per tier, guidelines for writing MCP attribute descriptions, and common prompt anti-patterns to avoid. Load when writing or reviewing system prompts or MCP definitions.',
 		mimeType: 'text/markdown',
@@ -773,7 +815,7 @@ class McpElements
 	}
 
 	#[McpResource(
-		uri: 'Skill://quality-assurance',
+		uri: 'skill://quality-assurance',
 		name: 'Quality-Assurance-Checklist',
 		description: 'Comprehensive code-review checklist: layer placement, dependency rules, aggregate boundaries, type safety, test coverage expectations, and the definition of done for a Sakoo pull request. Load before submitting or reviewing any change.',
 		mimeType: 'text/markdown',
@@ -784,7 +826,7 @@ class McpElements
 	}
 
 	#[McpResource(
-		uri: 'Skill://file-handling',
+		uri: 'skill://file-handling',
 		name: 'File-Handling-Skill',
 		description: 'Decision rules for reading files by size (full read / section sampling / grep), batch navigation patterns using MCP tools, and guidance on avoiding token waste with large files. Load before reading any file larger than 20 KB.',
 		mimeType: 'text/markdown',
@@ -795,7 +837,7 @@ class McpElements
 	}
 
 	#[McpResource(
-		uri: 'Skill://security-checklist',
+		uri: 'skill://security-checklist',
 		name: 'Security-Checklist',
 		description: 'Security review checklist covering authentication, authorization, session management, input/output validation, cryptography, availability, error handling, secure design, logging, server configuration, and VPS hardening. Load before reviewing or designing any security-sensitive feature.',
 		mimeType: 'text/markdown',
@@ -806,18 +848,18 @@ class McpElements
 	}
 
 	/**
-	 * @param string $fileName relative path under Assist/AI/Prompt/
+	 * @param string $fileName relative path under AI/Prompt/
 	 *
 	 * @return PromptMessage[]
 	 */
 	#[McpPrompt(
 		name: 'dev_task',
-		description: 'Load a story file as a structured developer task. Combines the senior engineer system prompt with a task file from Assist/AI/Prompt/ (e.g. Story/01-http-request-module.md) into a two-message prompt ready for agent invocation.',
+		description: 'Load a story file as a structured developer task. Combines the senior engineer system prompt with a task file from AI/Prompt/ (e.g. Story/01-http-request-module.md) into a two-message prompt ready for agent invocation.',
 	)]
 	public function devTaskPrompt(string $fileName): array
 	{
 		$userPromptPath = $this->resolvePromptFilePath($fileName);
-		$systemPrompt = File::open(Disk::Local, Path::getAppDir() . '/Assist/AI/Prompt/Skill/software-engineer.md')->readLines();
+		$systemPrompt = File::open(Disk::Local, Path::getAppDir() . '/AI/Prompt/Role/software-engineer.md')->readLines();
 		$userPrompt = File::open(Disk::Local, $userPromptPath)->readLines();
 
 		return [
@@ -868,18 +910,18 @@ class McpElements
 	}
 
 	/**
-	 * Resolves a dev_task prompt file and guarantees it stays under Assist/AI/Prompt.
+	 * Resolves a dev_task prompt file and guarantees it stays under AI/Prompt.
 	 *
 	 * @throws InvalidArgumentException
 	 */
 	private function resolvePromptFilePath(string $fileName): string
 	{
-		$promptBase = FileFinder::guard(Path::getAppDir() . '/Assist/AI/Prompt');
+		$promptBase = FileFinder::guard(Path::getAppDir() . '/AI/Prompt');
 		$resolved = FileFinder::guard($promptBase . '/' . ltrim($fileName, '/'));
 		$prefix = rtrim($promptBase, '/') . '/';
 
 		if (!str_starts_with($resolved, $prefix)) {
-			throw new InvalidArgumentException("Prompt path escapes Assist/AI/Prompt: {$fileName}");
+			throw new InvalidArgumentException("Prompt path escapes AI/Prompt: {$fileName}");
 		}
 
 		return $resolved;
@@ -972,7 +1014,7 @@ class McpElements
 
 	private function readSkillFile(string $relativePath): string
 	{
-		$lines = File::open(Disk::Local, Path::getAppDir() . '/Assist/AI/Prompt/' . $relativePath)->readLines();
+		$lines = File::open(Disk::Local, Path::getAppDir() . '/AI/Prompt/' . $relativePath)->readLines();
 
 		return implode(PHP_EOL, $lines);
 	}

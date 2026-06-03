@@ -23,15 +23,14 @@ class Claude extends Model
 		bool $extendedThinking = false,
 		?HttpClientInterface $httpClient = null,
 	) {
-		$this->name = $modelName;
-		$this->parameters = [];
+		$this->setName($modelName);
 		$params = [];
 
 		if ($extendedThinking) {
-			$this->parameters = ['thinking' => ['type' => 'enabled', 'budget_tokens' => 10000]];
+			$this->setParameters(['thinking' => ['type' => 'enabled', 'budget_tokens' => 10000]]);
 			$params = ['anthropic-beta' => 'interleaved-thinking-2025-05-14'];
 		}
 
-		$this->httpClient = ($httpClient?->withHeaders($params) ?? new GuzzleHttpClient($params));
+		$this->setHttpClient($httpClient?->withHeaders($params) ?? new GuzzleHttpClient($params));
 	}
 }
