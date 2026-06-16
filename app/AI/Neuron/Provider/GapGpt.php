@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace App\AI\Neuron\Provider;
 
 use App\AI\Neuron\Model\Model;
-use App\AI\Neuron\Model\ModelNameAwareInterface;
 use NeuronAI\HttpClient\HttpClientInterface;
 use NeuronAI\Providers\OpenAILike;
 use Sakoo\Framework\Core\Env\Env;
 
 // for more information: https://gapgpt.app/platform-v2
-class GapGpt extends OpenAILike implements ModelNameAwareInterface
+class GapGpt extends OpenAILike
 {
 	private const string BASE_URI = 'https://api.gapgpt.app/v1';
 
@@ -30,10 +29,5 @@ class GapGpt extends OpenAILike implements ModelNameAwareInterface
 			$model->getStrictResponse(),
 			$model->getHttpClient(),
 		);
-	}
-
-	public function modelName(): string
-	{
-		return $this->model;
 	}
 }

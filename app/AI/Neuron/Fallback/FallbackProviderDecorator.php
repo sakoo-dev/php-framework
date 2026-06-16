@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\AI\Neuron\Fallback;
 
+use App\AI\Neuron\AIProviderDecorator;
 use App\AI\Neuron\Fallback\Exception\AllProvidersFailedException;
 use NeuronAI\Chat\Messages\Message;
 use NeuronAI\HttpClient\HttpClientInterface;
@@ -20,9 +21,11 @@ use Psr\Log\LoggerInterface;
  * Throws AllProvidersFailedException when every provider in the chain fails,
  * wrapping the last caught exception as previous.
  */
-final class FallbackProviderDecorator implements AIProviderInterface
+final class FallbackProviderDecorator implements AIProviderDecorator
 {
 	private LoggerInterface $logger;
+	/** @phpstan-ignore property.onlyWritten */
+	private AIProviderInterface $inner;
 
 	/**
 	 * @param AIProviderInterface[] $providers ordered list; first is primary
@@ -31,10 +34,9 @@ final class FallbackProviderDecorator implements AIProviderInterface
 	{
 		// @phpstan-ignore-next-line
 		$this->logger = resolve('logger.ai');
+		$this->inner = $this->providers[0];
 
-		if (!$providers) {
-			throw new \InvalidArgumentException('FallbackProviderDecorator requires at least one provider.');
-		}
+		throwIf(!$providers, new \InvalidArgumentException('FallbackProviderDecorator requires at least one provider.'));
 	}
 
 	public function chat(Message ...$messages): Message
@@ -51,6 +53,9 @@ final class FallbackProviderDecorator implements AIProviderInterface
 
 		foreach ($this->providers as $provider) {
 			try {
+				$this->logger->info('Fallback Service: Try with ' . get_class($provider) . ' Provider');
+				$this->inner = $provider;
+
 				return yield from $provider->stream(...$messages);
 			} catch (\Throwable $e) {
 				$lastException = $e;
@@ -118,6 +123,9 @@ final class FallbackProviderDecorator implements AIProviderInterface
 
 		foreach ($this->providers as $provider) {
 			try {
+				$this->logger->info('Fallback Service: Try with ' . get_class($provider) . ' Provider');
+				$this->inner = $provider;
+
 				return $call($provider);
 			} catch (\Throwable $e) {
 				$lastException = $e;

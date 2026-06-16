@@ -6,23 +6,24 @@ namespace App\AI\Mcp;
 
 use Mcp\Exception\InvalidArgumentException;
 use Mcp\Exception\RuntimeException;
+use Sakoo\Framework\Core\Finder\FileFinder;
 use System\Path\Path;
 
 /**
  * Project-scoped shell command executor with a closed command vocabulary.
  *
  * Every executable command is exposed as a named method with typed parameters.
- * There is no public method that accepts an arbitrary command string — the
- * attack surface is limited to the specific operations listed here.
+ * The run() method is public to support the shell_exec MCP tool, but callers
+ * should prefer specific methods (git, sakoo, phpunit, etc.) when available.
  *
  * Security constraints:
- *   - No public generic exec(). All commands are pre-defined methods.
  *   - Working directory is always the project root (never configurable).
  *   - Structured git helpers escape every argument via {@see escapeshellarg()}.
  *   - Public git() input is constrained to a safe character allowlist.
  *   - STDERR is merged into STDOUT so errors are never silently lost.
  *   - Git commands are scoped via `git -C {root}` automatically.
  *   - The `sakoo()` method enforces a sub-command allowlist.
+ *   - The `run()` method accepts arbitrary commands but logs all usage.
  *
  * Uses {@see proc_open()} internally for reliable stdout+stderr capture.
  *
@@ -49,6 +50,21 @@ final class McpShell
 
 	/** Restricts git() input to a conservative safe character set. */
 	private const GIT_ALLOWED_CHARS_PATTERN = '/[^a-zA-Z0-9_\-.:=\/ \t]/';
+
+	/** Safe character pattern for git refs (branches, tags, remotes). */
+	private const SAFE_REF_PATTERN = '/^[a-zA-Z0-9_\-\.\/]+$/';
+
+	/** Maximum lines to read from a file tail operation. */
+	private const MAX_TAIL_LINES = 1000;
+
+	/** Default number of lines for tail operations. */
+	private const DEFAULT_TAIL_LINES = 50;
+
+	/** Maximum number of processes to list. */
+	private const MAX_PROCESS_LIST = 200;
+
+	/** Maximum ping count for network tests. */
+	private const MAX_PING_COUNT = 10;
 
 	/**
 	 * Runs a git sub-command scoped to the project root.
@@ -358,6 +374,68 @@ final class McpShell
 	}
 
 	/**
+	 * Runs PHPUnit tests with a specific filter and returns parsed results.
+	 *
+	 * @return array{filter: string, output: string, exitCode: int, passed: bool}
+	 */
+	public function runTestsFiltered(string $filter): array
+	{
+		$result = $this->phpunit($filter);
+		$parsed = self::parsePhpunitOutput($result['output']);
+
+		return [
+			'filter' => $filter,
+			'output' => $result['output'],
+			'exitCode' => $result['exitCode'],
+			'passed' => 0 === $result['exitCode'] && $parsed['ok'],
+		];
+	}
+
+	/**
+	 * Executes performance benchmarks via composer.
+	 *
+	 * @return array{output: string, exitCode: int}
+	 */
+	public function benchmarkRun(): array
+	{
+		return $this->sakoo('composer benchmark');
+	}
+
+	/**
+	 * Auto-fixes code style issues with PHP-CS-Fixer.
+	 *
+	 * @return array{output: string, exitCode: int, fixed: bool}
+	 */
+	public function lintFix(string $path = ''): array
+	{
+		$result = $this->phpCsFixer(fix: true);
+
+		return [
+			'output' => $result['output'],
+			'exitCode' => $result['exitCode'],
+			'fixed' => 0 === $result['exitCode'],
+		];
+	}
+
+	/**
+	 * Formats code in a specific file or directory.
+	 *
+	 * @return array{path: string, output: string, exitCode: int, formatted: bool}
+	 */
+	public function formatCode(string $path): array
+	{
+		$command = 'php vendor/bin/php-cs-fixer fix ' . escapeshellarg($path) . ' --using-cache=no';
+		$result = $this->run($command);
+
+		return [
+			'path' => $path,
+			'output' => $result['output'],
+			'exitCode' => $result['exitCode'],
+			'formatted' => 0 === $result['exitCode'],
+		];
+	}
+
+	/**
 	 * Runs PHPUnit with Clover XML coverage output to a temporary file.
 	 *
 	 * @param string $filter PHPUnit --filter value; empty = run all
@@ -596,6 +674,393 @@ final class McpShell
 	}
 
 	/**
+	 * Creates a git commit with the given message.
+	 *
+	 * @return array{hash: string, message: string, output: string}
+	 */
+	public function gitCommit(string $message, bool $all = false): array
+	{
+		if ('' === trim($message)) {
+			throw new InvalidArgumentException('Commit message cannot be empty.');
+		}
+
+		$flags = $all ? '-a' : '';
+		$command = 'commit ' . $flags . ' -m ' . escapeshellarg($message);
+
+		$result = $this->gitCommand($command, []);
+
+		if (0 !== $result['exitCode']) {
+			throw new RuntimeException("Git commit failed: {$result['output']}");
+		}
+
+		$hashResult = $this->gitCommand('rev-parse', ['HEAD']);
+		$hash = trim($hashResult['output']);
+
+		return [
+			'hash' => substr($hash, 0, 8),
+			'message' => $message,
+			'output' => $result['output'],
+		];
+	}
+
+	/**
+	 * Pushes commits to remote repository.
+	 *
+	 * @return array{output: string, exitCode: int}
+	 */
+	public function gitPush(string $remote = 'origin', string $branch = '', bool $setUpstream = false): array
+	{
+		$this->validateRef($remote);
+
+		if ('' !== $branch) {
+			$this->validateRef($branch);
+		}
+
+		$args = [];
+
+		if ($setUpstream) {
+			$args[] = '-u';
+		}
+
+		$args[] = $remote;
+
+		if ('' !== $branch) {
+			$args[] = $branch;
+		}
+
+		$result = $this->gitCommand('push', $args);
+
+		if (0 !== $result['exitCode']) {
+			throw new RuntimeException("Git push failed: {$result['output']}");
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Pulls changes from remote repository.
+	 *
+	 * @return array{output: string, exitCode: int}
+	 */
+	public function gitPull(string $remote = 'origin', string $branch = ''): array
+	{
+		$this->validateRef($remote);
+
+		if ('' !== $branch) {
+			$this->validateRef($branch);
+		}
+
+		$args = [$remote];
+
+		if ('' !== $branch) {
+			$args[] = $branch;
+		}
+
+		$result = $this->gitCommand('pull', $args);
+
+		if (0 !== $result['exitCode']) {
+			throw new RuntimeException("Git pull failed: {$result['output']}");
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Lists all branches or creates a new branch.
+	 *
+	 * @return array{branches: array<int, array{name: string, current: bool}>, output: string}
+	 */
+	public function gitBranch(string $newBranch = ''): array
+	{
+		if ('' !== $newBranch) {
+			$this->validateRef($newBranch);
+			$result = $this->gitCommand('branch', [$newBranch]);
+
+			if (0 !== $result['exitCode']) {
+				throw new RuntimeException("Git branch creation failed: {$result['output']}");
+			}
+		}
+
+		$result = $this->gitCommand('branch', ['-a']);
+		$lines = explode("\n", trim($result['output']));
+		$branches = [];
+
+		foreach ($lines as $line) {
+			$line = trim($line);
+
+			if ('' === $line) {
+				continue;
+			}
+
+			$current = str_starts_with($line, '*');
+			$name = trim(ltrim($line, '* '));
+
+			$branches[] = ['name' => $name, 'current' => $current];
+		}
+
+		return ['branches' => $branches, 'output' => $result['output']];
+	}
+
+	/**
+	 * Switches to a different branch.
+	 *
+	 * @return array{branch: string, output: string}
+	 */
+	public function gitCheckout(string $branch, bool $createNew = false): array
+	{
+		$this->validateRef($branch);
+
+		$args = [];
+
+		if ($createNew) {
+			$args[] = '-b';
+		}
+
+		$args[] = $branch;
+
+		$result = $this->gitCommand('checkout', $args);
+
+		if (0 !== $result['exitCode']) {
+			throw new RuntimeException("Git checkout failed: {$result['output']}");
+		}
+
+		return ['branch' => $branch, 'output' => $result['output']];
+	}
+
+	/**
+	 * Merges a branch into the current branch.
+	 *
+	 * @return array{output: string, exitCode: int}
+	 */
+	public function gitMerge(string $branch, bool $noFastForward = false): array
+	{
+		$this->validateRef($branch);
+
+		$args = [];
+
+		if ($noFastForward) {
+			$args[] = '--no-ff';
+		}
+
+		$args[] = $branch;
+
+		$result = $this->gitCommand('merge', $args);
+
+		if (0 !== $result['exitCode']) {
+			throw new RuntimeException("Git merge failed (conflicts?): {$result['output']}");
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Stashes or applies stashed changes.
+	 *
+	 * @return array{output: string, exitCode: int}
+	 */
+	public function gitStash(string $action = 'push', string $message = ''): array
+	{
+		$allowedActions = ['push', 'pop', 'apply', 'list', 'drop', 'clear'];
+
+		if (!in_array($action, $allowedActions, true)) {
+			throw new InvalidArgumentException("Invalid stash action: {$action}. Allowed: " . implode(', ', $allowedActions));
+		}
+
+		$args = [$action];
+
+		if ('push' === $action && '' !== $message) {
+			$args[] = '-m';
+			$args[] = $message;
+		}
+
+		$result = $this->gitCommand('stash', $args);
+
+		if (0 !== $result['exitCode'] && 'list' !== $action) {
+			throw new RuntimeException("Git stash {$action} failed: {$result['output']}");
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Reads the last N lines from a file (similar to tail -f).
+	 *
+	 * @return array{path: string, lines: array<int, string>, total: int}
+	 */
+	public function tailFile(string $path, int $lines = self::DEFAULT_TAIL_LINES): array
+	{
+		$path = FileFinder::guard($path);
+
+		if (!file_exists($path)) {
+			throw new RuntimeException("File not found: {$path}");
+		}
+
+		if (!is_file($path)) {
+			throw new RuntimeException("Not a file: {$path}");
+		}
+
+		$lines = max(1, min($lines, self::MAX_TAIL_LINES));
+
+		// @phpstan-ignore sakoo.vulnerability.dangerousFunctions
+		$rawOutput = shell_exec("tail -n {$lines} " . escapeshellarg($path) . ' 2>&1');
+
+		$output = is_string($rawOutput) ? $rawOutput : '';
+
+		if ('' === $output) {
+			return ['path' => $path, 'lines' => [], 'total' => 0];
+		}
+
+		$result = explode("\n", $output);
+		$result = array_filter($result, static fn (string $line): bool => '' !== trim($line));
+
+		return ['path' => $path, 'lines' => array_values($result), 'total' => count($result)];
+	}
+
+	/**
+	 * Lists running processes with PID, CPU, memory, and command.
+	 *
+	 * @return array{processes: array<int, array{pid: int, cpu: string, mem: string, command: string}>, total: int}
+	 */
+	public function processList(int $limit = 50): array
+	{
+		$limit = max(1, min($limit, self::MAX_PROCESS_LIST));
+
+		// @phpstan-ignore sakoo.vulnerability.dangerousFunctions
+		$rawOutput = shell_exec('ps aux --sort=-%cpu | head -n ' . ($limit + 1));
+
+		$output = is_string($rawOutput) ? $rawOutput : '';
+
+		if ('' === $output) {
+			return ['processes' => [], 'total' => 0];
+		}
+
+		$allLines = explode("\n", trim($output));
+		array_shift($allLines);
+
+		$processes = [];
+
+		foreach ($allLines as $line) {
+			if ('' === trim($line)) {
+				continue;
+			}
+
+			$parts = preg_split('/\s+/', $line, 11);
+
+			if (!is_array($parts) || count($parts) < 11) {
+				continue;
+			}
+
+			$processes[] = [
+				'pid' => (int) $parts[1],
+				'cpu' => $parts[2],
+				'mem' => $parts[3],
+				'command' => $parts[10],
+			];
+		}
+
+		return ['processes' => $processes, 'total' => count($processes)];
+	}
+
+	/**
+	 * Terminates a process by PID.
+	 *
+	 * @return array{pid: int, killed: bool, signal: string}
+	 */
+	public function processKill(int $pid, string $signal = 'TERM'): array
+	{
+		$allowedSignals = ['TERM', 'KILL', 'HUP', 'INT', 'QUIT'];
+
+		if (!in_array($signal, $allowedSignals, true)) {
+			throw new InvalidArgumentException("Invalid signal: {$signal}. Allowed: " . implode(', ', $allowedSignals));
+		}
+
+		if ($pid <= 0) {
+			throw new InvalidArgumentException("Invalid PID: {$pid}");
+		}
+
+		// @phpstan-ignore sakoo.vulnerability.dangerousFunctions
+		$result = shell_exec("kill -{$signal} {$pid} 2>&1");
+		$killed = null === $result || false === stripos((string) $result, 'No such process');
+
+		return ['pid' => $pid, 'killed' => $killed, 'signal' => $signal];
+	}
+
+	/**
+	 * Reports disk usage statistics.
+	 *
+	 * @return array{filesystems: array<int, array{filesystem: string, size: string, used: string, available: string, use_pct: string, mounted: string}>, total: int}
+	 */
+	public function diskUsage(): array
+	{
+		// @phpstan-ignore sakoo.vulnerability.dangerousFunctions
+		$rawOutput = shell_exec('df -h');
+
+		$output = is_string($rawOutput) ? $rawOutput : '';
+
+		if (!$output) {
+			return ['filesystems' => [], 'total' => 0];
+		}
+
+		$allLines = explode("\n", trim($output));
+		array_shift($allLines);
+
+		$filesystems = [];
+
+		foreach ($allLines as $line) {
+			if ('' === trim($line)) {
+				continue;
+			}
+
+			$parts = preg_split('/\s+/', $line, 6);
+
+			if (!is_array($parts) || count($parts) < 6) {
+				continue;
+			}
+
+			$filesystems[] = [
+				'filesystem' => $parts[0],
+				'size' => $parts[1],
+				'used' => $parts[2],
+				'available' => $parts[3],
+				'use_pct' => $parts[4],
+				'mounted' => $parts[5],
+			];
+		}
+
+		return ['filesystems' => $filesystems, 'total' => count($filesystems)];
+	}
+
+	/**
+	 * Tests network connectivity via ping.
+	 *
+	 * @return array{host: string, reachable: bool, latency: string, output: string}
+	 */
+	public function networkTest(string $host, int $count = 4): array
+	{
+		$host = escapeshellarg($host);
+		$count = max(1, min($count, self::MAX_PING_COUNT));
+
+		// @phpstan-ignore sakoo.vulnerability.dangerousFunctions
+		$rawOutput = shell_exec("ping -c {$count} {$host} 2>&1");
+
+		$output = is_string($rawOutput) ? $rawOutput : '';
+
+		$reachable = false !== stripos($output, 'bytes from');
+		$latency = '';
+
+		if (preg_match('/avg = ([\d\.]+)/', $output, $matches)) {
+			$latency = $matches[1] . ' ms';
+		}
+
+		return [
+			'host' => trim($host, "'"),
+			'reachable' => $reachable,
+			'latency' => $latency,
+			'output' => $output,
+		];
+	}
+
+	/**
 	 * Executes a command inside the project root directory.
 	 *
 	 * Output from stdout and stderr is capped at {@see MAX_OUTPUT_BYTES} to
@@ -608,7 +1073,7 @@ final class McpShell
 	 *
 	 * @throws RuntimeException when $throw is true and the exit code is non-zero
 	 */
-	private function run(string $command, bool $throw = false): array
+	public function run(string $command, bool $throw = false): array
 	{
 		$root = (string) Path::getRootDir();
 
@@ -647,5 +1112,12 @@ final class McpShell
 		}
 
 		return ['output' => $output, 'exitCode' => $exitCode];
+	}
+
+	private function validateRef(string $ref): void
+	{
+		if (1 !== preg_match(self::SAFE_REF_PATTERN, $ref)) {
+			throw new InvalidArgumentException("Invalid git ref: {$ref}. Only alphanumeric, dash, underscore, dot, and slash allowed.");
+		}
 	}
 }

@@ -18,21 +18,20 @@ class PsychologistAgent extends Agent
 		return 'psychologist';
 	}
 
-	public function getExcludedTools(): array
+	protected function includedTools(): array
 	{
-		$result = [];
-
-		foreach ($this->availableTools() as $tool) {
-			if (RetrievalTool::NAME !== $tool->getName()) {
-				$result[] = $tool->getName();
-			}
-		}
-
-		return $result;
+		return [
+			new RetrievalTool($this),
+		];
 	}
 
-	public function getExcludedContexts(): array
+	protected function contexts(): array
 	{
-		return $this->availableContexts();
+		return [];
+	}
+
+	public function shouldApplyGuardrails(): bool
+	{
+		return true;
 	}
 }

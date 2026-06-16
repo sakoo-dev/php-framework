@@ -106,14 +106,15 @@ trait Cacheable
 	 * @throws ClassNotInstantiableException
 	 * @throws ClassNotFoundException
 	 */
-	private function getTypeFactory(mixed $factory): mixed
+	private function getTypeFactory(mixed $factory): string
 	{
 		return match (true) {
 			is_string($factory) && empty($factory) => "''",
 			is_string($factory) && class_exists($factory) => $this->getClassFactory($factory),
 			is_object($factory) => $this->getClassFactory($factory::class),
 			is_callable($factory) => var_export($factory, true),
-			default => $factory,
+			// @phpstan-ignore argument.type
+			default => strval($factory),
 		};
 	}
 

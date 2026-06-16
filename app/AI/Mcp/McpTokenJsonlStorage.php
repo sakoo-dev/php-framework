@@ -14,7 +14,7 @@ use System\Path\Path;
  * behaviour. Swap this for a daily-file or database adapter by binding a
  * different McpTokenStorageInterface in AIServiceLoader.
  */
-final class JsonlMcpTokenStorage implements McpTokenStorageInterface
+final class McpTokenJsonlStorage implements McpTokenStorageInterface
 {
 	public function store(McpTokenEntry $entry): void
 	{

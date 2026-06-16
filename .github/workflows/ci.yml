@@ -33,11 +33,6 @@ jobs:
           cp ./stubs/environment/.env.ci.example .env
           fi
 
-      - name: Validate composer.json and composer.lock
-        run: |
-          composer validate --strict
-          composer audit
-
       - name: Cache composer packages
         id: composer-cache
         uses: actions/cache@v4
@@ -48,6 +43,11 @@ jobs:
       - name: Install dependencies
         if: steps.composer-cache.outputs.cache-hit != 'true'
         run: composer install --prefer-dist --no-progress --ignore-platform-reqs
+
+      - name: Validate composer.json and composer.lock
+        run: |
+          composer validate --strict
+          composer audit
 
       - name: Cache docker image
         id: docker-cache

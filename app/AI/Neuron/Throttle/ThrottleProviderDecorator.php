@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\AI\Neuron\Throttle;
 
+use App\AI\Neuron\AIProviderDecorator;
 use App\AI\Neuron\Throttle\Exception\ThrottleLimitExceededException;
 use NeuronAI\Chat\Messages\Message;
 use NeuronAI\HttpClient\HttpClientInterface;
@@ -21,7 +22,7 @@ use NeuronAI\Providers\ToolMapperInterface;
  * When the sliding-window limit is exceeded, ThrottleLimitExceededException is
  * thrown immediately with the number of seconds until a slot re-opens.
  */
-final class ThrottleProviderDecorator implements AIProviderInterface
+final class ThrottleProviderDecorator implements AIProviderDecorator
 {
 	public function __construct(
 		private readonly AIProviderInterface $inner,

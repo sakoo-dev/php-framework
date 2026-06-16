@@ -12,7 +12,7 @@ final class RagObserver implements ObserverInterface
 {
 	public function __construct(private Output $output) {}
 
-	public function onEvent(string $event, object $source, mixed $data = null): void
+	public function onEvent(string $event, object $source, mixed $data = null, ?string $branchId = null): void
 	{
 		//		$this->output->newLine();
 		//		$this->output->block((string) (!$data ?: get_class((object) $data)), Output::BG_MAGENTA);

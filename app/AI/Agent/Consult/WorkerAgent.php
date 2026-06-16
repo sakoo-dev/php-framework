@@ -6,8 +6,10 @@ namespace App\AI\Agent\Consult;
 
 use App\AI\Agent\Agent;
 use App\AI\Neuron\Tool\ConsultTool;
+use App\AI\Neuron\Tool\PromptFetchTool;
+use App\AI\Neuron\Tool\ResourceFetchTool;
+use App\AI\Neuron\Tool\RetrievalTool;
 use NeuronAI\Providers\AIProviderInterface;
-use NeuronAI\Tools\ToolInterface;
 
 final class WorkerAgent extends Agent
 {
@@ -32,26 +34,35 @@ final class WorkerAgent extends Agent
 		return 'worker';
 	}
 
-	public function getExcludedTools(): array
-	{
-		return [];
-	}
-
-	public function getExcludedContexts(): array
+	protected function includedTools(): array
 	{
 		return [
-			'skill://prompt-engineering',
-			'prompt:dev_task',
-			'prompt:review_file',
+			...$this->fileSystemTools(),
+			...$this->calculatorTools(),
+			...$this->calendarTools(),
+			...$this->mcpTools()->exclude([])->tools(),
+			ResourceFetchTool::make($this->mcpElementsClass()),
+			PromptFetchTool::make($this->mcpElementsClass()),
+			new RetrievalTool($this),
+			ConsultTool::make($this->architect),
 		];
 	}
 
-	/** @return ToolInterface[] */
-	protected function availableTools(): array
+	protected function contexts(): array
 	{
-		$tools = parent::availableTools();
-		$tools[] = ConsultTool::make($this->architect);
-
-		return $tools;
+		return [
+			'file://list',
+			'prompt://system',
+			'project://structure',
+			'project://info',
+			'project://makefile',
+			'project://commands',
+			'skill://architecture',
+			'skill://conventions',
+			'skill://sakoo-identity',
+			'skill://quality-assurance',
+			'skill://file-handling',
+			'skill://security-checklist',
+		];
 	}
 }

@@ -16,7 +16,7 @@ class McpServer
 	{
 		$discoverPath = Path::getAppDir() ?: __DIR__;
 		$sessionPath = Path::getStorageDir() . '/ai/mcp-sessions';
-		$icon = 'data:image/png;base64,' . base64_encode(file_get_contents(Path::getRootDir() . '/.github/static/logo-dark.png') ?: '');
+		$icon = 'https://avatars.githubusercontent.com/u/86832974?s=200&v=4';
 		/**
 		 * @var LoggerInterface $logger
 		 *

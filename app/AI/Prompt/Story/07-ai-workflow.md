@@ -157,7 +157,50 @@ each implements `DetectionStrategyInterface->detect(string $text): DetectionResu
 
 Dont limit yourself to above List. Complete them if it's possible.
 
-## Task 4: Planning
+
+## Task 4: PHP Token Killer
+- **Token Optimization:**
+  According to Huge Token Consumption of Agents, I want to create set of Tools to reduce Input Tokens.
+  I have 4 Solutions to fulfill this request:
+
+1) **Tool Search Tool:**  like Claude Desktop and Claude Code we should design a MCP Tool to find other MCP Tools.
+2) **Prune MCP Tools Results:** We shouldn't store all MCP Tool Results in Chat History to keep context minimal.
+3) **MCP Tools Result Normalization:** some of MCP Tools generate huge Boilerplates and Unnecessary data for LLMs. we should create customized Token Optimizer for each of them using PHP Attributes:
+```php
+#[GitDiffPTK]
+#[GitStatusPTK]
+#[GitLogsPTK]
+#[ComposerPTK]
+#[PhpUnitPTK]
+#[PhpStanPTK]
+```
+4) **Prompt Optimization:**
+- Remove Extra Whitespaces
+- Remove unnecessary Stop Words
+- Remove deduplicated and Unnecessary Phrases or Aggreegate them: 
+```bash
+# Remove it
+On branch main
+
+Your branch is up to date with 'origin/main'.
+```
+```bash
+PASS
+PASS
+PASS
+PASS
+PASS
+PASS
+PASS
+
+# Should be Convert to:
+
+PASS (x7)
+```
+- Truncate Large file (such as logs, etc)
+
+
+## Task 5: Planning
 - **Planner / Dry Run:**
   explicit planning enables cost forecasting, dry-run gating, and risk-aware execution.
   Show to user all your steps if they neeeds. make it compatible to visualize easyliy.
@@ -168,7 +211,7 @@ Dont limit yourself to above List. Complete them if it's possible.
   Throws `DryRunException` if simulation detects a blocking risk.
   Gate: if `WorkflowState::get('dryRun') === true`, stop here with `StopEvent` — never execute live.
 
-## Task 5: Scalability
+## Task 6: Scalability
 **Parallel & Isolated Sub Agents (Using NeuronAI Workflow Branching)**
 
 Parallel Sub-Agents

@@ -27,6 +27,7 @@ final class HttpClient implements HttpClientInterface
 	public function __construct(
 		private readonly HttpDriverInterface $driver,
 		private readonly HttpFactory $factory,
+		// @phpstan-ignore property.onlyWritten
 		private readonly float $timeout = 3.0,
 		private readonly array $headers = [],
 	) {}

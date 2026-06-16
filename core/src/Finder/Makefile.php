@@ -69,7 +69,7 @@ readonly class Makefile
 	{
 		preg_match('/^([a-zA-Z_-]+):/', $line, $matches);
 
-		return $matches[1];
+		return $matches[1] ?? '';
 	}
 
 	/**

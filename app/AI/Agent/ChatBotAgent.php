@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\AI\Agent;
 
+use App\AI\Neuron\Tool\PromptFetchTool;
+use App\AI\Neuron\Tool\ResourceFetchTool;
+use App\AI\Neuron\Tool\RetrievalTool;
+
 class ChatBotAgent extends Agent
 {
 	protected function agentInstructions(): string
@@ -16,20 +20,23 @@ class ChatBotAgent extends Agent
 		return 'chatbot';
 	}
 
-	public function getExcludedTools(): array
-	{
-		return ['write_file', 'remove_file', 'sakoo_exec', 'test_run', 'test_coverage', 'check_code'] + $this->neuronToolkitNames();
-	}
-
-	public function getExcludedContexts(): array
+	protected function includedTools(): array
 	{
 		return [
-			'file://list',
-			'prompt://system',
-			'project://makefile',
-			'skill://prompt-engineering',
-			'prompt:dev_task',
-			'prompt:review_file',
+			...$this->mcpTools()->only([])->tools(),
+			ResourceFetchTool::make($this->mcpElementsClass()),
+			PromptFetchTool::make($this->mcpElementsClass()),
+			new RetrievalTool($this),
+		];
+	}
+
+	protected function contexts(): array
+	{
+		return [
+			'project://structure',
+			'project://info',
+			'project://commands',
+			'skill://sakoo-identity',
 		];
 	}
 }

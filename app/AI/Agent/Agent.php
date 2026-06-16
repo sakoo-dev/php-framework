@@ -4,17 +4,26 @@ declare(strict_types=1);
 
 namespace App\AI\Agent;
 
+use App\AI\Mcp\LineDelimitedMcpConnector;
 use App\AI\Mcp\McpContextProvider;
 use App\AI\Mcp\McpElements;
-use App\AI\Neuron\Model\ModelNameResolver;
+use App\AI\Mcp\McpTokenCalculator;
+use App\AI\Neuron\AIProviderDecorator;
+use App\AI\Neuron\Middleware\ToolResultOptimizationMiddleware;
+use App\AI\Neuron\Middleware\ToolResultPruningMiddleware;
+use App\AI\Neuron\Optimizer\Normalizer\ComposerNormalizer;
+use App\AI\Neuron\Optimizer\Normalizer\GitDiffNormalizer;
+use App\AI\Neuron\Optimizer\Normalizer\GitLogsNormalizer;
+use App\AI\Neuron\Optimizer\Normalizer\GitStatusNormalizer;
+use App\AI\Neuron\Optimizer\Normalizer\PhpStanNormalizer;
+use App\AI\Neuron\Optimizer\Normalizer\PhpUnitNormalizer;
+use App\AI\Neuron\Optimizer\PromptOptimizerInterface;
+use App\AI\Neuron\Optimizer\Strategy\RecentToolResultsPruningStrategy;
+use App\AI\Neuron\Optimizer\ToolResultNormalizerRegistry;
 use App\AI\Neuron\Session\ChatHistory;
 use App\AI\Neuron\Session\ChatSession;
 use App\AI\Neuron\Session\SessionId;
-use App\AI\Neuron\Tool\PromptFetchTool;
-use App\AI\Neuron\Tool\ResourceFetchTool;
-use App\AI\Neuron\Tool\RetrievalTool;
-use Mcp\Capability\Attribute\McpPrompt;
-use Mcp\Capability\Attribute\McpResource;
+use App\AI\Neuron\Tool\SearchMcpToolsTool;
 use NeuronAI\Agent\Events\AgentStartEvent;
 use NeuronAI\Agent\Events\AIInferenceEvent;
 use NeuronAI\Agent\SystemPrompt;
@@ -29,27 +38,32 @@ use NeuronAI\Tools\ToolInterface;
 use NeuronAI\Tools\Toolkits\Calculator\CalculatorToolkit;
 use NeuronAI\Tools\Toolkits\Calendar\CalendarToolkit;
 use NeuronAI\Tools\Toolkits\FileSystem\FileSystemToolkit;
+use NeuronAI\Workflow\Middleware\WorkflowMiddleware;
 use Sakoo\Framework\Core\FileSystem\Disk;
 use Sakoo\Framework\Core\FileSystem\File;
 use System\Path\Path;
 
 abstract class Agent extends RAG
 {
+	public const int CONTEXT_WINDOW = 50000;
 	private ?McpContextProvider $contextProvider = null;
-
-	private static ?McpConnector $connector = null;
-
 	private ?ChatSession $session = null;
+	private static McpConnector $connector;
 
 	abstract public function getName(): string;
 
 	abstract protected function agentInstructions(): string;
 
 	/** @return string[] */
-	abstract public function getExcludedTools(): array;
+	protected function contexts(): array
+	{
+		return [];
+	}
 
-	/** @return string[] */
-	abstract public function getExcludedContexts(): array;
+	/**
+	 * @return ToolInterface[]
+	 */
+	abstract protected function includedTools(): array;
 
 	/**
 	 * Declares whether this agent benefits from Claude's extended-thinking feature.
@@ -80,23 +94,18 @@ abstract class Agent extends RAG
 		return $this;
 	}
 
+	public function shouldApplyGuardrails(): bool
+	{
+		return false;
+	}
+
 	final protected function instructions(): string
 	{
 		$base = $this->agentInstructions();
-		$extra = $this->contextProvider?->resolve() ?? [];
+		$contexts = $this->contextProvider?->resolve($this->contexts()) ?? [];
 
 		return (string) new SystemPrompt(
-			background: array_merge([$base], $extra),
-		);
-	}
-
-	final protected function tools(): array
-	{
-		$all = $this->availableTools();
-		$excluded = array_flip($this->getExcludedTools());
-
-		return array_values(
-			array_filter($all, fn (ToolInterface $tool) => !isset($excluded[$tool->getName()])),
+			background: array_merge([$base], $contexts),
 		);
 	}
 
@@ -133,29 +142,57 @@ abstract class Agent extends RAG
 		return new ChatHistory(
 			directory: Path::getStorageDir() . '/ai/chat-history',
 			key: $resolved->historyKey(),
-			contextWindow: 50000,
+			contextWindow: self::CONTEXT_WINDOW,
 		);
 	}
 
-	/** @return ToolInterface[] */
-	protected function availableTools(): array
+	/**
+	 * @return class-string
+	 */
+	protected function mcpElementsClass(): string
 	{
-		self::$connector ??= McpConnector::make(['command' => 'php', 'args' => ['assist', 'mcp:run']]);
+		return McpElements::class;
+	}
 
-		return [
-			...FileSystemToolkit::make()->tools(),
-			...CalculatorToolkit::make()->tools(),
-			...CalendarToolkit::make()->tools(),
-			...self::$connector->tools(),
-			ResourceFetchTool::make(McpElements::class),
-			PromptFetchTool::make(McpElements::class),
-			new RetrievalTool($this),
-		];
+	/** @return ToolInterface[] */
+	protected function fileSystemTools(): array
+	{
+		return FileSystemToolkit::make()->tools();
+	}
+
+	/** @return ToolInterface[] */
+	protected function calculatorTools(): array
+	{
+		return CalculatorToolkit::make()->tools();
+	}
+
+	/** @return ToolInterface[] */
+	protected function calendarTools(): array
+	{
+		return CalendarToolkit::make()->tools();
+	}
+
+	protected function mcpTools(): McpConnector
+	{
+		self::$connector ??= LineDelimitedMcpConnector::make(['command' => 'php', 'args' => [Path::getRootDir() . '/assist', 'mcp:run']]);
+
+		return self::$connector;
 	}
 
 	protected function ragNodes(): array
 	{
 		return [];
+	}
+
+	protected function tools(): array
+	{
+		$includedTools = $this->includedTools();
+		$availableTools = array_map(fn (ToolInterface $tool) => ['name' => $tool->getName(), 'description' => $tool->getDescription() ?? ''], $includedTools);
+
+		return [
+			new SearchMcpToolsTool($availableTools),
+			...$includedTools,
+		];
 	}
 
 	protected function startEvent(): AgentStartEvent
@@ -166,56 +203,89 @@ abstract class Agent extends RAG
 		return new AIInferenceEvent($instructions, $tools);
 	}
 
-	/** @return string[] */
-	protected function availableContexts(): array
+	/** @return WorkflowMiddleware[] */
+	protected function globalMiddleware(): array
 	{
-		$contexts = [];
+		$registry = new ToolResultNormalizerRegistry([
+			'git-status' => new GitStatusNormalizer(),
+			'git_status' => new GitStatusNormalizer(),
+			'git-diff' => new GitDiffNormalizer(),
+			'git_diff' => new GitDiffNormalizer(),
+			'git-log' => new GitLogsNormalizer(),
+			'git_log' => new GitLogsNormalizer(),
+			'git-logs' => new GitLogsNormalizer(),
+			'composer' => new ComposerNormalizer(),
+			'composer-install' => new ComposerNormalizer(),
+			'composer-update' => new ComposerNormalizer(),
+			'phpunit' => new PhpUnitNormalizer(),
+			'php-unit' => new PhpUnitNormalizer(),
+			'test' => new PhpUnitNormalizer(),
+			'test_run' => new PhpUnitNormalizer(),
+			'run_tests_filtered' => new PhpUnitNormalizer(),
+			'phpstan' => new PhpStanNormalizer(),
+			'php-stan' => new PhpStanNormalizer(),
+			'phpstan_analyse' => new PhpStanNormalizer(),
+			'static-analysis' => new PhpStanNormalizer(),
+		]);
 
-		$reflection = new \ReflectionClass(McpElements::class);
-		$methods = $reflection->getMethods();
-
-		/** @var array<\ReflectionAttribute<object>> */
-		$attributes = [];
-
-		foreach ($methods as $method) {
-			$attributes = $attributes + $method->getAttributes(McpResource::class);
-			$attributes = $attributes + $method->getAttributes(McpPrompt::class);
-		}
-
-		/** @var \ReflectionAttribute<object> $context */
-		foreach ($attributes as $context) {
-			$instance = $context->newInstance();
-
-			if ($instance instanceof McpResource) {
-				$contexts[] = $instance->uri;
-
-				continue;
-			}
-
-			if ($instance instanceof McpPrompt) {
-				if (null !== $instance->name) {
-					$contexts[] = $instance->name;
-				}
-			}
-		}
-
-		return $contexts;
-	}
-
-	/** @return string[] */
-	protected function neuronToolkitNames(): array
-	{
-		$toolkits = [
-			...FileSystemToolkit::make()->tools(),
-			...CalculatorToolkit::make()->tools(),
-			...CalendarToolkit::make()->tools(),
+		return [
+			new ToolResultOptimizationMiddleware($registry, resolve(PromptOptimizerInterface::class), resolve(McpTokenCalculator::class)),
+			new ToolResultPruningMiddleware(new RecentToolResultsPruningStrategy(15)),
 		];
-
-		return array_map(fn (ToolInterface $t): string => $t->getName(), $toolkits);
 	}
 
 	public function getModelName(): string
 	{
-		return ModelNameResolver::resolve($this->provider());
+		return $this->resolveModelName($this->provider());
+	}
+
+	public function getProviderName(): string
+	{
+		return $this->resolveProviderName($this->provider());
+	}
+
+	private function resolveModelName(AIProviderInterface $provider): string
+	{
+		if ($provider instanceof AIProviderDecorator) {
+			/** @var AIProviderInterface $inner */
+			$inner = $this->readProperty($provider, 'inner');
+
+			return $this->resolveModelName($inner);
+		}
+
+		/** @var string $modelName */
+		$modelName = $this->readProperty($provider, 'model');
+
+		return (string) $modelName;
+	}
+
+	private function resolveProviderName(AIProviderInterface $provider): string
+	{
+		if ($provider instanceof AIProviderDecorator) {
+			/** @var AIProviderInterface $inner */
+			$inner = $this->readProperty($provider, 'inner');
+
+			return $this->resolveProviderName($inner);
+		}
+
+		/** @var string $providerName */
+		$providerName = $this->readProperty($provider, 'baseUri') ?? $this->readProperty($provider, 'url');
+
+		return (string) $providerName;
+	}
+
+	private function readProperty(AIProviderInterface $provider, string $property): mixed
+	{
+		$reflection = new \ReflectionObject($provider);
+
+		if (!$reflection->hasProperty($property)) {
+			return null;
+		}
+
+		$property = $reflection->getProperty($property);
+		$property->setAccessible(true);
+		$value = $property->getValue($provider);
+
+		return $value ?: null;
 	}
 }

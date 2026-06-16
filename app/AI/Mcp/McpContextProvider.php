@@ -12,33 +12,22 @@ use Mcp\Capability\Attribute\McpResource;
  */
 final class McpContextProvider
 {
-	/** @var string[] */
-	private array $excluded = [];
-
 	/** @param class-string $sourceClass Class whose methods carry #[McpResource] / #[McpPrompt] attributes */
 	public function __construct(private string $sourceClass) {}
-
-	/**
-	 * @param string[] $excluded URIs / prompt names to omit from the index
-	 */
-	public function exclude(array $excluded): self
-	{
-		$this->excluded = $excluded;
-
-		return $this;
-	}
 
 	/**
 	 * Returns a single-element array containing the compact index block (~400 tokens).
 	 * This replaces the previous ~45 k token payload of the eager provider.
 	 *
+	 * @param string[] $included URIs / prompt names to add to index
+	 *
 	 * @return string[]
 	 */
-	public function resolve(): array
+	public function resolve(array $included): array
 	{
-		$entries = $this->scanEntries($this->sourceClass);
+		$entries = $this->scanEntries($this->sourceClass, $included);
 
-		if ([] === $entries) {
+		if (!$entries) {
 			return [];
 		}
 
@@ -56,17 +45,18 @@ final class McpContextProvider
 	 * and return a flat list of compact index entries.
 	 *
 	 * @param class-string $sourceClass
+	 * @param string[] $included
 	 *
 	 * @return list<array{type: 'prompt'|'resource', id: string, description: string}>
 	 */
-	private function scanEntries(string $sourceClass): array
+	private function scanEntries(string $sourceClass, array $included): array
 	{
 		$entries = [];
 
-		/** @var \ReflectionClass<object> $rc */
-		$rc = new \ReflectionClass($sourceClass);
+		/** @var \ReflectionClass<object> $reflectionClass */
+		$reflectionClass = new \ReflectionClass($sourceClass);
 
-		foreach ($rc->getMethods() as $method) {
+		foreach ($reflectionClass->getMethods() as $method) {
 			foreach ($method->getAttributes() as $attribute) {
 				$attrName = $attribute->getName();
 
@@ -74,11 +64,15 @@ final class McpContextProvider
 					/** @var McpResource $attr */
 					$attr = $attribute->newInstance();
 
-					if ('' === $attr->uri || in_array($attr->uri, $this->excluded)) {
+					if (!in_array($attr->uri, $included)) {
 						continue;
 					}
 
-					$entries[] = ['type' => 'resource', 'id' => $attr->uri, 'description' => $attr->description ?? ''];
+					$entries[] = [
+						'type' => 'resource',
+						'id' => $attr->uri,
+						'description' => $attr->description ?? '',
+					];
 				}
 
 				if (McpPrompt::class === $attrName) {
@@ -88,13 +82,16 @@ final class McpContextProvider
 
 					/** @var McpPrompt $attr */
 					$attr = $attribute->newInstance();
-					$name = $attr->name ?? '';
 
-					if ('' === $name || in_array($name, $this->excluded)) {
+					if (!in_array($attr->name, $included)) {
 						continue;
 					}
 
-					$entries[] = ['type' => 'prompt', 'id' => $name, 'description' => $attr->description ?? ''];
+					$entries[] = [
+						'type' => 'prompt',
+						'id' => $attr->name ?? '',
+						'description' => $attr->description ?? '',
+					];
 				}
 			}
 		}

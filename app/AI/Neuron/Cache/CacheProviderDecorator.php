@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\AI\Neuron\Cache;
 
+use App\AI\Neuron\AIProviderDecorator;
 use App\AI\Neuron\Metric\MetricSource;
 use NeuronAI\Chat\Messages\AssistantMessage;
 use NeuronAI\Chat\Messages\ContentBlocks\ReasoningContent;
@@ -46,7 +47,7 @@ use NeuronAI\Tools\ToolInterface;
  *
  * Streaming and structured calls pass through without caching.
  */
-final class CacheProviderDecorator implements AIProviderInterface
+final class CacheProviderDecorator implements AIProviderDecorator
 {
 	private ?string $systemPromptValue = null;
 	private MetricSource $lastSource = MetricSource::Live;

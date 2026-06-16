@@ -4,6 +4,7 @@ services:
     build:
       context: .
       dockerfile: docker/sakoo.app/Dockerfile
+    container_name: sakoo.app
     image: ${DOCKER_IMAGE}
     restart: unless-stopped
     extra_hosts:

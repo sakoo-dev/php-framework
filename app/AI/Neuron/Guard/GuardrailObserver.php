@@ -45,7 +45,7 @@ final class GuardrailObserver implements ObserverInterface
 		private readonly string $agentName,
 	) {}
 
-	public function onEvent(string $event, object $source, mixed $data = null): void
+	public function onEvent(string $event, object $source, mixed $data = null, ?string $branchId = null): void
 	{
 		if ($data instanceof InferenceStart) {
 			$this->guardRequest($data);

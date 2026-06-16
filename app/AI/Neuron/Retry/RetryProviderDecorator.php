@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\AI\Neuron\Retry;
 
+use App\AI\Neuron\AIProviderDecorator;
 use App\AI\Neuron\Retry\Exception\MaxRetriesExceededException;
 use NeuronAI\Chat\Messages\Message;
 use NeuronAI\HttpClient\HttpClientInterface;
@@ -25,7 +26,7 @@ use NeuronAI\Providers\ToolMapperInterface;
  * Note: stream() retries are limited to generator construction, not streaming
  * execution, due to generator semantics — keep this in mind for long streams.
  */
-final class RetryProviderDecorator implements AIProviderInterface
+final class RetryProviderDecorator implements AIProviderDecorator
 {
 	public function __construct(
 		private readonly AIProviderInterface $inner,

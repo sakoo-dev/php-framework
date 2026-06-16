@@ -26,18 +26,20 @@ use App\AI\Neuron\Metric\QualityEvaluatorInterface;
 use App\AI\Neuron\Session\ChatSession;
 use App\AI\Neuron\Session\ChatSessionRepository;
 use App\AI\Neuron\Session\SessionId;
+use App\AI\Neuron\State\AgentStreamState;
 use App\Assist\Commands\Formatter\CliAgentStreamFormatter;
 use NeuronAI\Chat\Messages\Stream\Chunks\StreamChunk;
 use NeuronAI\Chat\Messages\UserMessage;
 use NeuronAI\Exceptions\ChatHistoryException;
 use NeuronAI\Exceptions\WorkflowException;
+use NeuronAI\MCP\McpException;
 use NeuronAI\Observability\LogObserver;
-use NeuronAI\Providers\AIProviderInterface;
 use NeuronAI\Workflow\Interrupt\WorkflowInterrupt;
 use Psr\Log\LoggerInterface;
 use Sakoo\Framework\Core\Console\Command;
 use Sakoo\Framework\Core\Console\Input;
 use Sakoo\Framework\Core\Console\Output;
+use System\Path\Path;
 
 class AgentCommand extends Command
 {
@@ -69,14 +71,8 @@ class AgentCommand extends Command
 
 		/** @var Agent $agent */
 		$agent = $this->buildAgent($selectedClass);
-
 		$session = $this->resolveSession($agent->getName(), $input, $output);
-
 		$mcpContextProvider = new McpContextProvider(McpElements::class);
-		$mcpContextProvider = $mcpContextProvider->exclude($agent->getExcludedContexts());
-
-		/** @var AIProviderInterface $provider */
-		$provider = resolve(AIProviderInterface::class);
 
 		/** @var LoggerInterface $logger */
 		// @phpstan-ignore argument.type
@@ -89,7 +85,7 @@ class AgentCommand extends Command
 			sessionId: $session->sessionId,
 			agentName: $agent->getName(),
 			modelName: $agent->getModelName(),
-			providerName: $provider::class,
+			providerName: $agent->getProviderName(),
 			source: MetricSource::Live,
 		);
 
@@ -122,8 +118,11 @@ class AgentCommand extends Command
 
 			$agent->observe($logObserver);
 			$agent->observe($metricObserver);
-			$agent->observe($guardrailObserver);
 			$agent->observe($ragObserver);
+
+			if ($agent->shouldApplyGuardrails()) {
+				$agent->observe($guardrailObserver);
+			}
 
 			$agent->withSession($session);
 			$agent->withMcpContext($mcpContextProvider);
@@ -149,7 +148,9 @@ class AgentCommand extends Command
 					$previousChunk = $chunk;
 				}
 
-				$guardrailObserver->guardText($agentStream->getMessage()->getContent() ?? '', GuardrailObserver::RESPONSE);
+				if ($agent->shouldApplyGuardrails()) {
+					$guardrailObserver->guardText($agentStream->getMessage()->getContent() ?? '', GuardrailObserver::RESPONSE);
+				}
 			} catch (GuardViolationException $e) {
 				$output->newLine();
 				$output->block('⚠ ' . $e->classification->value . ': ' . $e->reason, Output::COLOR_RED);
@@ -175,7 +176,24 @@ class AgentCommand extends Command
 
 				continue;
 			} catch (\Throwable $e) {
+				if ($this->isOrphanedToolUseError($e->getMessage())) {
+					// @phpstan-ignore method.notFound
+					$agent->getChatHistory()->removeLastLog();
+					$output->block('Orphaned tool_use detected — pruned history, retrying...', Output::COLOR_RED);
+					$previousPrompt = $prompt;
+
+					continue;
+				}
+
+				if ($this->isMcpToolFile($e->getFile()) || $e instanceof McpException) {
+					$output->block('MCP Tool Error. Retrying...', Output::COLOR_RED);
+					$previousPrompt = $prompt;
+
+					continue;
+				}
+
 				$output->block(get_class($e) . ': ' . $e->getMessage(), Output::COLOR_RED);
+				//				$output->block($e->getTraceAsString(), Output::COLOR_RED);
 
 				continue;
 			}
@@ -183,9 +201,22 @@ class AgentCommand extends Command
 			$output->newLine();
 			/** @phpstan-ignore variable.undefined */
 			$agentUsage = $agentStream->getMessage()->getUsage();
-			$output->block('Input Tokens: ' . ($agentUsage->inputTokens ?? 'N/A'), Output::COLOR_MAGENTA);
+
+			$rawState = $agentStream->run();
+			$state = AgentStreamState::fromArray($rawState->all());
+
+			$contextWindow = $agent::CONTEXT_WINDOW;
+			$inputTokens = $agentUsage->inputTokens ?? 0;
+			$contextUsagePercent = $contextWindow > 0 ? round(($inputTokens / $contextWindow) * 100, 1) : 0;
+
+			$output->block('Powered By: ' . $agent->getProviderName() . ' | ' . $agent->getModelName(), Output::COLOR_MAGENTA);
+			$output->block('Input Tokens: ' . $inputTokens . ' (' . $contextUsagePercent . '% of context)', Output::COLOR_MAGENTA);
 			$output->block('Output Tokens: ' . ($agentUsage->outputTokens ?? 'N/A'), Output::COLOR_MAGENTA);
 			$output->block('Total Tokens: ' . ($agentUsage?->getTotal() ?? 'N/A'), Output::COLOR_MAGENTA);
+
+			if ($state->hasOptimization()) {
+				$output->block('⚡ Optimization: Saved ' . $state->tokensSaved() . ' tokens (' . $state->savingsPercent() . '% reduction)', Output::COLOR_CYAN);
+			}
 		}
 
 		// @phpstan-ignore deadCode.unreachable
@@ -241,5 +272,15 @@ class AgentCommand extends Command
 		}
 
 		return $class::make();
+	}
+
+	private function isOrphanedToolUseError(string $message): bool
+	{
+		return str_contains($message, 'tool_use` ids were found without `tool_result`');
+	}
+
+	private function isMcpToolFile(string $file): bool
+	{
+		return str_starts_with($file, Path::getVendorDir() . '/neuron-core/neuron-ai/src/Tools') || str_starts_with($file, Path::getAppDir() . '/AI/Mcp');
 	}
 }

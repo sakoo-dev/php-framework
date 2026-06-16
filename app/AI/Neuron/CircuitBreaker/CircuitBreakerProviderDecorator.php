@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\AI\Neuron\CircuitBreaker;
 
+use App\AI\Neuron\AIProviderDecorator;
 use App\AI\Neuron\CircuitBreaker\Exception\CircuitOpenException;
 use NeuronAI\Chat\Messages\Message;
 use NeuronAI\HttpClient\HttpClientInterface;
@@ -22,7 +23,7 @@ use NeuronAI\Providers\ToolMapperInterface;
  *
  * The providerKey namespaces state in storage so multiple providers coexist.
  */
-final class CircuitBreakerProviderDecorator implements AIProviderInterface
+final class CircuitBreakerProviderDecorator implements AIProviderDecorator
 {
 	public function __construct(
 		private readonly AIProviderInterface $inner,

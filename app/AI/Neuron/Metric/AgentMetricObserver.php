@@ -37,7 +37,7 @@ final class AgentMetricObserver implements ObserverInterface
 		private readonly MetricSource $source = MetricSource::Live,
 	) {}
 
-	public function onEvent(string $event, object $source, mixed $data = null): void
+	public function onEvent(string $event, object $source, mixed $data = null, ?string $branchId = null): void
 	{
 		if ($data instanceof InferenceStart) {
 			$this->handleInferenceStart($data);

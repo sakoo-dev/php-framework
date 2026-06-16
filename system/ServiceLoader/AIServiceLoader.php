@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace System\ServiceLoader;
 
-use App\AI\Mcp\JsonlMcpTokenStorage;
 use App\AI\Mcp\McpTokenCalculator;
+use App\AI\Mcp\McpTokenJsonlStorage;
 use App\AI\Mcp\McpTokenObserver;
 use App\AI\Mcp\McpTokenStorageInterface;
 use App\AI\Neuron\Cache\CacheStorageInterface;
@@ -26,6 +26,8 @@ use App\AI\Neuron\Metric\MetricStorageInterface;
 use App\AI\Neuron\Metric\NullQualityEvaluator;
 use App\AI\Neuron\Metric\QualityEvaluatorInterface;
 use App\AI\Neuron\Model\Anthropic\Claude;
+use App\AI\Neuron\Optimizer\PromptOptimizer;
+use App\AI\Neuron\Optimizer\PromptOptimizerInterface;
 use App\AI\Neuron\Provider\AvalAI;
 use App\AI\Neuron\Provider\GapGpt;
 use App\AI\Neuron\Provider\GapGptEmbedding;
@@ -49,6 +51,7 @@ class AIServiceLoader extends ServiceLoader
 {
 	public function load(Container $container): void
 	{
+		$this->registerOptimizers($container);
 		$this->registerMetrics($container);
 		$this->registerAvailability($container);
 		$this->registerGuard($container);
@@ -63,7 +66,13 @@ class AIServiceLoader extends ServiceLoader
 		$container->singleton(CircuitBreakerStorageInterface::class, new FileCircuitBreakerStorage(failureThreshold: 5, openWindowSeconds: 60));
 		$container->singleton(CacheStorageInterface::class, new FileCacheStorage());
 		$container->singleton(ThrottleStorageInterface::class, new FileThrottleStorage());
-		$container->singleton(LoggingHttpClient::class, new LoggingHttpClient($container->resolve('logger.ai')));
+		$container->bind(LoggingHttpClient::class, fn () => new LoggingHttpClient($container->resolve('logger.ai')));
+	}
+
+	private function registerOptimizers(Container $container): void
+	{
+		$container->singleton(PromptOptimizerInterface::class, new PromptOptimizer());
+		$container->singleton(McpTokenCalculator::class, new McpTokenCalculator());
 	}
 
 	private function registerGuard(Container $container): void
@@ -91,30 +100,28 @@ class AIServiceLoader extends ServiceLoader
 
 	private function registerProviders(Container $container): void
 	{
-		$httpClient = $container->resolve(LoggingHttpClient::class);
-
 		$container->bind('ai.gapgpt.claude.haiku', GapGpt::withAIModelObject(
-			new Claude(modelName: Claude::HAIKU_3_5, httpClient: $httpClient)
+			new Claude(modelName: Claude::HAIKU_3_5, httpClient: $container->resolve(LoggingHttpClient::class))
 		));
 
 		$container->bind('ai.gapgpt.claude.sonnet', GapGpt::withAIModelObject(
-			new Claude(modelName: Claude::SONNET_4_6, httpClient: $httpClient)
+			new Claude(modelName: Claude::SONNET_4_6, httpClient: $container->resolve(LoggingHttpClient::class))
 		));
 
 		$container->bind('ai.gapgpt.claude.sonnet.thinking', GapGpt::withAIModelObject(
-			new Claude(modelName: Claude::SONNET_4_6, extendedThinking: true, httpClient: $httpClient)
+			new Claude(modelName: Claude::SONNET_4_6, extendedThinking: true, httpClient: $container->resolve(LoggingHttpClient::class))
 		));
 
 		$container->bind('ai.gapgpt.claude.opus', GapGpt::withAIModelObject(
-			new Claude(modelName: Claude::OPUS_4_7, httpClient: $httpClient)
+			new Claude(modelName: Claude::OPUS_4_7, httpClient: $container->resolve(LoggingHttpClient::class))
 		));
 
 		$container->bind('ai.gapgpt.claude.opus.thinking', GapGpt::withAIModelObject(
-			new Claude(modelName: Claude::OPUS_4_7, extendedThinking: true, httpClient: $httpClient)
+			new Claude(modelName: Claude::OPUS_4_7, extendedThinking: true, httpClient: $container->resolve(LoggingHttpClient::class))
 		));
 
 		$container->bind('ai.avalai.claude.sonnet', AvalAI::withAIModelObject(
-			new Claude(modelName: Claude::SONNET_4_6, httpClient: $httpClient)
+			new Claude(modelName: Claude::SONNET_4_6, httpClient: $container->resolve(LoggingHttpClient::class))
 		));
 
 		$container->bind('ai.ollama.qwen3.4b', new Ollama(
@@ -162,7 +169,7 @@ class AIServiceLoader extends ServiceLoader
 
 	private function registerMcp(Container $container): void
 	{
-		$mcpStorage = new JsonlMcpTokenStorage();
+		$mcpStorage = new McpTokenJsonlStorage();
 		$container->singleton(McpTokenStorageInterface::class, $mcpStorage);
 		$container->singleton(McpTokenObserver::class, new McpTokenObserver(calculator: $container->resolve(McpTokenCalculator::class), storage: $mcpStorage));
 	}

@@ -94,7 +94,7 @@ readonly class CliFormatter implements Formatter
 				$type = $property->getType()->getName();
 			}
 
-			$out .= $indent . '  ' . ($property->isPrivate() ? '-' : '+') . $type . ' ' . $this->output->formatText($property->getName(), Output::COLOR_GREEN) . ': ' . $this->formatType($property->getValue($value), $depth + 1) . "\n";
+			$out .= $indent . '  ' . ($property->isPrivate() ? '-' : '+') . $type . ' ' . $this->output->formatText($property->getName(), Output::COLOR_GREEN) . ': ' . $this->formatType($property->isInitialized($value) ? $property->getValue($value) : null, $depth + 1) . "\n";
 		}
 
 		return $out . $indent . '}';

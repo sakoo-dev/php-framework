@@ -23,6 +23,7 @@
 * [Http\Client](#-sakooframeworkcorehttpclient)
 * [Http\Router](#-sakooframeworkcorehttprouter)
 * [Http\Router\Exceptions](#-sakooframeworkcorehttprouterexceptions)
+* [Finder\DTO](#-sakooframeworkcorefinderdto)
 * [Finder](#-sakooframeworkcorefinder)
 * [Locker](#-sakooframeworkcorelocker)
 * [Doc](#-sakooframeworkcoredoc)

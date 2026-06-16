@@ -6687,31 +6687,157 @@ public function getAllowedMethods(): array
 $methodNotAllowedException->getAllowedMethods();
 ```
 
+## 📦 Sakoo\Framework\Core\Finder\DTO
+
+### 🟢 FindResult
+
+<sub><sup>Result of a file name search operation. </sup></sub>
+
+
+
+<sub><sup>Encapsulates matched file paths and metadata about result truncation. Immutable value object returned by FileSearch::find(). </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$findResult = new FindResult(string $pattern, array $files, int $total, bool $truncated);
+```
+
+### - `toArray` Function
+
+<sub><sup>@return array{pattern: string, files: list&lt;string&gt;, total: int, truncated: bool} </sup></sub>
+
+
+
+```php
+// --- Contract
+public function toArray(): array
+// --- Usage
+$findResult->toArray();
+```
+
+### 🟢 GrepResult
+
+<sub><sup>Result of a content search operation. </sup></sub>
+
+
+
+<sub><sup>Encapsulates matching lines, their file locations, and metadata about result truncation. Immutable value object returned by FileSearch::grep(). </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$grepResult = new GrepResult(string $pattern, array $matches, int $total, bool $truncated);
+```
+
+### - `toArray` Function
+
+<sub><sup>Converts to array structure for MCP structured content. </sup></sub>
+
+
+
+<sub><sup>@return array{pattern: string, matches: list&lt;array{file: string, line: int, text: string}&gt;, total: int, truncated: bool} </sup></sub>
+
+
+
+```php
+// --- Contract
+public function toArray(): array
+// --- Usage
+$grepResult->toArray();
+```
+
+### 🟢 FileMetadata
+
+<sub><sup>File system metadata for a single file. </sup></sub>
+
+
+
+<sub><sup>Immutable value object containing size, modification time, and permission information. Returned by FileSearch::metadata(). </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$fileMetadata = new FileMetadata(string $path, int $size, int $modified, string $permissions, bool $readable, bool $writable);
+```
+
+### - `toArray` Function
+
+<sub><sup>@return array{path: string, size: int, modified: int, permissions: string, readable: bool, writable: bool} </sup></sub>
+
+
+
+```php
+// --- Contract
+public function toArray(): array
+// --- Usage
+$fileMetadata->toArray();
+```
+
+### 🟢 GrepMatch
+
+<sub><sup>Single line match from a grep operation. </sup></sub>
+
+
+
+<sub><sup>Immutable value object representing one line of text that matched a search pattern, including its location (file and line number). </sup></sub>
+
+
+
+#### How to use the Class:
+
+```php
+$grepMatch = new GrepMatch(string $file, int $line, string $text);
+```
+
+### - `toArray` Function
+
+<sub><sup>@return array{file: string, line: int, text: string} </sup></sub>
+
+
+
+```php
+// --- Contract
+public function toArray(): array
+// --- Usage
+$grepMatch->toArray();
+```
+
 ## 📦 Sakoo\Framework\Core\Finder
 
 ### 🟢 FileFinder
 
-<sub><sup>Recursive PHP-file finder with configurable filtering options. </sup></sub>
+<sub><sup>Recursive file finder with pattern matching, content search, and metadata extraction. </sup></sub>
 
 
 
-<sub><sup>FileFinder walks a directory tree and collects files whose names match a glob pattern. Filtering options can be combined freely via a fluent builder API: </sup></sub>
+<sub><sup>FileFinder provides three core capabilities: </sup></sub>
 
 
 
-<sub><sup>- pattern()          — restricts results to filenames matching a glob (default: &#039;*&#039;). - ignoreVCS()        — skips directories used by common VCS systems (.git, .svn, .hg, .bzr). - ignoreVCSIgnored() — skips files that would be excluded by the nearest .gitignore. - ignoreDotFiles()   — skips any file or directory whose name begins with &#039;.&#039;. - limit()            — caps the number of returned results. </sup></sub>
+<sub><sup>1. **File Discovery** — walks a directory tree and collects files whose names match a glob pattern. Filtering options can be combined via a fluent builder API: - pattern()          — restricts results to filenames matching a glob (default: &#039;*&#039;). - ignoreVCS()        — skips directories used by common VCS systems (.git, .svn, .hg, .bzr). - ignoreVCSIgnored() — skips files that would be excluded by the nearest .gitignore. - ignoreDotFiles()   — skips any file or directory whose name begins with &#039;.&#039;. - limit()            — caps the number of returned results. </sup></sub>
 
 
 
-<sub><sup>Static path-guarding methods (guard(), guardMany()) validate and resolve filesystem paths to ensure they stay inside the project root, preventing path-traversal attacks (e.g. `../../etc/passwd`). </sup></sub>
+<sub><sup>2. **Content Search** — grep() searches file contents for a pattern using case-insensitive substring matching. Returns structured results with file paths, line numbers, and matched text. </sup></sub>
 
 
 
-<sub><sup>getFiles() returns an array of SplFileObject instances ready for further inspection, while find() returns raw pathname strings for callers that need the paths only. </sup></sub>
+<sub><sup>3. **File Metadata** — metadata() returns size, modification time, permissions, and read/write flags for a given file. </sup></sub>
 
 
 
-<sub><sup>The class is declared final to prevent extension; filtering behaviour should be modified by composing FileFinder instances rather than subclassing. </sup></sub>
+<sub><sup>Static path-guarding methods (guard(), guardMany()) validate and resolve filesystem paths to ensure they stay inside the project root, preventing path-traversal attacks. </sup></sub>
+
+
+
+<sub><sup>All search operations automatically skip vendor, node_modules, .git, storage, and .idea directories, and respect file size limits to avoid memory exhaustion. </sup></sub>
 
 
 
@@ -6767,6 +6893,67 @@ public static function guardMany(array $paths): array
 FileFinder::guardMany($paths);
 ```
 
+### - `grep` Function
+
+<sub><sup>Searches file contents for a pattern using case-insensitive substring matching. </sup></sub>
+
+
+
+<sub><sup>Recursively walks the directory tree starting from $path, reading each file and returning lines that contain the search pattern. Automatically skips vendor, node_modules, .git, storage, and .idea directories, and files larger than 1MB. </sup></sub>
+
+
+
+<sub><sup>@param string $pattern substring to search for (case-insensitive) @param string $path root directory for search (defaults to project root) @param int $limit maximum number of matches to return (capped at 500) </sup></sub>
+
+
+
+> @throws \RuntimeException when the search path is invalid or inaccessible
+
+```php
+// --- Contract
+public static function grep(string $pattern, string $path, int $limit): GrepResult
+// --- Usage
+FileFinder::grep($pattern, $path, $limit);
+```
+
+### - `search` Function
+
+<sub><sup>Finds files by name pattern using glob-style wildcards. </sup></sub>
+
+
+
+<sub><sup>Recursively walks the directory tree starting from $path, matching file names against the provided glob pattern using fnmatch(). The match is case-insensitive. Automatically skips vendor, node_modules, .git, storage, and .idea directories. </sup></sub>
+
+
+
+<sub><sup>@param string $pattern glob pattern (e.g. &#039;*.php&#039;, &#039;test_*.txt&#039;) @param string $path root directory for search (defaults to project root) @param int $limit maximum number of files to return (capped at 200) </sup></sub>
+
+
+
+> @throws \RuntimeException when the search path is invalid or inaccessible
+
+```php
+// --- Contract
+public static function search(string $pattern, string $path, int $limit): FindResult
+// --- Usage
+FileFinder::search($pattern, $path, $limit);
+```
+
+### - `metadata` Function
+
+<sub><sup>Gets file metadata (size, modified time, permissions, read/write flags). </sup></sub>
+
+
+
+> @throws \RuntimeException when the file does not exist or cannot be stat&#039;d
+
+```php
+// --- Contract
+public static function metadata(string $path): FileMetadata
+// --- Usage
+FileFinder::metadata($path);
+```
+
 ### - `pattern` Function
 
 <sub><sup>Restricts results to files whose names match the given glob $pattern. Defaults to &#039;*&#039; (all files) when not called. </sup></sub>
@@ -6775,7 +6962,7 @@ FileFinder::guardMany($paths);
 
 ```php
 // --- Contract
-public function pattern(string $pattern): FileFinder
+public function pattern(string $pattern): self
 // --- Usage
 $fileFinder->pattern($pattern);
 ```
@@ -6788,7 +6975,7 @@ $fileFinder->pattern($pattern);
 
 ```php
 // --- Contract
-public function ignoreVCS(bool $value): FileFinder
+public function ignoreVCS(bool $value): self
 // --- Usage
 $fileFinder->ignoreVCS($value);
 ```
@@ -6801,7 +6988,7 @@ $fileFinder->ignoreVCS($value);
 
 ```php
 // --- Contract
-public function ignoreVCSIgnored(bool $value): FileFinder
+public function ignoreVCSIgnored(bool $value): self
 // --- Usage
 $fileFinder->ignoreVCSIgnored($value);
 ```
@@ -6814,7 +7001,7 @@ $fileFinder->ignoreVCSIgnored($value);
 
 ```php
 // --- Contract
-public function ignoreDotFiles(bool $value): FileFinder
+public function ignoreDotFiles(bool $value): self
 // --- Usage
 $fileFinder->ignoreDotFiles($value);
 ```
@@ -6827,7 +7014,7 @@ $fileFinder->ignoreDotFiles($value);
 
 ```php
 // --- Contract
-public function limit(int $limit): FileFinder
+public function limit(int $limit): self
 // --- Usage
 $fileFinder->limit($limit);
 ```

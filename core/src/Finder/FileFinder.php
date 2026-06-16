@@ -6,40 +6,52 @@ namespace Sakoo\Framework\Core\Finder;
 
 use Sakoo\Framework\Core\Assert\Assert;
 use Sakoo\Framework\Core\Assert\Exception\InvalidArgumentException;
+use Sakoo\Framework\Core\Finder\DTO\FileMetadata;
+use Sakoo\Framework\Core\Finder\DTO\FindResult;
+use Sakoo\Framework\Core\Finder\DTO\GrepMatch;
+use Sakoo\Framework\Core\Finder\DTO\GrepResult;
 use System\Path\Path;
 
 /**
- * Recursive PHP-file finder with configurable filtering options.
+ * Recursive file finder with pattern matching, content search, and metadata extraction.
  *
- * FileFinder walks a directory tree and collects files whose names match a glob
- * pattern. Filtering options can be combined freely via a fluent builder API:
+ * FileFinder provides three core capabilities:
  *
- * - pattern()          — restricts results to filenames matching a glob (default: '*').
- * - ignoreVCS()        — skips directories used by common VCS systems (.git, .svn, .hg, .bzr).
- * - ignoreVCSIgnored() — skips files that would be excluded by the nearest .gitignore.
- * - ignoreDotFiles()   — skips any file or directory whose name begins with '.'.
- * - limit()            — caps the number of returned results.
+ * 1. **File Discovery** — walks a directory tree and collects files whose names match
+ *    a glob pattern. Filtering options can be combined via a fluent builder API:
+ *    - pattern()          — restricts results to filenames matching a glob (default: '*').
+ *    - ignoreVCS()        — skips directories used by common VCS systems (.git, .svn, .hg, .bzr).
+ *    - ignoreVCSIgnored() — skips files that would be excluded by the nearest .gitignore.
+ *    - ignoreDotFiles()   — skips any file or directory whose name begins with '.'.
+ *    - limit()            — caps the number of returned results.
+ *
+ * 2. **Content Search** — grep() searches file contents for a pattern using case-insensitive
+ *    substring matching. Returns structured results with file paths, line numbers, and matched text.
+ *
+ * 3. **File Metadata** — metadata() returns size, modification time, permissions, and
+ *    read/write flags for a given file.
  *
  * Static path-guarding methods (guard(), guardMany()) validate and resolve filesystem
- * paths to ensure they stay inside the project root, preventing path-traversal attacks
- * (e.g. `../../etc/passwd`).
+ * paths to ensure they stay inside the project root, preventing path-traversal attacks.
  *
- * getFiles() returns an array of SplFileObject instances ready for further inspection,
- * while find() returns raw pathname strings for callers that need the paths only.
- *
- * The class is declared final to prevent extension; filtering behaviour should be
- * modified by composing FileFinder instances rather than subclassing.
+ * All search operations automatically skip vendor, node_modules, .git, storage, and .idea
+ * directories, and respect file size limits to avoid memory exhaustion.
  */
 final class FileFinder
 {
+	private const int MAX_GREP_RESULTS = 500;
+	private const int MAX_FIND_RESULTS = 200;
+	private const int MAX_FILE_SIZE_BYTES = 1_048_576;
+
+	private const array VCS_SYSTEMS = ['.git', '.svn', '.hg', '.bzr'];
+	private const array SKIP_DIRS = ['vendor', 'node_modules', '.git', 'storage', '.idea'];
+
 	private string $pattern = '*';
 	private bool $ignoreVCS = false;
 	private bool $ignoreVCSIgnored = false;
 	private bool $ignoreDotFiles = false;
 	private int $limit = 0;
 	private bool $truncated = false;
-
-	private const VCS_SYSTEMS = ['.git', '.svn', '.hg', '.bzr'];
 
 	/**
 	 * Constructs a FileFinder rooted at $path.
@@ -64,10 +76,7 @@ final class FileFinder
 	public static function guard(string $path): string
 	{
 		$root = (string) Path::getRootDir();
-
-		if ('' === $root) {
-			throw new InvalidArgumentException('Cannot resolve project root directory.');
-		}
+		throwUnless((bool) $root, new InvalidArgumentException('Cannot resolve project root directory.'));
 
 		$root = realpath($root) ?: $root;
 		$root = rtrim($root, '/');
@@ -100,10 +109,131 @@ final class FileFinder
 	}
 
 	/**
+	 * Searches file contents for a pattern using case-insensitive substring matching.
+	 *
+	 * Recursively walks the directory tree starting from $path, reading each file
+	 * and returning lines that contain the search pattern. Automatically skips
+	 * vendor, node_modules, .git, storage, and .idea directories, and files larger
+	 * than 1MB.
+	 *
+	 * @param string $pattern substring to search for (case-insensitive)
+	 * @param string $path root directory for search (defaults to project root)
+	 * @param int $limit maximum number of matches to return (capped at 500)
+	 *
+	 * @throws \RuntimeException when the search path is invalid or inaccessible
+	 */
+	public static function grep(string $pattern, string $path = '', int $limit = 100): GrepResult
+	{
+		$limit = min($limit, self::MAX_GREP_RESULTS);
+		$searchPath = !$path ? (string) Path::getRootDir() : self::guard($path);
+
+		if (!is_dir($searchPath)) {
+			$searchPath = dirname($searchPath);
+		}
+
+		$matches = [];
+		$iterator = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator($searchPath, \FilesystemIterator::SKIP_DOTS),
+		);
+
+		/** @var \SplFileInfo $file */
+		foreach ($iterator as $file) {
+			if (!$file->isFile() || self::shouldSkipPath($file->getPathname())) {
+				continue;
+			}
+
+			if ($file->getSize() > self::MAX_FILE_SIZE_BYTES) {
+				continue;
+			}
+
+			$lines = file($file->getPathname());
+
+			if (!$lines) {
+				continue;
+			}
+
+			foreach ($lines as $lineNo => $lineText) {
+				if (false !== stripos($lineText, $pattern)) {
+					$matches[] = new GrepMatch(self::relativePath($file->getPathname()), $lineNo + 1, trim($lineText));
+
+					if (count($matches) >= $limit) {
+						break 2;
+					}
+				}
+			}
+		}
+
+		return new GrepResult($pattern, $matches, count($matches), count($matches) >= $limit);
+	}
+
+	/**
+	 * Finds files by name pattern using glob-style wildcards.
+	 *
+	 * Recursively walks the directory tree starting from $path, matching file names
+	 * against the provided glob pattern using fnmatch(). The match is case-insensitive.
+	 * Automatically skips vendor, node_modules, .git, storage, and .idea directories.
+	 *
+	 * @param string $pattern glob pattern (e.g. '*.php', 'test_*.txt')
+	 * @param string $path root directory for search (defaults to project root)
+	 * @param int $limit maximum number of files to return (capped at 200)
+	 *
+	 * @throws \RuntimeException when the search path is invalid or inaccessible
+	 */
+	public static function search(string $pattern, string $path = '', int $limit = 100): FindResult
+	{
+		$limit = min($limit, self::MAX_FIND_RESULTS);
+		$searchPath = !$path ? (string) Path::getRootDir() : self::guard($path);
+
+		if (!is_dir($searchPath)) {
+			$searchPath = dirname($searchPath);
+		}
+
+		$files = [];
+		$iterator = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator($searchPath, \FilesystemIterator::SKIP_DOTS),
+		);
+
+		/** @var \SplFileInfo $file */
+		foreach ($iterator as $file) {
+			if (!$file->isFile() || self::shouldSkipPath($file->getPathname())) {
+				continue;
+			}
+
+			$fileName = $file->getFilename();
+
+			if (fnmatch($pattern, $fileName, FNM_CASEFOLD)) {
+				$files[] = self::relativePath($file->getPathname());
+
+				if (count($files) >= $limit) {
+					break;
+				}
+			}
+		}
+
+		return new FindResult($pattern, $files, count($files), count($files) >= $limit);
+	}
+
+	/**
+	 * Gets file metadata (size, modified time, permissions, read/write flags).
+	 *
+	 * @throws \RuntimeException when the file does not exist or cannot be stat'd
+	 */
+	public static function metadata(string $path): FileMetadata
+	{
+		$path = self::guard($path);
+		throwUnless(file_exists($path), new \RuntimeException("File not found: {$path}"));
+		$stat = stat($path);
+		throwIf(!$stat, new \RuntimeException("Failed to stat file: {$path}"));
+
+		// @phpstan-ignore-next-line
+		return new FileMetadata(self::relativePath($path), $stat['size'], $stat['mtime'], substr(sprintf('%o', fileperms($path)), -4), is_readable($path), is_writable($path));
+	}
+
+	/**
 	 * Restricts results to files whose names match the given glob $pattern.
 	 * Defaults to '*' (all files) when not called.
 	 */
-	public function pattern(string $pattern): FileFinder
+	public function pattern(string $pattern): self
 	{
 		$this->pattern = $pattern;
 
@@ -114,7 +244,7 @@ final class FileFinder
 	 * When $value is true (the default), directories used by VCS systems
 	 * (.git, .svn, .hg, .bzr) are excluded from traversal entirely.
 	 */
-	public function ignoreVCS(bool $value = true): FileFinder
+	public function ignoreVCS(bool $value = true): self
 	{
 		$this->ignoreVCS = $value;
 
@@ -125,7 +255,7 @@ final class FileFinder
 	 * When $value is true (the default), files matched by the nearest .gitignore
 	 * are excluded from results. Requires a readable .gitignore in the working directory.
 	 */
-	public function ignoreVCSIgnored(bool $value = true): FileFinder
+	public function ignoreVCSIgnored(bool $value = true): self
 	{
 		$this->ignoreVCSIgnored = $value;
 
@@ -136,7 +266,7 @@ final class FileFinder
 	 * When $value is true (the default), any file or directory whose name starts
 	 * with '.' is excluded from traversal and results.
 	 */
-	public function ignoreDotFiles(bool $value = true): FileFinder
+	public function ignoreDotFiles(bool $value = true): self
 	{
 		$this->ignoreDotFiles = $value;
 
@@ -147,7 +277,7 @@ final class FileFinder
 	 * Caps the number of results returned by find() and getFiles().
 	 * A value of 0 (the default) means no limit.
 	 */
-	public function limit(int $limit): FileFinder
+	public function limit(int $limit): self
 	{
 		$this->limit = $limit;
 
@@ -197,24 +327,26 @@ final class FileFinder
 
 		$directory = new \RecursiveDirectoryIterator($this->path, \FilesystemIterator::FOLLOW_SYMLINKS);
 		$filter = new \RecursiveCallbackFilterIterator($directory, fn (\SplFileInfo $file) => $this->shouldDescend($file));
-		$iterator = new \RecursiveIteratorIterator($filter, \RecursiveIteratorIterator::SELF_FIRST);
+		$iterator = new \RecursiveIteratorIterator($filter);
 
 		$files = [];
 
+		/** @var \SplFileInfo $file */
 		foreach ($iterator as $file) {
-			/** @var \SplFileInfo $file */
+			if (!$file->isFile()) {
+				continue;
+			}
+
 			if ($this->shouldSkip($file)) {
 				continue;
 			}
 
-			if ($file->isFile()) {
-				$files[] = $file->getPathname();
+			$files[] = $file->getPathname();
 
-				if ($this->limit > 0 && count($files) >= $this->limit) {
-					$this->truncated = true;
+			if ($this->limit > 0 && count($files) >= $this->limit) {
+				$this->truncated = true;
 
-					break;
-				}
+				break;
 			}
 		}
 
@@ -222,24 +354,17 @@ final class FileFinder
 	}
 
 	/**
-	 * Resolves `.` and `..` segments in $path.
+	 * Normalises a path by eliminating `.` and `..` segments.
 	 *
-	 * Uses realpath() when the target exists on disk to catch symlink escapes.
-	 * Falls back to manual string-based normalisation for paths that do not yet
-	 * exist (e.g. write targets).
-	 *
-	 * @return string normalised absolute path
+	 * This method does not touch the filesystem; it purely manipulates the input
+	 * string. It is not used as the primary resolution mechanism (realpath() is
+	 * preferred when the path exists), but serves as a fallback for non-existent
+	 * paths to prevent directory-traversal attacks before file creation.
 	 */
 	private static function normalisePath(string $path): string
 	{
-		$real = realpath($path);
-
-		if (false !== $real) {
-			return $real;
-		}
-
 		$parts = explode('/', $path);
-		$resolved = [];
+		$stack = [];
 
 		foreach ($parts as $part) {
 			if ('.' === $part || '' === $part) {
@@ -247,17 +372,23 @@ final class FileFinder
 			}
 
 			if ('..' === $part) {
-				array_pop($resolved);
+				if ([] !== $stack && '..' !== end($stack)) {
+					array_pop($stack);
+				} else {
+					$stack[] = $part;
+				}
 			} else {
-				$resolved[] = $part;
+				$stack[] = $part;
 			}
 		}
 
-		return '/' . implode('/', $resolved);
+		$normalised = implode('/', $stack);
+
+		return str_starts_with($path, '/') ? '/' . $normalised : $normalised;
 	}
 
 	/**
-	 * Resolves an absolute path while preserving symlink safety for non-existent files.
+	 * Resolves $path to an absolute path within the project root.
 	 *
 	 * When $path does not exist yet, resolves the nearest existing ancestor via
 	 * realpath() and appends the missing suffix. This catches cases where an in-root
@@ -292,7 +423,36 @@ final class FileFinder
 			$rebuilt .= '/' . implode('/', $suffix);
 		}
 
-		return '' === $rebuilt ? '/' : $rebuilt;
+		return !$rebuilt ? '/' : $rebuilt;
+	}
+
+	/**
+	 * Returns true when $path should be excluded from search results based on
+	 * the SKIP_DIRS list (vendor, node_modules, .git, storage, .idea).
+	 */
+	private static function shouldSkipPath(string $path): bool
+	{
+		foreach (self::SKIP_DIRS as $dir) {
+			if (str_contains($path, DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Converts an absolute path to a relative path from the project root.
+	 */
+	private static function relativePath(string $absolutePath): string
+	{
+		$root = rtrim((string) Path::getRootDir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
+		if (str_starts_with($absolutePath, $root)) {
+			return substr($absolutePath, strlen($root));
+		}
+
+		return $absolutePath;
 	}
 
 	/**
@@ -332,7 +492,7 @@ final class FileFinder
 
 		$name = $file->getFilename();
 
-		if ($this->ignoreVCS && in_array($name, self::VCS_SYSTEMS)) {
+		if ($this->ignoreVCS && in_array($name, self::VCS_SYSTEMS, true)) {
 			return false;
 		}
 

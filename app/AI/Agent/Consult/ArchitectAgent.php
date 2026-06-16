@@ -6,6 +6,9 @@ namespace App\AI\Agent\Consult;
 
 use App\AI\Agent\Agent;
 use App\AI\Neuron\Schema\ArchitectDirective;
+use App\AI\Neuron\Tool\PromptFetchTool;
+use App\AI\Neuron\Tool\ResourceFetchTool;
+use App\AI\Neuron\Tool\RetrievalTool;
 use NeuronAI\Chat\Messages\UserMessage;
 use NeuronAI\Providers\AIProviderInterface;
 
@@ -32,31 +35,25 @@ final class ArchitectAgent extends Agent
 		return 'architect';
 	}
 
-	public function getExcludedTools(): array
+	protected function includedTools(): array
 	{
 		return [
-			'write_file',
-			'remove_file',
-			'sakoo_exec',
-			'test_run',
-			'test_coverage',
-			'check_code',
-			'consult_architect',
-		] + $this->neuronToolkitNames();
+			...$this->mcpTools()->exclude([])->tools(),
+			ResourceFetchTool::make($this->mcpElementsClass()),
+			PromptFetchTool::make($this->mcpElementsClass()),
+			new RetrievalTool($this),
+		];
 	}
 
-	public function getExcludedContexts(): array
+	protected function contexts(): array
 	{
 		return [
-			'file://list',
-			'prompt://system',
-			'project://makefile',
-			'project://commands',
-			'skill://prompt-engineering',
-			'skill://quality-assurance',
-			'skill://file-handling',
-			'prompt:dev_task',
-			'prompt:review_file',
+			'project://structure',
+			'project://info',
+			'skill://architecture',
+			'skill://conventions',
+			'skill://sakoo-identity',
+			'skill://security-checklist',
 		];
 	}
 

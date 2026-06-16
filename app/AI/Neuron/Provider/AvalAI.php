@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace App\AI\Neuron\Provider;
 
 use App\AI\Neuron\Model\Model;
-use App\AI\Neuron\Model\ModelNameAwareInterface;
 use NeuronAI\HttpClient\HttpClientInterface;
 use NeuronAI\Providers\OpenAILike;
 use Sakoo\Framework\Core\Env\Env;
 
 // for more information: https://chat.avalai.ir/platform/home
-class AvalAI extends OpenAILike implements ModelNameAwareInterface
+class AvalAI extends OpenAILike
 {
 	private const string BASE_URI = 'https://api.avalai.ir/v1/';
 
@@ -30,10 +29,5 @@ class AvalAI extends OpenAILike implements ModelNameAwareInterface
 			$model->getStrictResponse(),
 			$model->getHttpClient(),
 		);
-	}
-
-	public function modelName(): string
-	{
-		return $this->model;
 	}
 }
