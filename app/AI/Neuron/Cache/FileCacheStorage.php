@@ -55,10 +55,10 @@ final class FileCacheStorage implements CacheStorageInterface
 		$file = File::open(Disk::Local, $this->filePath($key));
 
 		$encoded = json_encode(['expires_at' => time() + $ttlSeconds, 'value' => $value], JSON_UNESCAPED_SLASHES);
-		throwUnless((bool) $encoded, new CacheStorageException("Failed to encode cache entry for key: {$key}"));
+		throwIf(!$encoded, new CacheStorageException("Failed to encode cache entry for key: {$key}"));
 
 		$result = $file->write($encoded ?: '');
-		throwUnless($result, new CacheStorageException("Failed to encode cache entry for key: {$key}"));
+		throwUnless($result, new CacheStorageException("Failed to write cache entry for key: {$key}"));
 	}
 
 	public function has(string $key): bool

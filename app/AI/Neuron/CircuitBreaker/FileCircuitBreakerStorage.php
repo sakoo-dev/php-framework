@@ -14,8 +14,14 @@ use System\Path\Path;
  * Each provider key gets a JSON file at storage/ai/circuit-breaker/{key}.json
  * containing failure count, last-failure timestamp, current state, and a
  * probe_claimed flag that gates the single HalfOpen probe call.
- * Suitable for single-process environments; swap to a Redis adapter for
- * multi-process deployments.
+ *
+ * Uses exclusive file locking (LOCK_EX) in claimProbe() to prevent race conditions
+ * in multi-process environments. Other operations use optimistic concurrency — they
+ * are idempotent enough that occasional lost updates are acceptable (e.g., missing
+ * one failure increment out of five still opens the circuit).
+ *
+ * For high-throughput distributed systems, consider RedisCircuitBreakerStorage with
+ * Lua scripts or atomic SET NX operations for better performance.
  */
 final class FileCircuitBreakerStorage implements CircuitBreakerStorageInterface
 {
@@ -86,16 +92,49 @@ final class FileCircuitBreakerStorage implements CircuitBreakerStorageInterface
 
 	public function claimProbe(string $key): bool
 	{
-		$data = $this->read($key);
+		$path = $this->filePath($key);
+		$handle = @fopen($path, 'c+');
 
-		if (true === ($data['probe_claimed'] ?? false)) {
+		if (!$handle) {
 			return false;
 		}
 
-		$data['probe_claimed'] = true;
-		$this->write($key, $data);
+		if (!flock($handle, LOCK_EX)) {
+			fclose($handle);
 
-		return true;
+			return false;
+		}
+
+		try {
+			$content = stream_get_contents($handle);
+			$data = $content ? json_decode($content, true) : [];
+
+			if (!is_array($data)) {
+				$data = [];
+			}
+
+			if (true === ($data['probe_claimed'] ?? false)) {
+				return false;
+			}
+
+			$data['probe_claimed'] = true;
+
+			$encoded = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+			if (false === $encoded) {
+				return false;
+			}
+
+			ftruncate($handle, 0);
+			rewind($handle);
+			fwrite($handle, $encoded);
+			fflush($handle);
+
+			return true;
+		} finally {
+			flock($handle, LOCK_UN);
+			fclose($handle);
+		}
 	}
 
 	/** @param array<string, mixed> $data */

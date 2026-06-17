@@ -18,7 +18,7 @@ class CliAgentStreamFormatter
 	public function format(?StreamChunk $chunk, ?StreamChunk $previousChunk): void
 	{
 		if (is_null($chunk)) {
-			$this->output->block('[Empty Response]', Output::COLOR_RED);
+			//			$this->output->block('[Empty Response]', Output::COLOR_RED);
 
 			return;
 		}
@@ -28,27 +28,30 @@ class CliAgentStreamFormatter
 		}
 
 		if ($chunk instanceof ToolCallChunk) {
-			$this->output->block('Calling tool: ' . $chunk->tool->getName(), Output::COLOR_MAGENTA);
-			$this->output->block('Input: ' . json_encode($chunk->tool->getInputs()), Output::COLOR_MAGENTA);
+			$this->output->block('🛠 ⏳  Calling tool: ' . $chunk->tool->getName() . ' (' . json_encode($chunk->tool->getInputs()) . ')', Output::COLOR_MAGENTA);
+			//			$this->output->block('Input: ' . json_encode($chunk->tool->getInputs()), Output::COLOR_MAGENTA);
 
 			return;
 		}
 
 		if ($chunk instanceof ToolResultChunk) {
-			$this->output->block('Tool Completed: ' . $chunk->tool->getName(), Output::COLOR_MAGENTA);
-			$this->output->block('Tool Result: ' . $chunk->tool->getResult(), Output::COLOR_MAGENTA);
+			$this->output->block('🛠 ✅  Tool Completed: ' . $chunk->tool->getName(), Output::COLOR_MAGENTA);
+			//			$this->output->block('Tool Result: ' . $chunk->tool->getResult(), Output::COLOR_MAGENTA);
 
 			return;
 		}
 
 		if ($chunk instanceof ReasoningChunk) {
-			$this->output->text(((!$previousChunk instanceof ReasoningChunk) ? 'Reasoning: ' : '') . $chunk->content, Output::COLOR_YELLOW);
+			//			$this->output->text(((!$previousChunk instanceof ReasoningChunk) ? 'Reasoning: ' : '') . $chunk->content, Output::COLOR_YELLOW);
+			if (!$previousChunk instanceof ReasoningChunk) {
+				$this->output->block('🤔  Thinking... ', Output::COLOR_YELLOW);
+			}
 
 			return;
 		}
 
 		if ($chunk instanceof TextChunk) {
-			$this->output->text(((!$previousChunk instanceof TextChunk) ? 'Result: ' : '') . $chunk->content, Output::COLOR_GREEN);
+			$this->output->text(((!$previousChunk instanceof TextChunk) ? '💎  Result Generated: ' : '') . $chunk->content, Output::COLOR_GREEN);
 		}
 	}
 

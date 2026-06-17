@@ -269,7 +269,7 @@ abstract class Agent extends RAG
 		}
 
 		/** @var string $providerName */
-		$providerName = $this->readProperty($provider, 'baseUri') ?? $this->readProperty($provider, 'url');
+		$providerName = $this->readProperty($provider, 'baseUri') ?? $this->readProperty($provider, 'url') ?? '';
 
 		return (string) $providerName;
 	}

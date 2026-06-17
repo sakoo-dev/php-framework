@@ -80,6 +80,8 @@ final class CacheProviderDecorator implements AIProviderDecorator
 
 				return $restored;
 			}
+
+			$this->storage->delete($cacheKey);
 		}
 
 		$response = $this->inner->chat(...$messages);

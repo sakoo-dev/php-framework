@@ -41,7 +41,7 @@ final class FallbackProviderDecorator implements AIProviderDecorator
 
 	public function chat(Message ...$messages): Message
 	{
-		return $this->tryEach(fn (AIProviderInterface $p): Message => $p->chat(...$messages));
+		return $this->tryEach(fn (AIProviderInterface $provider): Message => $provider->chat(...$messages));
 	}
 
 	/**

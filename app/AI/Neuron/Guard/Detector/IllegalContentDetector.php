@@ -26,7 +26,7 @@ final class IllegalContentDetector implements DetectionStrategyInterface
 		$reasons = [];
 
 		foreach ($this->dataset as $pattern => $reason) {
-			if (1 === @preg_match("/$pattern/u", $text)) {
+			if (1 === preg_match("/$pattern/u", $text)) {
 				$reasons[] = 'Illegal content: ' . $reason;
 			}
 		}
