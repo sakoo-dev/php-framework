@@ -70,7 +70,7 @@ jobs:
 
       - name: Upload docker artifact
         if: steps.docker-cache.outputs.cache-hit != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sakoo.app
           path: /tmp/sakoo-app.tar.gz
