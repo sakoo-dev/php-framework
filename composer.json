@@ -28,27 +28,34 @@
   },
   "minimum-stability": "dev",
   "require": {
-    "sakoo/framework-core": "^1"
+    "sakoo/framework-core": "^1",
+    "sakoo/ai": "^1"
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.6",
     "phpstan/phpstan": "^2",
     "phpunit/phpunit": "^10",
-    "swoole/ide-helper": "^6.0",
-    "neuron-core/neuron-ai": "^3.3",
-    "mcp/sdk": "dev-main"
+    "swoole/ide-helper": "^6.0"
   },
   "scripts": {
     "lint": "./vendor/bin/php-cs-fixer check . --using-cache=no",
     "test": "./vendor/bin/phpunit --do-not-cache-result --coverage-text --colors=never",
     "analyse": "./vendor/bin/phpstan analyse --memory-limit 1G",
-    "eval": "./vendor/bin/neuron evaluation --path=app/AI/Neuron/Evals"
+    "eval": "./vendor/bin/neuron evaluation --path=ai/src/Neuron/Evals"
   },
   "repositories": [
     {
       "type": "path",
       "url": "core",
       "name": "sakoo/framework-core",
+      "options": {
+        "symlink": true
+      }
+    },
+    {
+      "type": "path",
+      "url": "ai",
+      "name": "sakoo/ai",
       "options": {
         "symlink": true
       }

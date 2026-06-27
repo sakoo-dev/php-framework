@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\AI\Agent;
 
-use App\AI\Neuron\Tool\RetrievalTool;
+use Sakoo\AI\Agent;
+use Sakoo\AI\Neuron\Tool\RetrievalTool;
 
 class PsychologistAgent extends Agent
 {

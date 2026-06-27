@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\AI\Agent;
 
-use App\AI\Neuron\Tool\PromptFetchTool;
-use App\AI\Neuron\Tool\ResourceFetchTool;
-use App\AI\Neuron\Tool\RetrievalTool;
+use Sakoo\AI\Agent;
+use Sakoo\AI\Neuron\Tool\PromptFetchTool;
+use Sakoo\AI\Neuron\Tool\ResourceFetchTool;
+use Sakoo\AI\Neuron\Tool\RetrievalTool;
 
 class ChatBotAgent extends Agent
 {
