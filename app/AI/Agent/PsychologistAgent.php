@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\AI\Agent;
 
-use App\AI\Neuron\Tool\RetrievalTool;
+use NeuronAI\RAG\PostProcessor\LocalAIRerankerPostProcessor;
+use Sakoo\AI\Agent\Agent;
+use Sakoo\AI\Neuron\Tool\RetrievalTool;
 
 class PsychologistAgent extends Agent
 {
@@ -21,7 +23,7 @@ class PsychologistAgent extends Agent
 	protected function includedTools(): array
 	{
 		return [
-			new RetrievalTool($this),
+			new RetrievalTool($this, new LocalAIRerankerPostProcessor('ai.reranker')),
 		];
 	}
 
