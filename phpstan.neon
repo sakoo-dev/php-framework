@@ -12,3 +12,4 @@ parameters:
 	paths:
 		- app
 		- core/src
+		- ai/src

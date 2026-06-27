@@ -16,6 +16,7 @@
     <include>
       <directory suffix=".php">app</directory>
       <directory suffix=".php">core/src</directory>
+      <directory suffix=".php">ai/src</directory>
     </include>
     <exclude>
       <directory suffix=".php">core/src/Exception</directory>
