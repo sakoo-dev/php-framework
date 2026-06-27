@@ -28,21 +28,19 @@
   },
   "minimum-stability": "dev",
   "require": {
-    "sakoo/framework-core": "^1"
+    "sakoo/framework-core": "^1",
+    "sakoo/ai": "dev-main"
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.6",
     "phpstan/phpstan": "^2",
     "phpunit/phpunit": "^10",
-    "swoole/ide-helper": "^6.0",
-    "neuron-core/neuron-ai": "^3.3",
-    "mcp/sdk": "dev-main"
+    "swoole/ide-helper": "^6.0"
   },
   "scripts": {
     "lint": "./vendor/bin/php-cs-fixer check . --using-cache=no",
     "test": "./vendor/bin/phpunit --do-not-cache-result --coverage-text --colors=never",
-    "analyse": "./vendor/bin/phpstan analyse --memory-limit 1G",
-    "eval": "./vendor/bin/neuron evaluation --path=app/AI/Neuron/Evals"
+    "analyse": "./vendor/bin/phpstan analyse --memory-limit 1G"
   },
   "repositories": [
     {
@@ -52,6 +50,10 @@
       "options": {
         "symlink": true
       }
+    },
+    {
+      "type": "vcs",
+      "url": "git@github.com:sakoo-dev/ai.git"
     }
   ],
   "config": {
