@@ -4,53 +4,63 @@ declare(strict_types=1);
 
 namespace System\ServiceLoader;
 
-use App\AI\Mcp\McpTokenCalculator;
-use App\AI\Mcp\McpTokenJsonlStorage;
-use App\AI\Mcp\McpTokenObserver;
-use App\AI\Mcp\McpTokenStorageInterface;
-use App\AI\Neuron\Cache\CacheStorageInterface;
-use App\AI\Neuron\Cache\FileCacheStorage;
-use App\AI\Neuron\CircuitBreaker\CircuitBreakerStorageInterface;
-use App\AI\Neuron\CircuitBreaker\FileCircuitBreakerStorage;
-use App\AI\Neuron\Guard\AuditStorageInterface;
-use App\AI\Neuron\Guard\Dataset\IllegalPatternDataset;
-use App\AI\Neuron\Guard\Detector\IllegalContentDetector;
-use App\AI\Neuron\Guard\Detector\LLMModerationDetector;
-use App\AI\Neuron\Guard\Detector\PiiMaskingDetector;
-use App\AI\Neuron\Guard\GuardrailPipeline;
-use App\AI\Neuron\Guard\JsonlAuditStorage;
-use App\AI\Neuron\HighAvailableProviderBuilder;
-use App\AI\Neuron\Http\LoggingHttpClient;
-use App\AI\Neuron\Metric\JsonlMetricStorage;
-use App\AI\Neuron\Metric\MetricStorageInterface;
-use App\AI\Neuron\Metric\NullQualityEvaluator;
-use App\AI\Neuron\Metric\QualityEvaluatorInterface;
-use App\AI\Neuron\Model\Anthropic\Claude;
-use App\AI\Neuron\Optimizer\PromptOptimizer;
-use App\AI\Neuron\Optimizer\PromptOptimizerInterface;
-use App\AI\Neuron\Provider\AvalAI;
-use App\AI\Neuron\Provider\GapGpt;
-use App\AI\Neuron\Provider\GapGptEmbedding;
-use App\AI\Neuron\Provider\OpenAIModeration;
-use App\AI\Neuron\Retry\RetryPolicy;
-use App\AI\Neuron\Throttle\FileThrottleStorage;
-use App\AI\Neuron\Throttle\ThrottleStorageInterface;
 use NeuronAI\Providers\AIProviderInterface;
 use NeuronAI\Providers\Ollama\Ollama;
 use NeuronAI\RAG\Embeddings\EmbeddingsProviderInterface;
 use NeuronAI\RAG\Embeddings\OllamaEmbeddingsProvider;
 use NeuronAI\RAG\PostProcessor\LocalAIRerankerPostProcessor;
 use Psr\Clock\ClockInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Sakoo\AI\Mcp\McpTokenCalculator;
+use Sakoo\AI\Mcp\McpTokenJsonlStorage;
+use Sakoo\AI\Mcp\McpTokenObserver;
+use Sakoo\AI\Mcp\McpTokenStorageInterface;
+use Sakoo\AI\Mcp\McpWebClient;
+use Sakoo\AI\Mcp\ProjectContextInterface;
+use Sakoo\AI\Neuron\Cache\CacheStorageInterface;
+use Sakoo\AI\Neuron\Cache\FileCacheStorage;
+use Sakoo\AI\Neuron\CircuitBreaker\CircuitBreakerStorageInterface;
+use Sakoo\AI\Neuron\CircuitBreaker\FileCircuitBreakerStorage;
+use Sakoo\AI\Neuron\FileSystem\FileStorageInterface;
+use Sakoo\AI\Neuron\Guard\AuditStorageInterface;
+use Sakoo\AI\Neuron\Guard\Dataset\IllegalPatternDataset;
+use Sakoo\AI\Neuron\Guard\Detector\IllegalContentDetector;
+use Sakoo\AI\Neuron\Guard\Detector\LLMModerationDetector;
+use Sakoo\AI\Neuron\Guard\Detector\PiiMaskingDetector;
+use Sakoo\AI\Neuron\Guard\GuardrailPipeline;
+use Sakoo\AI\Neuron\Guard\JsonlAuditStorage;
+use Sakoo\AI\Neuron\HighAvailableProviderBuilder;
+use Sakoo\AI\Neuron\Http\LoggingHttpClient;
+use Sakoo\AI\Neuron\Metric\JsonlMetricStorage;
+use Sakoo\AI\Neuron\Metric\MetricStorageInterface;
+use Sakoo\AI\Neuron\Metric\NullQualityEvaluator;
+use Sakoo\AI\Neuron\Metric\QualityEvaluatorInterface;
+use Sakoo\AI\Neuron\Model\Anthropic\Claude;
+use Sakoo\AI\Neuron\Optimizer\PromptOptimizer;
+use Sakoo\AI\Neuron\Optimizer\PromptOptimizerInterface;
+use Sakoo\AI\Neuron\Provider\AvalAI;
+use Sakoo\AI\Neuron\Provider\GapGpt;
+use Sakoo\AI\Neuron\Provider\GapGptEmbedding;
+use Sakoo\AI\Neuron\Provider\OpenAIModeration;
+use Sakoo\AI\Neuron\Retry\RetryPolicy;
+use Sakoo\AI\Neuron\Throttle\FileThrottleStorage;
+use Sakoo\AI\Neuron\Throttle\ThrottleStorageInterface;
 use Sakoo\Framework\Core\Container\Container;
 use Sakoo\Framework\Core\Env\Env;
+use Sakoo\Framework\Core\Http\Client\HttpClient;
+use Sakoo\Framework\Core\Http\HttpFactory;
 use Sakoo\Framework\Core\Logger\FileLogger;
 use Sakoo\Framework\Core\ServiceLoader\ServiceLoader;
+use System\AI\HttpClientBridge;
+use System\AI\ProjectContext;
+use System\AI\SakooFileStorage;
 use System\Path\Path;
 
 class AIServiceLoader extends ServiceLoader
 {
 	public function load(Container $container): void
 	{
+		$this->registerCore($container);
 		$this->registerOptimizers($container);
 		$this->registerMetrics($container);
 		$this->registerAvailability($container);
@@ -61,11 +71,31 @@ class AIServiceLoader extends ServiceLoader
 		$this->neuronProcessors($container);
 	}
 
+	/**
+	 * Binds the two framework-agnostic interfaces to their Sakoo implementations.
+	 * When shipping app/AI as a standalone package, replace these bindings with
+	 * framework-specific adapters (e.g. LaravelFileStorage, LaravelProjectContext).
+	 */
+	private function registerCore(Container $container): void
+	{
+		$container->singleton(FileStorageInterface::class, new SakooFileStorage());
+		$container->singleton(ProjectContextInterface::class, new ProjectContext());
+
+		$factory = new HttpFactory();
+		$container->singleton(RequestFactoryInterface::class, $factory);
+		$container->singleton(McpWebClient::class, new McpWebClient(
+			new HttpClientBridge($container->resolve(HttpClient::class)),
+			$factory,
+		));
+	}
+
 	private function registerAvailability(Container $container): void
 	{
-		$container->singleton(CircuitBreakerStorageInterface::class, new FileCircuitBreakerStorage(failureThreshold: 5, openWindowSeconds: 60));
-		$container->singleton(CacheStorageInterface::class, new FileCacheStorage());
-		$container->singleton(ThrottleStorageInterface::class, new FileThrottleStorage());
+		$storageDir = (string) Path::getStorageDir();
+		$fileStorage = $container->resolve(FileStorageInterface::class);
+		$container->singleton(CircuitBreakerStorageInterface::class, new FileCircuitBreakerStorage($fileStorage, $storageDir, failureThreshold: 5, openWindowSeconds: 60));
+		$container->singleton(CacheStorageInterface::class, new FileCacheStorage($fileStorage, $storageDir));
+		$container->singleton(ThrottleStorageInterface::class, new FileThrottleStorage($fileStorage, $storageDir));
 		$container->bind(LoggingHttpClient::class, fn () => new LoggingHttpClient($container->resolve('logger.ai')));
 	}
 
@@ -77,6 +107,8 @@ class AIServiceLoader extends ServiceLoader
 
 	private function registerGuard(Container $container): void
 	{
+		$storageDir = (string) Path::getStorageDir();
+		$fileStorage = $container->resolve(FileStorageInterface::class);
 		$httpClient = $container->resolve(LoggingHttpClient::class);
 
 		$container->bind('moderation.avalai.openai', new LLMModerationDetector(
@@ -95,7 +127,10 @@ class AIServiceLoader extends ServiceLoader
 			resolve('moderation.avalai.openai'),
 		]));
 
-		$container->singleton(AuditStorageInterface::class, new JsonlAuditStorage());
+		$container->singleton(
+			AuditStorageInterface::class,
+			new JsonlAuditStorage($fileStorage, $storageDir),
+		);
 	}
 
 	private function registerProviders(Container $container): void
@@ -162,16 +197,25 @@ class AIServiceLoader extends ServiceLoader
 
 	private function registerMetrics(Container $container): void
 	{
-		$container->singleton('logger.ai', new FileLogger($container->resolve(ClockInterface::class), Path::getStorageDir() . '/ai/logs'));
-		$container->singleton(MetricStorageInterface::class, new JsonlMetricStorage());
+		$storageDir = (string) Path::getStorageDir();
+		$fs = $container->resolve(FileStorageInterface::class);
+
+		$container->singleton('logger.ai', new FileLogger($container->resolve(ClockInterface::class), $storageDir . '/ai/logs'));
+		$container->singleton(MetricStorageInterface::class, new JsonlMetricStorage($fs, $storageDir));
 		$container->singleton(QualityEvaluatorInterface::class, new NullQualityEvaluator());
 	}
 
 	private function registerMcp(Container $container): void
 	{
-		$mcpStorage = new McpTokenJsonlStorage();
+		$storageDir = (string) Path::getStorageDir();
+		$fs = $container->resolve(FileStorageInterface::class);
+
+		$mcpStorage = new McpTokenJsonlStorage($fs, $storageDir);
 		$container->singleton(McpTokenStorageInterface::class, $mcpStorage);
-		$container->singleton(McpTokenObserver::class, new McpTokenObserver(calculator: $container->resolve(McpTokenCalculator::class), storage: $mcpStorage));
+		$container->singleton(McpTokenObserver::class, new McpTokenObserver(
+			calculator: $container->resolve(McpTokenCalculator::class),
+			storage: $mcpStorage,
+		));
 	}
 
 	private function neuronProcessors(Container $container): void

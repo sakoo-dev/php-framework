@@ -47,7 +47,10 @@ $rules = [
 $config = new Config();
 
 $config->getFinder()
-	->in([__DIR__ . '/app', __DIR__ . '/core'])
+	->in([
+		__DIR__ . '/app',
+		__DIR__ . '/core',
+	])
 	->name('*.php')
 	->ignoreVCS(true)
 	->ignoreVCSIgnored(true)
