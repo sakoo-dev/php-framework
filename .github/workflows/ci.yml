@@ -42,7 +42,9 @@ jobs:
 
       - name: Install dependencies
         if: steps.composer-cache.outputs.cache-hit != 'true'
-        run: composer install --prefer-dist --no-progress --ignore-platform-reqs
+        run: |
+          composer config --global github-oauth.github.com "${{ secrets.SAKOO_AI_PRIVATE_KEY }}"
+          composer install --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: Validate composer.json and composer.lock
         run: |

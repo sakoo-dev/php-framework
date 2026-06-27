@@ -4,46 +4,27 @@ declare(strict_types=1);
 
 namespace App\Assist\Commands;
 
-use App\AI\Agent\Agent;
 use App\AI\Agent\ChatBotAgent;
-use App\AI\Agent\Consult\ArchitectAgent;
-use App\AI\Agent\Consult\WorkerAgent;
 use App\AI\Agent\DataAnalystAgent;
 use App\AI\Agent\DeveloperAgent;
 use App\AI\Agent\ProductManagerAgent;
 use App\AI\Agent\PsychologistAgent;
-use App\AI\Mcp\McpContextProvider;
-use App\AI\Mcp\McpElements;
-use App\AI\Neuron\Guard\AuditStorageInterface;
-use App\AI\Neuron\Guard\Exception\GuardViolationException;
-use App\AI\Neuron\Guard\GuardrailObserver;
-use App\AI\Neuron\Guard\GuardrailPipeline;
-use App\AI\Neuron\Inspector\RagObserver;
-use App\AI\Neuron\Metric\AgentMetricObserver;
-use App\AI\Neuron\Metric\MetricSource;
-use App\AI\Neuron\Metric\MetricStorageInterface;
-use App\AI\Neuron\Metric\QualityEvaluatorInterface;
-use App\AI\Neuron\Session\ChatSession;
-use App\AI\Neuron\Session\ChatSessionRepository;
-use App\AI\Neuron\Session\SessionId;
-use App\AI\Neuron\State\AgentStreamState;
-use App\Assist\Commands\Formatter\CliAgentStreamFormatter;
-use NeuronAI\Chat\Messages\Stream\Chunks\StreamChunk;
-use NeuronAI\Chat\Messages\UserMessage;
-use NeuronAI\Exceptions\ChatHistoryException;
-use NeuronAI\Exceptions\WorkflowException;
-use NeuronAI\MCP\McpException;
-use NeuronAI\Observability\LogObserver;
-use NeuronAI\Workflow\Interrupt\WorkflowInterrupt;
-use Psr\Log\LoggerInterface;
+use App\Assist\Commands\Formatter\CLIAgentStreamFormatter;
+use Sakoo\AI\Agent\Agent;
+use Sakoo\AI\Agent\Runner\AgentRunnerFactory;
+use Sakoo\AI\Agent\Runner\TurnStatus;
+use Sakoo\AI\Agent\WorkerAgent;
+use Sakoo\AI\Neuron\Session\ChatSession;
+use Sakoo\AI\Neuron\Session\ChatSessionRepository;
+use Sakoo\AI\Neuron\Session\SessionId;
 use Sakoo\Framework\Core\Console\Command;
 use Sakoo\Framework\Core\Console\Input;
 use Sakoo\Framework\Core\Console\Output;
-use System\Path\Path;
 
 class AgentCommand extends Command
 {
 	private const string START_FRESH_SESSION = 'Start fresh session';
+
 	/** @var string[] */
 	private array $agents = [
 		DataAnalystAgent::class,
@@ -69,34 +50,11 @@ class AgentCommand extends Command
 		/** @var class-string<Agent> $selectedClass */
 		$selectedClass = $input->radio($this->agents, 'Select an Agent to Talk with:');
 
-		/** @var Agent $agent */
-		$agent = $this->buildAgent($selectedClass);
+		$agent = $selectedClass::make();
 		$session = $this->resolveSession($agent->getName(), $input, $output);
-		$mcpContextProvider = new McpContextProvider(McpElements::class);
-
-		/** @var LoggerInterface $logger */
-		// @phpstan-ignore argument.type
-		$logger = resolve('logger.ai');
-		$logObserver = new LogObserver($logger);
-
-		$metricObserver = new AgentMetricObserver(
-			storage: resolve(MetricStorageInterface::class),
-			qualityEvaluator: resolve(QualityEvaluatorInterface::class),
-			sessionId: $session->sessionId,
-			agentName: $agent->getName(),
-			modelName: $agent->getModelName(),
-			providerName: $agent->getProviderName(),
-			source: MetricSource::Live,
-		);
-
-		$guardrailObserver = new GuardrailObserver(
-			pipeline: resolve(GuardrailPipeline::class),
-			auditStorage: resolve(AuditStorageInterface::class),
-			sessionId: $session->sessionId,
-			agentName: $agent->getName(),
-		);
-
-		$ragObserver = new RagObserver($output);
+		$factory = resolve(AgentRunnerFactory::class);
+		$runner = $factory->make($agent, $session);
+		$formatter = new CLIAgentStreamFormatter($output);
 
 		$output->block([
 			"\t\t=======================",
@@ -107,115 +65,68 @@ class AgentCommand extends Command
 		$output->block('Welcome to Sakoo ' . strtoupper($agent->getName()) . ' Agent!', Output::COLOR_RED);
 		$output->block('Session: ' . $session->sessionId->value, Output::COLOR_MAGENTA);
 
-		$formatter = new CliAgentStreamFormatter($output);
-
-		$previousPrompt = null;
+		$pendingPrompt = null;
 
 		// @phpstan-ignore while.alwaysTrue
 		while (true) {
-			/** @var Agent $agent */
-			$agent = $this->buildAgent($selectedClass);
-
-			$agent->observe($logObserver);
-			$agent->observe($metricObserver);
-			$agent->observe($ragObserver);
-
-			if ($agent->shouldApplyGuardrails()) {
-				$agent->observe($guardrailObserver);
-			}
-
-			$agent->withSession($session);
-			$agent->withMcpContext($mcpContextProvider);
-
-			if (!$previousPrompt) {
+			if (null === $pendingPrompt) {
 				$output->block('Enter Your Prompt:', Output::COLOR_YELLOW);
 			}
 
-			$prompt = $previousPrompt ?? $input->getUserInput();
+			$prompt = $pendingPrompt ?? $input->getUserInput();
+			$pendingPrompt = null;
 
 			$output->block('Processing...', Output::COLOR_CYAN);
 
-			try {
-				$agentStream = $agent->stream(new UserMessage($prompt));
-				$previousPrompt = null;
+			$result = $runner->turn($prompt);
 
-				/** @var ?StreamChunk $previousChunk */
-				$previousChunk = null;
+			if ($result->needsRetry()) {
+				$pendingPrompt = $result->retryPrompt;
 
-				/** @var StreamChunk $chunk */
-				foreach ($agentStream->events() as $chunk) {
-					$formatter->format($chunk, $previousChunk);
-					$previousChunk = $chunk;
-				}
-
-				if ($agent->shouldApplyGuardrails()) {
-					$guardrailObserver->guardText($agentStream->getMessage()->getContent() ?? '', GuardrailObserver::RESPONSE);
-				}
-			} catch (GuardViolationException $e) {
-				$output->newLine();
-				$output->block('⚠ ' . $e->classification->value . ': ' . $e->reason, Output::COLOR_RED);
-
-				continue;
-			} catch (ChatHistoryException $e) {
-				if (str_contains($e->getMessage(), 'Invalid message sequence at position')) {
-					// @phpstan-ignore method.notFound
-					$agent->getChatHistory()->removeLastLog();
-					$output->block('Chat History Error Fixing ...', Output::COLOR_RED);
-					$previousPrompt = $prompt;
-				} else {
-					$output->block('Chat History Exception', Output::COLOR_RED);
-				}
-
-				continue;
-			} catch (WorkflowInterrupt $e) {
-				$output->block('Workflow Interrupt: ' . $e->getMessage(), Output::COLOR_RED);
-
-				continue;
-			} catch (WorkflowException $e) {
-				$output->block('Workflow Exception: ' . $e->getMessage(), Output::COLOR_RED);
-
-				continue;
-			} catch (\Throwable $e) {
-				if ($this->isOrphanedToolUseError($e->getMessage())) {
-					// @phpstan-ignore method.notFound
-					$agent->getChatHistory()->removeLastLog();
+				if ($result->orphanedToolUse) {
 					$output->block('Orphaned tool_use detected — pruned history, retrying...', Output::COLOR_RED);
-					$previousPrompt = $prompt;
-
-					continue;
-				}
-
-				if ($this->isMcpToolFile($e->getFile()) || $e instanceof McpException) {
+				} elseif ($result->mcpError) {
 					$output->block('MCP Tool Error. Retrying...', Output::COLOR_RED);
-					$previousPrompt = $prompt;
-
-					continue;
+				} else {
+					$output->block('Chat History Error Fixing...', Output::COLOR_RED);
 				}
-
-				$output->block(get_class($e) . ': ' . $e->getMessage(), Output::COLOR_RED);
-				//				$output->block($e->getTraceAsString(), Output::COLOR_RED);
 
 				continue;
 			}
 
+			if (TurnStatus::GuardViolation === $result->status) {
+				$output->newLine();
+				$output->block(
+					'⚠ ' . $result->guardViolation?->classification->value . ': ' . $result->guardViolation?->reason,
+					Output::COLOR_RED,
+				);
+
+				continue;
+			}
+
+			if (TurnStatus::RecoverableError === $result->status || TurnStatus::FatalError === $result->status) {
+				$label = '' !== $result->errorLabel ? $result->errorLabel : get_class($result->error ?? new \RuntimeException());
+				$message = $result->error?->getMessage() ?? '';
+				$output->block($label . ('' !== $message ? ': ' . $message : ''), Output::COLOR_RED);
+
+				continue;
+			}
+
+			foreach ($result->chunks as [$chunk, $previousChunk]) {
+				$formatter->format($chunk, $previousChunk);
+			}
+
 			$output->newLine();
-			/** @phpstan-ignore variable.undefined */
-			$agentUsage = $agentStream->getMessage()->getUsage();
+			$output->block('Powered By: ' . $result->providerName . ' | ' . $result->modelName, Output::COLOR_MAGENTA);
+			$output->block('Input Tokens: ' . $result->inputTokens . ' (' . $result->contextUsagePercent() . '% of context)', Output::COLOR_MAGENTA);
+			$output->block('Output Tokens: ' . ($result->outputTokens ?: 'N/A'), Output::COLOR_MAGENTA);
+			$output->block('Total Tokens: ' . ($result->totalTokens ?: 'N/A'), Output::COLOR_MAGENTA);
 
-			$rawState = $agentStream->run();
-			$state = AgentStreamState::fromArray($rawState->all());
-
-			$contextWindow = $agent::CONTEXT_WINDOW;
-			$inputTokens = $agentUsage->inputTokens ?? 0;
-			$contextUsagePercent = $contextWindow > 0 ? round(($inputTokens / $contextWindow) * 100, 1) : 0;
-
-			$output->block('Powered By: ' . $agent->getProviderName() . ' | ' . $agent->getModelName(), Output::COLOR_MAGENTA);
-			$output->block('Input Tokens: ' . $inputTokens . ' (' . $contextUsagePercent . '% of context)', Output::COLOR_MAGENTA);
-			$output->block('Output Tokens: ' . ($agentUsage->outputTokens ?? 'N/A'), Output::COLOR_MAGENTA);
-			$output->block('Total Tokens: ' . ($agentUsage?->getTotal() ?? 'N/A'), Output::COLOR_MAGENTA);
-
-			if ($state->hasOptimization()) {
-				$output->block('⚡ Optimization: Saved ' . $state->tokensSaved() . ' tokens (' . $state->savingsPercent() . '% reduction)', Output::COLOR_CYAN);
+			if ($result->streamState?->hasOptimization()) {
+				$output->block(
+					'⚡ Optimization: Saved ' . $result->streamState->tokensSaved() . ' tokens (' . $result->streamState->savingsPercent() . '% reduction)',
+					Output::COLOR_CYAN,
+				);
 			}
 		}
 
@@ -223,13 +134,9 @@ class AgentCommand extends Command
 		return Output::SUCCESS;
 	}
 
-	/**
-	 * Asks whether to resume an existing session or start fresh. Existing sessions
-	 * are discovered by ChatSessionRepository and presented via the console radio.
-	 */
 	private function resolveSession(string $agentName, Input $input, Output $output): ChatSession
 	{
-		$existing = (new ChatSessionRepository())->findByAgent($agentName);
+		$existing = resolve(ChatSessionRepository::class)->findByAgent($agentName);
 
 		if ([] === $existing) {
 			return $this->startNewSession($output, $agentName);
@@ -260,27 +167,5 @@ class AgentCommand extends Command
 		$output->block('Starting new session.', Output::COLOR_CYAN);
 
 		return new ChatSession(SessionId::generate(), $agentName);
-	}
-
-	/**
-	 * @param class-string<Agent> $class
-	 */
-	private function buildAgent(string $class): Agent
-	{
-		if (WorkerAgent::class === $class) {
-			return new WorkerAgent(ArchitectAgent::make());
-		}
-
-		return $class::make();
-	}
-
-	private function isOrphanedToolUseError(string $message): bool
-	{
-		return str_contains($message, 'tool_use` ids were found without `tool_result`');
-	}
-
-	private function isMcpToolFile(string $file): bool
-	{
-		return str_starts_with($file, Path::getVendorDir() . '/neuron-core/neuron-ai/src/Tools') || str_starts_with($file, Path::getAppDir() . '/AI/Mcp');
 	}
 }

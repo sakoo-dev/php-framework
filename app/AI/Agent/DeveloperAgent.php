@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\AI\Agent;
 
-use App\AI\Neuron\Tool\PromptFetchTool;
-use App\AI\Neuron\Tool\ResourceFetchTool;
-use App\AI\Neuron\Tool\RetrievalTool;
+use NeuronAI\RAG\PostProcessor\LocalAIRerankerPostProcessor;
+use Sakoo\AI\Agent\Agent;
+use Sakoo\AI\Neuron\Tool\PromptFetchTool;
+use Sakoo\AI\Neuron\Tool\ResourceFetchTool;
+use Sakoo\AI\Neuron\Tool\RetrievalTool;
 
 class DeveloperAgent extends Agent
 {
@@ -27,9 +29,9 @@ class DeveloperAgent extends Agent
 			...$this->calculatorTools(),
 			...$this->calendarTools(),
 			...$this->mcpTools()->exclude([])->tools(),
-			ResourceFetchTool::make($this->mcpElementsClass()),
-			PromptFetchTool::make($this->mcpElementsClass()),
-			new RetrievalTool($this),
+			ResourceFetchTool::make($this->mcpElementsClass(), container()),
+			PromptFetchTool::make($this->mcpElementsClass(), container()),
+			new RetrievalTool($this, new LocalAIRerankerPostProcessor('ai.reranker')),
 		];
 	}
 

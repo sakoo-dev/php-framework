@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace App\AI\Mcp;
 
-use App\AI\Mcp\Diff\Exception\MalformedDiffException;
-use App\AI\Mcp\Diff\Exception\PatchWriteException;
-use App\AI\Mcp\Diff\PatchApplier;
-use App\AI\Mcp\Web\Exception\WebFetchException;
-use App\AI\Mcp\Web\Exception\WebSearchException;
 use Mcp\Capability\Attribute\McpPrompt;
 use Mcp\Capability\Attribute\McpResource;
 use Mcp\Capability\Attribute\McpTool;
@@ -17,245 +12,21 @@ use Mcp\Schema\Content\PromptMessage;
 use Mcp\Schema\Content\TextContent;
 use Mcp\Schema\Enum\Role;
 use Mcp\Schema\Result\CallToolResult;
-use Sakoo\Framework\Core\Assert\Assert;
-use Sakoo\Framework\Core\Assert\Exception\InvalidArgumentException;
-use Sakoo\Framework\Core\Console\Application;
-use Sakoo\Framework\Core\Console\Command;
-use Sakoo\Framework\Core\Env\Env;
-use Sakoo\Framework\Core\FileSystem\Disk;
-use Sakoo\Framework\Core\FileSystem\File;
-use Sakoo\Framework\Core\Finder\FileFinder;
-use Sakoo\Framework\Core\Finder\Makefile;
-use Sakoo\Framework\Core\Kernel\Kernel;
-use System\Path\Path;
+use Sakoo\AI\Mcp\McpElements as BaseElements;
 
 /**
- * Declares all MCP capabilities (Tools, Resources, Prompts) for the Sakoo PHP Framework.
+ * Sakoo PHP Framework-specific MCP capabilities.
  *
- * Every tool method returns a {@see CallToolResult} from the official php-mcp/schema
- * package, providing first-class MCP protocol compatibility. The SDK serialises
- * CallToolResult directly into the JSON-RPC response — no wrapping needed.
+ * Extends the generic {@see BaseElements} with tools, resources, and prompts
+ * that are tightly coupled to the Sakoo framework's directory structure,
+ * CLI commands, evaluation system, and skill file library.
  *
- * Response conventions:
- *   - {@see CallToolResult::success()} for successful operations.
- *   - {@see CallToolResult::error()} for tool-level failures (LLM can self-correct).
- *   - {@see TextContent} carries the human/LLM-readable text payload.
- *   - `structuredContent` carries machine-readable JSON for complex data.
- *   - `_meta` carries optional metadata (counts, truncation flags).
- *
- * Architecture:
- *   - Tools    -> LLM invokes. Return CallToolResult.
- *   - Resources -> User attaches. Return raw data.
- *   - Prompts  -> User runs as template. Return PromptMessage[].
- *
- * @see FileFinder::guard()    Path-traversal protection.
- * @see McpShell               Project-scoped shell executor.
- * @see ExceptionInterface     Base marker for all MCP SDK exceptions.
+ * Generic capabilities (file I/O, git, shell, web, code analysis) live in
+ * BaseElements so they can be reused in other host applications.
  */
-class McpElements
+class McpElements extends BaseElements
 {
-	//	#[McpTool('rhel_integration', 'Returns Interactive Shell on the Project')]
-	//	#[McpTool('route_inspection', 'Scans the project for route definition files and returns their contents.')]
-	//	#[McpTool('database_connections', 'Lists all configured database connections read from environment variables (DB_*).')]
-	//	#[McpTool('database_query', 'Executes a read-only SQL query against the default PDO connection and returns results.')]
-	//	#[McpTool('database_schema', 'Returns the schema (tables and columns) of the configured database.')]
-
-	/** Maximum characters of tool output to include in check_code structured results. */
 	private const CHECK_OUTPUT_CAP = 10000;
-
-	private McpShell $shell;
-	private McpTokenObserver $observer;
-	private McpWebClient $web;
-	private McpCodeAnalysisClient $codeAnalysis;
-
-	/** @var null|array<array{name: string, desc: string}> */
-	private ?array $cachedCommands = null;
-
-	public function __construct()
-	{
-		$this->shell = resolve(McpShell::class);
-		$this->observer = resolve(McpTokenObserver::class);
-		$this->web = resolve(McpWebClient::class);
-		$this->codeAnalysis = resolve(McpCodeAnalysisClient::class);
-	}
-
-	#[McpTool(
-		name: 'sakoo_read_file',
-		description: 'Read a single file with optional line range (from/to, 1-based) and character cap (maxChars). Returns raw text, truncation flag, and total line count. Scoped to project root — directory traversal is rejected.',
-	)]
-	public function readFileTool(string $path, int $from = 1, int $to = 0, int $maxChars = 50000): CallToolResult
-	{
-		$path = FileFinder::guard($path);
-		$input = compact('path', 'from', 'to', 'maxChars');
-
-		Assert::lazy()
-			->file($path, "Not a file: {$path}")
-			->notDir($path, "Is a directory: {$path}")
-			->validate();
-
-		$chunk = File::open(Disk::Local, $path)->readChunk($from, $to, $maxChars);
-
-		$result = new CallToolResult(
-			[new TextContent($chunk->content)],
-			structuredContent: ['path' => $path, 'from' => $chunk->from, 'to' => $chunk->to, 'totalLines' => $chunk->totalLines, 'truncated' => $chunk->truncated],
-			meta: ['truncated' => $chunk->truncated],
-		);
-
-		$this->observer->log('read_file', $input, $chunk->content);
-
-		return $result;
-	}
-
-	#[McpTool(
-		name: 'sakoo_write_file',
-		description: 'Write or overwrite a file at the given path. Creates missing parent directories automatically. Returns ok:{path} on success. Scoped to project root — directory traversal is rejected.',
-	)]
-	public function writeFileTool(string $path, string $content): CallToolResult
-	{
-		$path = FileFinder::guard($path);
-		$stored = File::open(Disk::Local, $path)->write($content);
-
-		if (!$stored) {
-			return CallToolResult::error([new TextContent("Write failed: {$path}")]);
-		}
-
-		$result = new CallToolResult(
-			[new TextContent("ok:{$path}")],
-			structuredContent: ['path' => $path],
-		);
-
-		$this->observer->log('write_file', compact('path'), "ok:{$path}");
-
-		return $result;
-	}
-
-	#[McpTool(
-		name: 'apply_diff',
-		description: 'Apply a unified diff to a file instead of rewriting it entirely. Pass the path and a standard unified diff (--- / +++ / @@ hunks). Returns ok:{path} on success. Reduces token usage up to 90% vs sakoo_write_file for incremental changes.',
-	)]
-	public function applyDiffTool(string $path, string $diff): CallToolResult
-	{
-		$path = FileFinder::guard($path);
-
-		if (!is_file($path)) {
-			return CallToolResult::error([new TextContent("Not found: {$path}")]);
-		}
-
-		try {
-			(new PatchApplier())->apply($path, $diff);
-		} catch (MalformedDiffException $e) {
-			return CallToolResult::error([new TextContent("Malformed diff for {$path}: {$e->getMessage()}")]);
-		} catch (PatchWriteException $e) {
-			return CallToolResult::error([new TextContent($e->getMessage())]);
-		}
-
-		$this->observer->log('apply_diff', compact('path'), "ok:{$path}");
-
-		return new CallToolResult(
-			[new TextContent("ok:{$path}")],
-			structuredContent: ['path' => $path],
-		);
-	}
-
-	#[McpTool(
-		name: 'remove_file',
-		description: 'Permanently delete a single file from the project. Refuses silently when the path resolves to a directory. Returns an error result for missing paths so the LLM can self-correct. Scoped to project root.',
-	)]
-	public function removeFileTool(string $path): CallToolResult
-	{
-		$path = FileFinder::guard($path);
-
-		if (is_dir($path)) {
-			return CallToolResult::error([new TextContent("Is a directory: {$path}")]);
-		}
-
-		if (!is_file($path)) {
-			return CallToolResult::error([new TextContent("Not found: {$path}")]);
-		}
-
-		$removed = File::open(Disk::Local, $path)->remove();
-
-		if (!$removed) {
-			return CallToolResult::error([new TextContent("Remove failed: {$path}")]);
-		}
-
-		$this->observer->log('remove_file', compact('path'), "ok:{$path}");
-
-		return new CallToolResult(
-			[new TextContent("ok:{$path}")],
-			structuredContent: ['path' => $path],
-		);
-	}
-
-	/**
-	 * @param string[] $paths
-	 */
-	#[McpTool(
-		name: 'read_files',
-		description: 'Read multiple files in one call and return a {path: content} map. Each file is capped individually by maxChars. Unreadable or missing paths are collected in structuredContent.errors rather than aborting the batch.',
-	)]
-	public function readFilesTool(array $paths, int $maxChars = 30000): CallToolResult
-	{
-		$paths = FileFinder::guardMany($paths);
-		$files = [];
-		$errors = [];
-
-		foreach ($paths as $path) {
-			if (!is_file($path) || !is_readable($path)) {
-				$errors[$path] = 'not_readable';
-
-				continue;
-			}
-
-			$files[$path] = File::open(Disk::Local, $path)->readChunkText(maxChars: $maxChars);
-		}
-
-		$contents = array_map(
-			fn (string $p, string $c): TextContent => new TextContent("[{$p}]\n{$c}"),
-			array_keys($files),
-			array_values($files),
-		);
-
-		$result = new CallToolResult(
-			$contents,
-			structuredContent: ['files' => $files, 'errors' => $errors],
-			meta: ['requested' => count($paths), 'read' => count($files)],
-		);
-
-		$this->observer->log('read_files', ['paths' => $paths, 'maxChars' => $maxChars], $files);
-
-		return $result;
-	}
-
-	#[McpTool(
-		name: 'dir_files',
-		description: 'List files in a directory with an optional glob pattern and result cap. Dot-files and VCS metadata are excluded. When the result is truncated by limit, _meta.truncated is set to true. Scoped to project root.',
-	)]
-	public function getDirFileListTool(string $path, string $pattern = '', int $limit = 500): CallToolResult
-	{
-		$path = FileFinder::guard($path);
-
-		$finder = (new FileFinder($path))
-			->ignoreDotFiles()
-			->ignoreVCS()
-			->limit($limit);
-
-		if ('' !== $pattern) {
-			$finder->pattern($pattern);
-		}
-
-		$files = $finder->find();
-
-		$result = new CallToolResult(
-			[new TextContent($files)],
-			structuredContent: ['files' => $files],
-			meta: ['total' => count($files), 'truncated' => $finder->wasTruncated()],
-		);
-
-		$this->observer->log('dir_files', compact('path', 'pattern', 'limit'), $files);
-
-		return $result;
-	}
 
 	#[McpTool(
 		name: 'project_structure',
@@ -263,23 +34,9 @@ class McpElements
 	)]
 	public function projectStructureTool(): CallToolResult
 	{
-		$appFiles = (new FileFinder(Path::getAppDir() ?: __DIR__))
-			->ignoreDotFiles()
-			->ignoreVCS()
-			->ignoreVCSIgnored()
-			->find();
-
-		$systemFiles = (new FileFinder(Path::getSystemDir() ?: __DIR__))
-			->ignoreDotFiles()
-			->ignoreVCS()
-			->ignoreVCSIgnored()
-			->find();
-
-		$coreFiles = (new FileFinder(Path::getCoreDir() ?: __DIR__))
-			->ignoreDotFiles()
-			->ignoreVCS()
-			->ignoreVCSIgnored()
-			->find();
+		$appFiles = $this->context->listFiles($this->context->appDir() ?: __DIR__);
+		$systemFiles = $this->context->listFiles($this->context->systemDir() ?: __DIR__);
+		$coreFiles = $this->context->listFiles($this->context->coreDir() ?: __DIR__);
 
 		$structured = ['app' => $appFiles, 'core' => $coreFiles, 'system' => $systemFiles];
 
@@ -299,14 +56,14 @@ class McpElements
 	)]
 	public function browserLogsTool(int $limit = 50): CallToolResult
 	{
-		$logFile = Path::getStorageDir() . '/browser/http.log';
-		$file = File::open(Disk::Local, $logFile);
+		$logPath = $this->context->storageDir() . '/browser/http.log';
 
-		if (!$file->exists()) {
+		if (!$this->fileStorage->exists($logPath)) {
 			return CallToolResult::success([new TextContent('No browser log found.')], ['note' => 'no_log']);
 		}
 
-		$entries = $file->readTail($limit)->lines;
+		$allLines = array_values(array_filter(explode("\n", $this->fileStorage->read($logPath)), fn (string $l): bool => '' !== trim($l)));
+		$entries = array_slice($allLines, -$limit);
 
 		$result = new CallToolResult(
 			[new TextContent($entries)],
@@ -328,17 +85,17 @@ class McpElements
 			$date = date('Y/m/d');
 		}
 
-		$logPath = Path::getLogsDir() . '/' . $date . '.log';
-		$file = File::open(Disk::Local, $logPath);
+		$logPath = $this->context->logsDir() . '/' . $date . '.log';
 
-		if (!$file->exists()) {
+		if (!$this->fileStorage->exists($logPath)) {
 			return CallToolResult::success(
 				[new TextContent("No log file for {$date}")],
 				['date' => $date, 'n' => 0, 'note' => 'no_log'],
 			);
 		}
 
-		$entries = $file->readTail($limit)->lines;
+		$allLines = array_values(array_filter(explode("\n", $this->fileStorage->read($logPath)), fn (string $l): bool => '' !== trim($l)));
+		$entries = array_slice($allLines, -$limit);
 
 		$result = new CallToolResult(
 			[new TextContent($entries)],
@@ -352,47 +109,21 @@ class McpElements
 	}
 
 	#[McpTool(
-		name: 'last_error',
-		description: 'Return the last PHP error captured by error_get_last(). Covers fatals, parse errors, and warnings stored in the last-error slot. Returns a notice when the slot is empty. Does not read log files — use read_log_entries for persistent history.',
-	)]
-	public function lastErrorTool(): CallToolResult
-	{
-		$error = error_get_last();
-
-		if (null === $error) {
-			return CallToolResult::success([new TextContent('No PHP error recorded.')]);
-		}
-
-		$data = [
-			'type' => $error['type'],
-			'msg' => $error['message'],
-			'file' => $error['file'],
-			'line' => $error['line'],
-		];
-
-		return new CallToolResult(
-			[new TextContent("[{$error['type']}] {$error['message']} in {$error['file']}:{$error['line']}")],
-			structuredContent: $data,
-		);
-	}
-
-	#[McpTool(
 		name: 'search_docs',
 		description: 'Search the generated wiki (.github/wiki/Home.md) for lines matching a keyword using a case-insensitive substring match. Returns matched lines with their line numbers. Run "php assist doc:gen" first if the wiki has not been generated yet.',
 	)]
 	public function searchDocsTool(string $keyword, int $limit = 30): CallToolResult
 	{
-		$wikiFile = Path::getRootDir() . '/.github/wiki/Home.md';
-		$file = File::open(Disk::Local, $wikiFile);
+		$wikiFile = $this->context->rootDir() . '/.github/wiki/Home.md';
 
-		if (!$file->exists()) {
+		if (!$this->fileStorage->exists($wikiFile)) {
 			return CallToolResult::success(
 				[new TextContent('Wiki not generated. Run: php assist doc:gen')],
 				['kw' => $keyword, 'n' => 0],
 			);
 		}
 
-		$lines = $file->readLines();
+		$lines = explode("\n", $this->fileStorage->read($wikiFile));
 		$matches = [];
 
 		foreach ($lines as $lineNo => $line) {
@@ -412,128 +143,6 @@ class McpElements
 		);
 
 		$this->observer->log('search_docs', compact('keyword', 'limit'), $matches);
-
-		return $result;
-	}
-
-	#[McpTool(
-		name: 'get_absolute_url',
-		description: 'Build an absolute URL by combining the APP_URL environment variable with a given URI path. Useful for constructing browser-ready links to routes, assets, or API endpoints without hard-coding the base domain.',
-	)]
-	public function getAbsoluteUrlTool(string $path = '/'): CallToolResult
-	{
-		/** @var string $appUrl */
-		$appUrl = Env::get('APP_URL', 'http://localhost');
-		$url = rtrim($appUrl, '/') . '/' . ltrim($path, '/');
-
-		return CallToolResult::success([new TextContent($url)]);
-	}
-
-	#[McpTool(
-		name: 'git_log',
-		description: 'Return recent git commits as {hash, message} objects, sorted newest-first. Use limit to cap results and path to filter commits touching a specific file or directory.',
-	)]
-	public function gitLogTool(int $limit = 20, string $path = ''): CallToolResult
-	{
-		$path = $this->guardOptionalPath($path);
-
-		$parsed = $this->shell->gitLogParsed($limit, $path);
-
-		$result = new CallToolResult(
-			[new TextContent($parsed['commits'])],
-			structuredContent: ['commits' => $parsed['commits']],
-			meta: ['n' => count($parsed['commits'])],
-		);
-
-		$this->observer->log('git_log', compact('limit', 'path'), $parsed['commits']);
-
-		return $result;
-	}
-
-	#[McpTool(
-		name: 'git_diff',
-		description: 'Show a git diff. Defaults to the current unstaged working-tree diff when ref and path are empty. Use ref to compare against a branch, tag, or SHA. Long diffs are truncated at maxLines and flagged in _meta.truncated.',
-	)]
-	public function gitDiffTool(string $ref = '', string $path = '', int $maxLines = 200): CallToolResult
-	{
-		$path = $this->guardOptionalPath($path);
-
-		$parsed = $this->shell->gitDiffParsed($ref, $path, $maxLines);
-
-		$result = new CallToolResult(
-			[new TextContent($parsed['diff'])],
-			structuredContent: ['diff' => $parsed['diff']],
-			meta: ['lines' => $parsed['total'], 'truncated' => $parsed['truncated']],
-		);
-
-		$this->observer->log('git_diff', compact('ref', 'path', 'maxLines'), $parsed['diff']);
-
-		return $result;
-	}
-
-	#[McpTool(
-		name: 'git_status',
-		description: 'Show the current git working-tree status: staged, unstaged, and untracked files. Returns a human-readable summary and a structured per-file status list. Always call this before proposing a commit or verifying a clean state.',
-	)]
-	public function gitStatusTool(string $path = ''): CallToolResult
-	{
-		$path = $this->guardOptionalPath($path);
-
-		$parsed = $this->shell->gitStatusParsed($path);
-
-		$result = new CallToolResult(
-			[new TextContent($parsed['summary'])],
-			structuredContent: ['clean' => $parsed['clean'], 'files' => $parsed['files']],
-			meta: ['summary' => $parsed['summary']],
-		);
-
-		$this->observer->log('git_status', ['path' => $path], $parsed['files']);
-
-		return $result;
-	}
-
-	#[McpTool(
-		name: 'test_run',
-		description: 'Run the PHPUnit test suite and return full output with a pass/fail summary. Use filter to target a single class or method via PHPUnit\'s --filter flag. The result is marked isError on failure so the LLM is prompted to investigate before continuing.',
-	)]
-	public function testRunTool(string $filter = ''): CallToolResult
-	{
-		$parsed = $this->shell->phpunitParsed($filter);
-
-		$result = new CallToolResult(
-			[new TextContent($parsed['output'])],
-			isError: !$parsed['ok'],
-			structuredContent: ['ok' => $parsed['ok'], 'summary' => $parsed['summary'], 'exitCode' => $parsed['exitCode']],
-		);
-
-		$this->observer->log('test_run', ['filter' => $filter], $parsed['output']);
-
-		return $result;
-	}
-
-	#[McpTool(
-		name: 'test_coverage',
-		description: 'Run PHPUnit with code coverage and return per-file line/method/class statistics sorted worst-first. Use maxPct to suppress well-covered files and focus on gaps. Requires Xdebug or PCOV — returns a clear notice when neither driver is active.',
-	)]
-	public function testCoverageTool(string $filter = '', int $maxPct = 100): CallToolResult
-	{
-		$parsed = $this->shell->phpunitCoverageParsed($filter);
-		$stats = $parsed['stats'];
-		$files = $this->filterCoverageFiles($parsed['files'], $maxPct);
-		$summaryText = $this->formatCoverageSummary($stats);
-
-		$result = new CallToolResult(
-			[new TextContent($summaryText)],
-			structuredContent: [
-				'ok' => $parsed['ok'],
-				'tests_summary' => $parsed['summary'],
-				'exitCode' => $parsed['exitCode'],
-				'stats' => $stats,
-				'files' => $files,
-			],
-		);
-
-		$this->observer->log('test_coverage', ['filter' => $filter, 'maxPct' => $maxPct], $summaryText);
 
 		return $result;
 	}
@@ -582,25 +191,6 @@ class McpElements
 		$this->observer->log('check_code', ['fix' => $fix, 'evalsOk' => $evals['ok']], $summaryText);
 
 		return $result;
-	}
-
-	#[McpTool(
-		name: 'phpstan_analyse',
-		description: 'Run PHPStan static analysis and return the FULL raw error list as text. Unlike check_code, this surfaces every error line directly in the response so the LLM can read and fix them without needing structuredContent access. isError is set when analysis fails.',
-	)]
-	public function phpstanAnalyseTool(): CallToolResult
-	{
-		$result = $this->shell->phpstan();
-		$output = $result['output'];
-		$ok = 0 === $result['exitCode'] && McpShell::parsePhpstanOutput($output);
-
-		$this->observer->log('phpstan_analyse', [], $output);
-
-		return new CallToolResult(
-			[new TextContent($output ?: 'No PHPStan output.')],
-			isError: !$ok,
-			structuredContent: ['ok' => $ok, 'exitCode' => $result['exitCode']],
-		);
 	}
 
 	#[McpTool(
@@ -660,306 +250,6 @@ class McpElements
 		);
 	}
 
-	#[McpTool(
-		name: 'web_search',
-		description: 'Search the web using Brave Search API. Returns up to count results (default 5, max 20) with title, URL, and description for each result. Requires BRAVE_SEARCH_API_KEY environment variable to be set.',
-	)]
-	public function webSearchTool(string $query, int $count = 5): CallToolResult
-	{
-		try {
-			$result = $this->web->search($query, $count);
-		} catch (WebSearchException $e) {
-			return CallToolResult::error([new TextContent($e->getMessage())]);
-		}
-
-		$results = $result['results'];
-		$text = "Search results for: {$query}\n\n";
-
-		foreach ($results as $i => $item) {
-			$text .= sprintf(
-				"%d. %s\n   %s\n   %s\n\n",
-				$i + 1,
-				$item['title'],
-				$item['url'],
-				$item['description']
-			);
-		}
-
-		$this->observer->log('web_search', compact('query', 'count'), $text);
-
-		return new CallToolResult(
-			[new TextContent($text)],
-			structuredContent: ['query' => $query, 'results' => $results],
-			meta: ['count' => count($results)],
-		);
-	}
-
-	#[McpTool(
-		name: 'web_fetch',
-		description: 'Fetch a URL and return the raw HTTP response body with metadata (status code, headers). Follows redirects and enforces a timeout (default 15s). Response bodies larger than 5MB are truncated and flagged in _meta.truncated.',
-	)]
-	public function webFetchTool(string $url, float $timeout = 15.0): CallToolResult
-	{
-		try {
-			$result = $this->web->fetch($url, $timeout);
-		} catch (WebFetchException $e) {
-			return CallToolResult::error([new TextContent($e->getMessage())]);
-		}
-
-		$text = "Fetched: {$result['url']}\nStatus: {$result['statusCode']}\n";
-
-		if ($result['truncated']) {
-			$text .= "WARNING: Response body truncated at 5MB\n";
-		}
-
-		$text .= "\n" . $result['body'];
-
-		$this->observer->log('web_fetch', compact('url', 'timeout'), substr($result['body'], 0, 1000));
-
-		return new CallToolResult(
-			[new TextContent($text)],
-			structuredContent: [
-				'url' => $result['url'],
-				'statusCode' => $result['statusCode'],
-				'headers' => $result['headers'],
-				'body' => $result['body'],
-			],
-			meta: ['truncated' => $result['truncated'], 'statusCode' => $result['statusCode']],
-		);
-	}
-
-	#[McpTool(
-		name: 'shell_exec',
-		description: 'Execute an arbitrary shell command in the project root directory. Returns stdout+stderr combined with exit code. Use with caution — no command filtering is applied. The result is marked isError on non-zero exit code.',
-	)]
-	public function shellExecTool(string $command): CallToolResult
-	{
-		try {
-			$result = $this->shell->run($command);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Shell execution failed: {$e->getMessage()}")]);
-		}
-
-		$output = $result['output'];
-		$exitCode = $result['exitCode'];
-
-		$this->observer->log('shell_exec', compact('command'), $output);
-
-		return new CallToolResult(
-			[new TextContent($output)],
-			isError: 0 !== $exitCode,
-			structuredContent: ['exitCode' => $exitCode, 'command' => $command],
-		);
-	}
-
-	#[McpTool(
-		name: 'grep_files',
-		description: 'Search file contents for a pattern using case-insensitive substring matching. Returns matched lines with file paths and line numbers. Searches recursively from path (default: project root). Skips vendor, node_modules, .git. Max 500 results.',
-	)]
-	public function grepFilesTool(string $pattern, string $path = '', int $limit = 100): CallToolResult
-	{
-		try {
-			$result = FileFinder::grep($pattern, $path, $limit);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Grep failed: {$e->getMessage()}")]);
-		}
-
-		$text = "Pattern: {$result->pattern}\nMatches: {$result->total}" . ($result->truncated ? ' (truncated)' : '') . "\n\n";
-
-		foreach ($result->matches as $match) {
-			$text .= sprintf("%s:%d: %s\n", $match->file, $match->line, $match->text);
-		}
-
-		$this->observer->log('grep_files', compact('pattern', 'path', 'limit'), $text);
-
-		return new CallToolResult(
-			[new TextContent($text)],
-			structuredContent: $result->toArray(),
-			meta: ['total' => $result->total, 'truncated' => $result->truncated],
-		);
-	}
-
-	#[McpTool(
-		name: 'find_files',
-		description: 'Find files by name pattern using glob-style wildcards (e.g., "*.php", "Controller*"). Searches recursively from path (default: project root). Returns relative file paths. Skips vendor, node_modules, .git. Max 200 results.',
-	)]
-	public function findFilesTool(string $pattern, string $path = '', int $limit = 100): CallToolResult
-	{
-		try {
-			$result = FileFinder::search($pattern, $path, $limit);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Find failed: {$e->getMessage()}")]);
-		}
-
-		$text = "Pattern: {$result->pattern}\nFiles: {$result->total}" . ($result->truncated ? ' (truncated)' : '') . "\n\n";
-		$text .= implode("\n", $result->files);
-
-		$this->observer->log('find_files', compact('pattern', 'path', 'limit'), $text);
-
-		return new CallToolResult(
-			[new TextContent($text)],
-			structuredContent: $result->toArray(),
-			meta: ['total' => $result->total, 'truncated' => $result->truncated],
-		);
-	}
-
-	#[McpTool(
-		name: 'file_metadata',
-		description: 'Get file metadata: size, modified timestamp, permissions, readable/writable flags. Path must be relative to project root or absolute within project.',
-	)]
-	public function fileMetadataTool(string $path): CallToolResult
-	{
-		try {
-			$result = FileFinder::metadata($path);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Metadata failed: {$e->getMessage()}")]);
-		}
-
-		$text = sprintf(
-			"File: %s\nSize: %d bytes\nModified: %s\nPermissions: %s\nReadable: %s\nWritable: %s",
-			$result->path,
-			$result->size,
-			date('Y-m-d H:i:s', $result->modified),
-			$result->permissions,
-			$result->readable ? 'yes' : 'no',
-			$result->writable ? 'yes' : 'no'
-		);
-
-		$this->observer->log('file_metadata', compact('path'), $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result->toArray());
-	}
-
-	#[McpTool(
-		name: 'create_directory',
-		description: 'Create a directory with optional recursive parent creation. Returns created flag (false if already exists). Path must be relative to project root.',
-	)]
-	public function createDirectoryTool(string $path, bool $recursive = true): CallToolResult
-	{
-		try {
-			$path = FileFinder::guard($path);
-
-			if (is_dir($path)) {
-				$relativePath = $this->relativePath($path);
-				$text = "Already exists: {$relativePath}";
-				$this->observer->log('create_directory', compact('path', 'recursive'), $text);
-
-				return new CallToolResult(
-					[new TextContent($text)],
-					structuredContent: ['path' => $relativePath, 'created' => false],
-				);
-			}
-
-			$created = @mkdir($path, 0755, $recursive);
-			throwUnless($created, new \RuntimeException("Failed to create directory: {$path}"));
-
-			$relativePath = $this->relativePath($path);
-			$text = "Created: {$relativePath}";
-			$this->observer->log('create_directory', compact('path', 'recursive'), $text);
-
-			return new CallToolResult(
-				[new TextContent($text)],
-				structuredContent: ['path' => $relativePath, 'created' => true],
-			);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Directory creation failed: {$e->getMessage()}")]);
-		}
-	}
-
-	#[McpTool(
-		name: 'copy_file',
-		description: 'Copy a file or directory recursively. Fails if destination already exists. Creates parent directories automatically. Paths must be relative to project root.',
-	)]
-	public function copyFileTool(string $source, string $destination): CallToolResult
-	{
-		try {
-			$source = FileFinder::guard($source);
-			$destination = FileFinder::guard($destination);
-
-			throwUnless(file_exists($source), new \RuntimeException("Source not found: {$source}"));
-			throwUnless(file_exists($destination), new \RuntimeException("Destination already exists: {$destination}"));
-
-			if (is_dir($source)) {
-				$this->copyDirectory($source, $destination);
-			} else {
-				$destDir = dirname($destination);
-
-				if (!is_dir($destDir)) {
-					@mkdir($destDir, 0755, true);
-				}
-
-				$copied = @copy($source, $destination);
-				throwUnless($copied, new \RuntimeException("Failed to copy file: {$source} -> {$destination}"));
-			}
-
-			$relativeSource = $this->relativePath($source);
-			$relativeDestination = $this->relativePath($destination);
-			$text = "Copied: {$relativeSource} -> {$relativeDestination}";
-
-			$this->observer->log('copy_file', compact('source', 'destination'), $text);
-
-			return new CallToolResult(
-				[new TextContent($text)],
-				structuredContent: ['source' => $relativeSource, 'destination' => $relativeDestination, 'copied' => true],
-			);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Copy failed: {$e->getMessage()}")]);
-		}
-	}
-
-	#[McpTool(
-		name: 'move_file',
-		description: 'Move or rename a file or directory. Fails if destination already exists. Creates parent directories automatically. Paths must be relative to project root.',
-	)]
-	public function moveFileTool(string $source, string $destination): CallToolResult
-	{
-		try {
-			$source = FileFinder::guard($source);
-			$destination = FileFinder::guard($destination);
-
-			throwUnless(file_exists($source), new \RuntimeException("Source not found: {$source}"));
-			throwUnless(file_exists($destination), new \RuntimeException("Destination not found: {$destination}"));
-
-			$destDir = dirname($destination);
-
-			if (!is_dir($destDir)) {
-				@mkdir($destDir, 0755, true);
-			}
-
-			$moved = @rename($source, $destination);
-			throwUnless($moved, new \RuntimeException("Failed to move file: {$source} -> {$destination}"));
-
-			$relativeSource = $this->relativePath($source);
-			$relativeDestination = $this->relativePath($destination);
-			$text = "Moved: {$relativeSource} -> {$relativeDestination}";
-
-			$this->observer->log('move_file', compact('source', 'destination'), $text);
-
-			return new CallToolResult(
-				[new TextContent($text)],
-				structuredContent: ['source' => $relativeSource, 'destination' => $relativeDestination, 'moved' => true],
-			);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Move failed: {$e->getMessage()}")]);
-		}
-	}
-
-	/**
-	 * @phpstan-ignore missingType.iterableValue
-	 */
-	#[McpResource(
-		uri: 'file://list',
-		name: 'Full-Project-File-List',
-		description: 'Complete recursive file listing of the entire project root. Includes app/, core/, system/, and config files. Dot-files and VCS metadata are excluded. Prefer project://structure for a cheaper grouped overview — use this only when a flat full inventory is needed.',
-	)]
-	public function getFilesListResource(): array
-	{
-		$path = Path::getRootDir() ?: __DIR__;
-		$result = $this->getDirFileListTool($path);
-
-		return $result->structuredContent ?? [];
-	}
-
 	#[McpResource(
 		uri: 'prompt://system',
 		name: 'Senior-Engineer-System-Prompt',
@@ -996,21 +286,7 @@ class McpElements
 	)]
 	public function applicationInfoResource(): array
 	{
-		$kernel = Kernel::getInstance();
-
-		return [
-			'mode' => $kernel->getMode()->value,
-			'env' => $kernel->getEnvironment()->value,
-			'replica' => $kernel->getReplicaId(),
-			'paths' => [
-				'root' => Path::getRootDir(),
-				'storage' => Path::getStorageDir(),
-				'logs' => Path::getLogsDir(),
-				'vendor' => Path::getVendorDir(),
-				'app' => Path::getAppDir(),
-				'system' => Path::getSystemDir(),
-			],
-		];
+		return $this->context->runtimeInfo();
 	}
 
 	/**
@@ -1023,13 +299,7 @@ class McpElements
 	)]
 	public function makefileTargetsResource(): array
 	{
-		$path = Path::getRootDir() . '/Makefile';
-
-		if (!is_file($path)) {
-			return ['targets' => [], 'note' => 'no_makefile'];
-		}
-
-		return ['targets' => (new Makefile($path))->getTargets()];
+		return ['targets' => $this->context->makefileTargets()];
 	}
 
 	/**
@@ -1042,22 +312,7 @@ class McpElements
 	)]
 	public function assistCommandsResource(): array
 	{
-		if ($this->cachedCommands) {
-			return ['commands' => $this->cachedCommands];
-		}
-
-		/** @var Application $application */
-		$application = require Path::getAppDir() . '/Assist/Bootstrap.php';
-
-		/** @var array<array{name: string, desc: string}> $list */
-		$list = array_map(
-			fn (Command $cmd): array => ['name' => $cmd::getName(), 'desc' => $cmd::getDescription()],
-			$application->getCommands(),
-		);
-
-		$this->cachedCommands = array_values($list);
-
-		return ['commands' => $this->cachedCommands];
+		return ['commands' => $this->context->registeredCommands()];
 	}
 
 	#[McpResource(
@@ -1138,80 +393,35 @@ class McpElements
 	}
 
 	/**
-	 * @param string $fileName relative path under AI/Prompt/
-	 *
 	 * @return PromptMessage[]
 	 */
 	#[McpPrompt(
 		name: 'dev_task',
-		description: 'Load a story file as a structured developer task. Combines the senior engineer system prompt with a task file from AI/Prompt/ (e.g. Story/01-http-request-module.md) into a two-message prompt ready for agent invocation.',
+		description: 'Load a story file as a structured developer task. Combines the senior engineer system prompt with a task file from /Prompt/ (e.g. Story/01-http-request-module.md) into a two-message prompt ready for agent invocation.',
 	)]
 	public function devTaskPrompt(string $fileName): array
 	{
 		$userPromptPath = $this->resolvePromptFilePath($fileName);
-		$systemPrompt = File::open(Disk::Local, Path::getAppDir() . '/AI/Prompt/Role/software-engineer.md')->readLines();
-		$userPrompt = File::open(Disk::Local, $userPromptPath)->readLines();
+		$systemPrompt = $this->fileStorage->read($this->context->promptDir() . '/Role/software-engineer.md');
+		$userPrompt = $this->fileStorage->read($userPromptPath);
 
 		return [
-			new PromptMessage(Role::Assistant, new TextContent("[System context]\n" . implode(PHP_EOL, $systemPrompt))),
+			new PromptMessage(Role::Assistant, new TextContent("[System context]\n" . $systemPrompt)),
 			new PromptMessage(Role::User, new TextContent($userPrompt)),
 		];
 	}
 
 	/**
-	 * @param string $path path to the file to review (scoped to project)
-	 *
-	 * @return PromptMessage[]
-	 */
-	#[McpPrompt(
-		name: 'review_file',
-		description: 'Load a project file and wrap it in a structured code review request. Reads the target file, counts its tokens, and returns a single user message. Use for focused per-file review sessions without building context manually.',
-	)]
-	public function reviewFilePrompt(string $path): array
-	{
-		$path = FileFinder::guard($path);
-		Assert::file($path, "Not a file: {$path}");
-
-		$lines = File::open(Disk::Local, $path)->readLines();
-		$content = implode(PHP_EOL, $lines);
-		$tokens = (new McpTokenCalculator())->countText($content);
-
-		return [
-			new PromptMessage(
-				Role::User,
-				new TextContent(["Review this file ({$tokens} tokens):\n\n```php\n{$content}\n```"])
-			),
-		];
-	}
-
-	/**
-	 * Guards an optional path parameter and returns the sanitised value.
-	 *
-	 * Returning the guarded path ensures callers pass the normalised,
-	 * traversal-safe string to downstream methods rather than the raw input.
-	 */
-	private function guardOptionalPath(string $path): string
-	{
-		if ('' === $path) {
-			return '';
-		}
-
-		return FileFinder::guard($path);
-	}
-
-	/**
-	 * Resolves a dev_task prompt file and guarantees it stays under AI/Prompt.
-	 *
-	 * @throws InvalidArgumentException
+	 * @throws \InvalidArgumentException
 	 */
 	private function resolvePromptFilePath(string $fileName): string
 	{
-		$promptBase = FileFinder::guard(Path::getAppDir() . '/AI/Prompt');
-		$resolved = FileFinder::guard($promptBase . '/' . ltrim($fileName, '/'));
+		$promptBase = $this->context->guardPath($this->context->promptDir());
+		$resolved = $this->context->guardPath($promptBase . '/' . ltrim($fileName, '/'));
 		$prefix = rtrim($promptBase, '/') . '/';
 
 		if (!str_starts_with($resolved, $prefix)) {
-			throw new InvalidArgumentException("Prompt path escapes AI/Prompt: {$fileName}");
+			throw new \InvalidArgumentException('Prompt path escapes ' . $this->context->promptDir() . ": {$fileName}");
 		}
 
 		return $resolved;
@@ -1235,501 +445,8 @@ class McpElements
 		return $result;
 	}
 
-	/**
-	 * @param array<int, array<string, mixed>> $files
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function filterCoverageFiles(array $files, int $maxPct): array
-	{
-		if ($maxPct >= 100) {
-			return $files;
-		}
-
-		return array_values(array_filter($files, static fn (array $f): bool => $f['lines_pct'] < $maxPct));
-	}
-
-	/**
-	 * @param array<string, mixed> $stats
-	 */
-	private function formatCoverageSummary(array $stats): string
-	{
-		if ([] === $stats) {
-			return 'No coverage data available (Xdebug/PCOV required)';
-		}
-
-		return sprintf(
-			'Coverage — Lines: %.2f%% (%d/%d) | Methods: %.2f%% (%d/%d) | Classes: %.2f%% (%d/%d)',
-			$this->toFloatStat($stats['lines_pct'] ?? null),
-			$this->toIntStat($stats['lines_covered'] ?? null),
-			$this->toIntStat($stats['lines_total'] ?? null),
-			$this->toFloatStat($stats['methods_pct'] ?? null),
-			$this->toIntStat($stats['methods_covered'] ?? null),
-			$this->toIntStat($stats['methods_total'] ?? null),
-			$this->toFloatStat($stats['classes_pct'] ?? null),
-			$this->toIntStat($stats['classes_covered'] ?? null),
-			$this->toIntStat($stats['classes_total'] ?? null),
-		);
-	}
-
-	private function toFloatStat(mixed $value): float
-	{
-		if (is_int($value) || is_float($value)) {
-			return (float) $value;
-		}
-
-		if (is_string($value) && is_numeric($value)) {
-			return (float) $value;
-		}
-
-		return 0.0;
-	}
-
-	private function toIntStat(mixed $value): int
-	{
-		if (is_int($value)) {
-			return $value;
-		}
-
-		if (is_float($value)) {
-			return (int) round($value);
-		}
-
-		if (is_string($value) && is_numeric($value)) {
-			return (int) round((float) $value);
-		}
-
-		return 0;
-	}
-
 	private function readSkillFile(string $relativePath): string
 	{
-		$lines = File::open(Disk::Local, Path::getAppDir() . '/AI/Prompt/' . $relativePath)->readLines();
-
-		return implode(PHP_EOL, $lines);
-	}
-
-	#[McpTool(
-		name: 'git_commit',
-		description: 'Create a git commit with the given message. Use --all flag to stage all modified files. Returns commit hash and message. Requires clean working tree or staged changes.',
-	)]
-	public function gitCommitTool(string $message, bool $all = false): CallToolResult
-	{
-		try {
-			$result = $this->shell->gitCommit($message, $all);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Commit failed: {$e->getMessage()}")]);
-		}
-
-		$text = "Committed: {$result['hash']} - {$result['message']}";
-
-		$this->observer->log('git_commit', compact('message', 'all'), $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'git_push',
-		description: 'Push commits to remote repository. Use setUpstream flag for new branches. Returns output from git push command.',
-	)]
-	public function gitPushTool(string $remote = 'origin', string $branch = '', bool $setUpstream = false): CallToolResult
-	{
-		try {
-			$result = $this->shell->gitPush($remote, $branch, $setUpstream);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Push failed: {$e->getMessage()}")]);
-		}
-
-		$text = "Pushed to {$remote}" . ('' !== $branch ? "/{$branch}" : '');
-
-		$this->observer->log('git_push', compact('remote', 'branch', 'setUpstream'), $result['output']);
-
-		return new CallToolResult([new TextContent($result['output'])], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'git_pull',
-		description: 'Pull changes from remote repository. Returns output from git pull command.',
-	)]
-	public function gitPullTool(string $remote = 'origin', string $branch = ''): CallToolResult
-	{
-		try {
-			$result = $this->shell->gitPull($remote, $branch);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Pull failed: {$e->getMessage()}")]);
-		}
-
-		$this->observer->log('git_pull', compact('remote', 'branch'), $result['output']);
-
-		return new CallToolResult([new TextContent($result['output'])], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'git_branch',
-		description: 'List all branches or create a new branch. Pass empty newBranch to list only. Returns structured branch list with current branch marked.',
-	)]
-	public function gitBranchTool(string $newBranch = ''): CallToolResult
-	{
-		try {
-			$result = $this->shell->gitBranch($newBranch);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Branch operation failed: {$e->getMessage()}")]);
-		}
-
-		$text = "Branches:\n";
-
-		foreach ($result['branches'] as $branch) {
-			$marker = $branch['current'] ? '* ' : '  ';
-			$text .= "{$marker}{$branch['name']}\n";
-		}
-
-		$this->observer->log('git_branch', compact('newBranch'), $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'git_checkout',
-		description: 'Switch to a different branch. Use createNew flag to create and switch to a new branch. Returns branch name and output.',
-	)]
-	public function gitCheckoutTool(string $branch, bool $createNew = false): CallToolResult
-	{
-		try {
-			$result = $this->shell->gitCheckout($branch, $createNew);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Checkout failed: {$e->getMessage()}")]);
-		}
-
-		$text = "Switched to branch: {$result['branch']}";
-
-		$this->observer->log('git_checkout', compact('branch', 'createNew'), $text);
-
-		return new CallToolResult([new TextContent($result['output'])], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'git_merge',
-		description: 'Merge a branch into the current branch. Use noFastForward flag to create a merge commit even when fast-forward is possible. Returns merge output or conflict details.',
-	)]
-	public function gitMergeTool(string $branch, bool $noFastForward = false): CallToolResult
-	{
-		try {
-			$result = $this->shell->gitMerge($branch, $noFastForward);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Merge failed: {$e->getMessage()}")]);
-		}
-
-		$this->observer->log('git_merge', compact('branch', 'noFastForward'), $result['output']);
-
-		return new CallToolResult([new TextContent($result['output'])], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'git_stash',
-		description: 'Stash or apply stashed changes. Actions: push (save), pop (apply+drop), apply (apply only), list, drop, clear. Returns stash output.',
-	)]
-	public function gitStashTool(string $action = 'push', string $message = ''): CallToolResult
-	{
-		try {
-			$result = $this->shell->gitStash($action, $message);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Stash failed: {$e->getMessage()}")]);
-		}
-
-		$this->observer->log('git_stash', compact('action', 'message'), $result['output']);
-
-		return new CallToolResult([new TextContent($result['output'])], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'process_list',
-		description: 'List running processes sorted by CPU usage. Returns PID, CPU%, memory%, and command for each process. Limit controls max results (default 50, max 200).',
-	)]
-	public function processListTool(int $limit = 50): CallToolResult
-	{
-		try {
-			$result = $this->shell->processList($limit);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Process list failed: {$e->getMessage()}")]);
-		}
-
-		$text = sprintf("Processes: %d\n\n", $result['total']);
-
-		foreach ($result['processes'] as $proc) {
-			$text .= sprintf("PID %d | CPU %s%% | MEM %s%% | %s\n", $proc['pid'], $proc['cpu'], $proc['mem'], $proc['command']);
-		}
-
-		$this->observer->log('process_list', compact('limit'), $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'process_kill',
-		description: 'Terminate a process by PID using a signal. Signals: TERM (graceful), KILL (force), HUP, INT, QUIT. Returns killed flag and signal used.',
-	)]
-	public function processKillTool(int $pid, string $signal = 'TERM'): CallToolResult
-	{
-		try {
-			$result = $this->shell->processKill($pid, $signal);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Kill failed: {$e->getMessage()}")]);
-		}
-
-		$text = $result['killed'] ? "Killed PID {$result['pid']} with {$result['signal']}" : "Failed to kill PID {$result['pid']}";
-
-		$this->observer->log('process_kill', compact('pid', 'signal'), $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'disk_usage',
-		description: 'Report disk usage statistics for all mounted filesystems. Returns filesystem, size, used, available, use%, and mount point.',
-	)]
-	public function diskUsageTool(): CallToolResult
-	{
-		try {
-			$result = $this->shell->diskUsage();
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Disk usage failed: {$e->getMessage()}")]);
-		}
-
-		$text = sprintf("Filesystems: %d\n\n", $result['total']);
-
-		foreach ($result['filesystems'] as $fs) {
-			$text .= sprintf("%s: %s used / %s total (%s) - mounted at %s\n", $fs['filesystem'], $fs['used'], $fs['size'], $fs['use_pct'], $fs['mounted']);
-		}
-
-		$this->observer->log('disk_usage', [], $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'network_test',
-		description: 'Test network connectivity via ping. Returns reachable flag, latency, and full ping output. Count controls number of pings (default 4, max 10).',
-	)]
-	public function networkTestTool(string $host, int $count = 4): CallToolResult
-	{
-		try {
-			$result = $this->shell->networkTest($host, $count);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Network test failed: {$e->getMessage()}")]);
-		}
-
-		$text = sprintf(
-			"Host: %s\nReachable: %s\nLatency: %s\n\n%s",
-			$result['host'],
-			$result['reachable'] ? 'yes' : 'no',
-			$result['latency'] ?: 'n/a',
-			$result['output']
-		);
-
-		$this->observer->log('network_test', compact('host', 'count'), $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'tail_file',
-		description: 'Read the last N lines from a file (like tail -n). Useful for log monitoring. Default 50 lines, max 1000. Path must be relative to project root or absolute within project.',
-	)]
-	public function tailFileTool(string $path, int $lines = 50): CallToolResult
-	{
-		try {
-			$result = $this->shell->tailFile($path, $lines);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Tail failed: {$e->getMessage()}")]);
-		}
-
-		$text = sprintf("File: %s\nLines: %d\n\n", $result['path'], $result['total']);
-		$text .= implode("\n", $result['lines']);
-
-		$this->observer->log('tail_file', compact('path', 'lines'), $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'find_references',
-		description: 'Find all references to a class, method, or function name. Searches PHP files recursively from path (default: app/). Returns file path, line number, and context for each reference. Max 500 results.',
-	)]
-	public function findReferencesTool(string $symbol, string $path = ''): CallToolResult
-	{
-		try {
-			$result = $this->codeAnalysis->findReferences($symbol, $path);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Find references failed: {$e->getMessage()}")]);
-		}
-
-		$text = sprintf("Symbol: %s\nReferences: %d%s\n\n", $result['symbol'], $result['total'], $result['truncated'] ? ' (truncated)' : '');
-
-		foreach ($result['references'] as $ref) {
-			$text .= sprintf("%s:%d: %s\n", $ref['file'], $ref['line'], $ref['context']);
-		}
-
-		$this->observer->log('find_references', compact('symbol', 'path'), $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result, meta: ['total' => $result['total'], 'truncated' => $result['truncated']]);
-	}
-
-	#[McpTool(
-		name: 'find_definition',
-		description: 'Find the definition of a class, method, or function. Searches PHP files recursively from path (default: app/). Returns file path, line number, and context if found.',
-	)]
-	public function findDefinitionTool(string $symbol, string $path = ''): CallToolResult
-	{
-		try {
-			$result = $this->codeAnalysis->findDefinition($symbol, $path);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Find definition failed: {$e->getMessage()}")]);
-		}
-
-		if (null === $result['definition']) {
-			$text = "Symbol: {$result['symbol']}\nDefinition: not found";
-		} else {
-			$def = $result['definition'];
-			$text = sprintf("Symbol: %s\nDefinition: %s:%d\n%s", $result['symbol'], $def['file'], $def['line'], $def['context']);
-		}
-
-		$this->observer->log('find_definition', compact('symbol', 'path'), $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'code_metrics',
-		description: 'Calculate code metrics for a file or directory. Returns file count, total lines, class count, method count, and function count. Recursively analyzes PHP files.',
-	)]
-	public function codeMetricsTool(string $path): CallToolResult
-	{
-		try {
-			$result = $this->codeAnalysis->codeMetrics($path);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Code metrics failed: {$e->getMessage()}")]);
-		}
-
-		$text = sprintf(
-			"Path: %s\nFiles: %d\nLines: %d\nClasses: %d\nMethods: %d\nFunctions: %d",
-			$result['path'],
-			$result['files'],
-			$result['lines'],
-			$result['classes'],
-			$result['methods'],
-			$result['functions']
-		);
-
-		$this->observer->log('code_metrics', compact('path'), $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'run_tests_filtered',
-		description: 'Run PHPUnit tests with a specific filter (class name, method name, or pattern). Returns test output, exit code, and pass/fail status.',
-	)]
-	public function runTestsFilteredTool(string $filter): CallToolResult
-	{
-		try {
-			$result = $this->shell->runTestsFiltered($filter);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Test execution failed: {$e->getMessage()}")]);
-		}
-
-		$text = sprintf("Filter: %s\nPassed: %s\n\n%s", $result['filter'], $result['passed'] ? 'yes' : 'no', $result['output']);
-
-		$this->observer->log('run_tests_filtered', compact('filter'), $text);
-
-		return new CallToolResult([new TextContent($text)], isError: !$result['passed'], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'benchmark_run',
-		description: 'Execute performance benchmarks via composer benchmark command. Returns benchmark output and exit code.',
-	)]
-	public function benchmarkRunTool(): CallToolResult
-	{
-		try {
-			$result = $this->shell->benchmarkRun();
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Benchmark failed: {$e->getMessage()}")]);
-		}
-
-		$this->observer->log('benchmark_run', [], $result['output']);
-
-		return new CallToolResult([new TextContent($result['output'])], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'lint_fix',
-		description: 'Auto-fix code style issues with PHP-CS-Fixer. Applies fixes to all configured paths. Returns output and fixed flag.',
-	)]
-	public function lintFixTool(): CallToolResult
-	{
-		try {
-			$result = $this->shell->lintFix();
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Lint fix failed: {$e->getMessage()}")]);
-		}
-
-		$text = sprintf("Fixed: %s\n\n%s", $result['fixed'] ? 'yes' : 'no', $result['output']);
-
-		$this->observer->log('lint_fix', [], $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result);
-	}
-
-	#[McpTool(
-		name: 'format_code',
-		description: 'Format code in a specific file or directory using PHP-CS-Fixer. Returns output and formatted flag.',
-	)]
-	public function formatCodeTool(string $path): CallToolResult
-	{
-		try {
-			$result = $this->shell->formatCode($path);
-		} catch (\Throwable $e) {
-			return CallToolResult::error([new TextContent("Format failed: {$e->getMessage()}")]);
-		}
-
-		$text = sprintf("Path: %s\nFormatted: %s\n\n%s", $result['path'], $result['formatted'] ? 'yes' : 'no', $result['output']);
-
-		$this->observer->log('format_code', compact('path'), $text);
-
-		return new CallToolResult([new TextContent($text)], structuredContent: $result);
-	}
-
-	private function relativePath(string $absolutePath): string
-	{
-		$root = rtrim((string) Path::getRootDir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-
-		if (str_starts_with($absolutePath, $root)) {
-			return substr($absolutePath, strlen($root));
-		}
-
-		return $absolutePath;
-	}
-
-	private function copyDirectory(string $source, string $destination): void
-	{
-		@mkdir($destination, 0755, true);
-
-		$iterator = new \RecursiveIteratorIterator(
-			new \RecursiveDirectoryIterator($source, \FilesystemIterator::SKIP_DOTS),
-			\RecursiveIteratorIterator::SELF_FIRST
-		);
-
-		foreach ($iterator as $item) {
-			/**
-			 * @var \SplFileInfo $item
-			 */
-			$targetPath = $destination . DIRECTORY_SEPARATOR . $iterator->getSubPathname();
-
-			if ($item->isDir()) {
-				@mkdir($targetPath, 0755, true);
-			} else {
-				@copy($item->getPathname(), $targetPath);
-			}
-		}
+		return $this->fileStorage->read($this->context->promptDir() . "/$relativePath");
 	}
 }

@@ -33,7 +33,6 @@ lint:
 check:
 	@./sakoo composer lint
 	@./sakoo composer test
-	@./sakoo composer eval
 	@./sakoo composer analyse
 	@./sakoo composer validate --strict
 	@./sakoo composer audit
@@ -86,7 +85,3 @@ cache-clear:
 .PHONY: mcp-test
 mcp-test:
 	@npx @modelcontextprotocol/inspector ./bin/mcp
-
-.PHONY: eval
-eval:
-	@./sakoo composer eval

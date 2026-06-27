@@ -11,7 +11,7 @@ use NeuronAI\Chat\Messages\Stream\Chunks\ToolCallChunk;
 use NeuronAI\Chat\Messages\Stream\Chunks\ToolResultChunk;
 use Sakoo\Framework\Core\Console\Output;
 
-class CliAgentStreamFormatter
+class CLIAgentStreamFormatter
 {
 	public function __construct(private Output $output) {}
 
